@@ -1,10 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSuperApp } from './hooks/useSuperApp';
-import { useAssetStore } from './store/assetStore';
-import SessionListPage from './pages/asset-counting/SessionListPage';
-import SessionDetailPage from './pages/asset-counting/SessionDetailPage';
-import ReportsPage from './pages/asset-counting/ReportsPage';
+import { useAppStore } from './store/appStore';
+import HomePage from './pages/HomePage';
 import DevPanel from './components/dev/DevPanel';
 
 // Initialize React Query Client
@@ -18,35 +16,31 @@ const queryClient = new QueryClient({
   },
 });
 
-/**
- * Root application component.
- */
 export default function App() {
   /* ── Auth token for standalone dev mode ──────────────────────────────── */
   const [authToken, setAuthToken] = useState<string>(() => {
     return (
       localStorage.getItem('dev_auth_token') ||
       import.meta.env.VITE_DEV_AUTH_TOKEN ||
-      'mock-dev-token-value'
+      ''
     );
   });
 
   const { bridge: superApp, isMock } = useSuperApp(authToken);
 
-  const setSuperApp = useAssetStore((s) => s.setSuperApp);
-  const setAuthTokenInStore = useAssetStore((s) => s.setAuthToken);
+  const setSuperApp = useAppStore((s) => s.setSuperApp);
+  const setAuthTokenInStore = useAppStore((s) => s.setAuthToken);
 
-  // Sync bridge and token to Zustand store when resolved
+  // Sync bridge to store when resolved
   useEffect(() => {
     if (superApp) {
       setSuperApp(superApp);
     }
   }, [superApp, setSuperApp]);
 
+  // Sync auth token to store
   useEffect(() => {
-    if (authToken) {
-      setAuthTokenInStore(authToken);
-    }
+    setAuthTokenInStore(authToken);
   }, [authToken, setAuthTokenInStore]);
 
   const handleSaveToken = useCallback((newToken: string) => {
@@ -58,17 +52,23 @@ export default function App() {
   /* ── Waiting for bridge ──────────────────────────────────────────────── */
   if (!superApp) {
     return (
-      <div className="font-sans max-w-[480px] mx-auto p-0 text-center pt-[100px] text-slate-400">
-        <p>Waiting for SuperApp Bridge...</p>
+      <div className="font-sans max-w-md mx-auto min-h-screen flex items-center justify-center bg-slate-50 text-slate-400 p-6">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="font-semibold text-slate-600">Initializing Bridge...</p>
+          <p className="text-xs text-slate-400 mt-1">Checking for SuperApp container context</p>
+        </div>
       </div>
     );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="relative min-h-screen">
-        <AssetCountingRouter key={authToken} superApp={superApp} />
+      <div className="relative min-h-screen bg-slate-50">
+        {/* Router or View Controller */}
+        <AppRouter superApp={superApp} />
 
+        {/* Floating Developer Bridge Console (Only active in stand-alone browser mock mode) */}
         {isMock && (
           <DevPanel
             superApp={superApp}
@@ -81,20 +81,20 @@ export default function App() {
   );
 }
 
-/* ── Internal router component ─────────────────────────────────────────── */
+/* ── App View Router ────────────────────────────────────────────────────── */
 
-function AssetCountingRouter({ superApp }: { superApp: NonNullable<typeof window.superApp> }) {
-  const view = useAssetStore((s) => s.view);
-  const selectedSession = useAssetStore((s) => s.selectedSession);
-  const selectedFunction = useAssetStore((s) => s.selectedFunction);
-  const token = useAssetStore((s) => s.authToken);
-  const setAuthToken = useAssetStore((s) => s.setAuthToken);
+function AppRouter({ superApp }: { superApp: NonNullable<typeof window.superApp> }) {
+  const view = useAppStore((s) => s.view);
+  const token = useAppStore((s) => s.authToken);
+  const setAuthToken = useAppStore((s) => s.setAuthToken);
 
-  // Initialize bridge
-  superApp.ready();
-  superApp.setTitle('Asset Counting');
+  // Initialize bridge events & configuration
+  useEffect(() => {
+    superApp.ready();
+    superApp.setTitle('MiniApp Starter');
+  }, [superApp]);
 
-  // Pull dynamic auth token if store token is empty
+  // Pull dynamic auth token if store token is empty (when running in real SuperApp)
   useEffect(() => {
     const fetchToken = async () => {
       if (!token) {
@@ -102,50 +102,29 @@ function AssetCountingRouter({ superApp }: { superApp: NonNullable<typeof window
           const t = await superApp.getAuthToken();
           if (t) setAuthToken(t);
         } catch (e) {
-          console.error('[App] Failed to fetch dynamic token:', e);
+          console.error('[AppRouter] Failed to fetch dynamic token:', e);
         }
       }
     };
     fetchToken();
   }, [superApp, token, setAuthToken]);
 
-  const viewIndex = view === 'list' ? 0 : view === 'detail' ? 1 : 2;
-
+  // Standard sliding transition panel or simple view switcher based on AppStore.view
   return (
-    <div className="w-full h-screen overflow-hidden relative bg-slate-50">
-      <div
-        className="flex w-full h-full transition-transform duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{
-          transform: `translate3d(-${viewIndex * 100}%, 0, 0)`,
-        }}
-      >
-        {/* Slide 1: Session List */}
-        <div className="flex-[0_0_100%] w-full h-screen box-border">
-          <SessionListPage />
+    <div className="w-full min-h-screen overflow-x-hidden relative">
+      {view === 'home' ? (
+        <HomePage />
+      ) : (
+        <div className="p-8 text-center text-slate-400">
+          <p>Unknown view: "{view}"</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm"
+          >
+            Reload App
+          </button>
         </div>
-
-        {/* Slide 2: Session Detail */}
-        <div className="flex-[0_0_100%] w-full h-screen box-border">
-          {selectedSession ? (
-            <SessionDetailPage />
-          ) : (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 min-h-screen">
-              Waiting for session selection...
-            </div>
-          )}
-        </div>
-
-        {/* Slide 3: Reports */}
-        <div className="flex-[0_0_100%] w-full h-screen box-border">
-          {selectedSession && selectedFunction ? (
-            <ReportsPage />
-          ) : (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 min-h-screen">
-              Waiting for group selection...
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
