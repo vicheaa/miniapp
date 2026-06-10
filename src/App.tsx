@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSuperApp } from './hooks/useSuperApp';
 import { useWorkflowStore } from './store/workflowStore';
 import TaskListPage from './pages/workflow/TaskListPage';
+import TaskDetailPage from './pages/workflow/TaskDetailPage';
 import DevPanel from './components/dev/DevPanel';
 
 // Initialize React Query Client
@@ -121,21 +122,9 @@ function WorkflowRouter({ superApp }: { superApp: NonNullable<typeof window.supe
           <TaskListPage />
         </div>
 
-        {/* Slide 2: Task Detail (placeholder for future) */}
+        {/* Slide 2: Task Detail */}
         <div className="flex-[0_0_100%] w-full h-screen box-border">
-          {selectedTask ? (
-            <div className="p-6 bg-slate-50 min-h-screen">
-              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                <h2 className="text-[18px] font-bold text-slate-900 mb-2">{selectedTask.taskName}</h2>
-                <p className="text-[13px] text-slate-500">{selectedTask.instanceInfo.processName}</p>
-                <p className="text-[13px] text-slate-400 mt-1">Business Key: {selectedTask.instanceInfo.businessKey}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 min-h-screen">
-              Waiting for task selection...
-            </div>
-          )}
+          <TaskDetailPage />
         </div>
       </div>
     </div>

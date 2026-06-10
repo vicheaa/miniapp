@@ -1,0 +1,530 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useWorkflowStore } from '../../store/workflowStore';
+import { formatDateCompact } from '../../utils/format';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Workflow,
+  Users,
+  Ban,
+  User,
+  SendHorizontal,
+  FileText,
+  Paperclip,
+  CheckCircle2,
+  Clock,
+  Info,
+  Calendar,
+  Building2,
+  DollarSign,
+  AlertCircle,
+  Download,
+  Mail,
+  UserCheck,
+  ChevronLeft
+} from 'lucide-react';
+import {
+  fetchTaskInstanceData,
+  fetchProcessFlowDetail,
+  fetchBasicContactInfo,
+  type TaskInstanceData,
+  type ProcessFlowDetail,
+  type BasicContactInfo
+} from '../../services/api/task-detail-api';
+
+export default function TaskDetailPage() {
+  const superApp = useWorkflowStore((s) => s.superApp);
+  const selectedTask = useWorkflowStore((s) => s.selectedTask);
+  const authToken = useWorkflowStore((s) => s.authToken);
+  const setView = useWorkflowStore((s) => s.setView);
+
+  // States
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [instanceData, setInstanceData] = useState<TaskInstanceData | null>(null);
+  const [processDetail, setProcessDetail] = useState<ProcessFlowDetail | null>(null);
+  const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
+
+  // UI state
+  const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
+  const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
+
+  // Fetch all details
+  const loadTaskDetails = useCallback(async () => {
+    if (!selectedTask || !authToken) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Step 1: Fetch instance data and process flow details in parallel
+      const [instData, flowDetail] = await Promise.all([
+        fetchTaskInstanceData(authToken, selectedTask.taskId),
+        fetchProcessFlowDetail(authToken, selectedTask.instanceInfo.processInstanceId)
+      ]);
+
+      setInstanceData(instData);
+      setProcessDetail(flowDetail);
+
+      // Step 2: Fetch basic contact info of the creator
+      if (flowDetail.createdBy) {
+        try {
+          const contact = await fetchBasicContactInfo(authToken, flowDetail.createdBy);
+          setContactInfo(contact);
+        } catch (contactErr) {
+          console.error('[TaskDetailPage] Failed to fetch contact info:', contactErr);
+          // Don't fail the whole load if only contact info fails
+        }
+      }
+    } catch (err: any) {
+      console.error('[TaskDetailPage] Error loading details:', err);
+      setError(err?.message || 'Failed to load task details. Please check connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedTask, authToken]);
+
+  useEffect(() => {
+    loadTaskDetails();
+  }, [loadTaskDetails]);
+
+  // Back button
+  const handleBack = () => {
+    setView('task-list');
+  };
+
+  // Action Handlers
+  const handleAction = (actionName: string) => {
+    if (superApp) {
+      superApp.showToast(`Action executed: ${actionName}`);
+    } else {
+      alert(`[Dev Mode] Action: ${actionName}`);
+    }
+  };
+
+  if (!selectedTask) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6 text-center text-slate-400">
+        <Info size={40} className="mb-2 text-slate-300" />
+        <p>No task selected</p>
+        <button onClick={handleBack} className="mt-4 text-[13px] text-blue-600 font-semibold underline">
+          Go back to list
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-screen overflow-hidden flex flex-col box-border relative">
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <header className="bg-white px-4 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
+        <button
+          onClick={handleBack}
+          className="p-1 -ml-1 text-slate-500 hover:text-slate-900 active:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+        >
+          <ChevronLeft size={24} color='black' />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-[16px] font-bold text-slate-900 truncate">
+            {selectedTask.instanceInfo.businessKey || 'Task Details'}
+          </h1>
+          <p className="text-[11px] text-slate-400 font-medium truncate">
+            {selectedTask.instanceInfo.processName}
+          </p>
+        </div>
+        <div className="shrink-0 flex gap-1.5">
+          <button
+            onClick={() => handleAction('Flow')}
+            className="px-2.5 py-1 rounded-[6px] border border-slate-200 text-slate-600 text-[11px] font-semibold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer"
+          >
+            Flow
+          </button>
+          <button
+            onClick={() => handleAction('Diagram')}
+            className="px-2.5 py-1 rounded-[6px] border border-slate-200 text-slate-600 text-[11px] font-semibold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer"
+          >
+            Diagram
+          </button>
+        </div>
+      </header>
+
+      {/* ── Scrollable Body ──────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <svg className="animate-spin h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-[13px] text-slate-400 font-semibold">Loading details…</span>
+          </div>
+        ) : error ? (
+          <div className="p-6 text-center">
+            <div className="inline-flex items-center justify-center p-3 rounded-full bg-red-50 text-red-500 mb-3">
+              <AlertCircle size={24} />
+            </div>
+            <h3 className="text-[15px] font-bold text-slate-800 mb-1">Failed to load</h3>
+            <p className="text-[13px] text-slate-500 mb-4 px-4">{error}</p>
+            <button
+              onClick={loadTaskDetails}
+              className="px-4 py-2 rounded-lg bg-slate-800 text-white text-[13px] font-semibold hover:bg-slate-900 transition-all cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="p-3.5 flex flex-col gap-3.5">
+            {/* ── Request Info Collapsible Card ──────────────────────────────── */}
+            <div className="bg-white rounded-xl border border-slate-200/60 overflow-hidden shadow-sm">
+              <button
+                onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <span className="text-[14px] font-bold text-slate-800">Request Info</span>
+                <span className="text-slate-400">
+                  {isRequestInfoExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </span>
+              </button>
+
+              {isRequestInfoExpanded && (
+                <div className="px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px]">
+                  {/* Requester Info */}
+                  <div className="flex gap-3">
+                    <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-slate-400 font-medium block text-[11px]">Requested By</span>
+                      <span className="text-slate-800 font-semibold">
+                        {contactInfo
+                          ? `${contactInfo.empNo} ${contactInfo.lastName} ${contactInfo.firstName}`
+                          : processDetail?.createdBy || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contact Email */}
+                  {contactInfo?.mail && (
+                    <div className="flex gap-3">
+                      <Mail size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <span className="text-slate-400 font-medium block text-[11px]">Contact</span>
+                        <a href={`mailto:${contactInfo.mail}`} className="text-blue-600 font-medium hover:underline">
+                          {contactInfo.mail}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Org / Business Unit */}
+                  <div className="flex gap-3">
+                    <Building2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-slate-400 font-medium block text-[11px]">Org Info</span>
+                      <span className="text-slate-800 font-semibold">
+                        {processDetail?.buName || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Process Status */}
+                  <div className="flex gap-3">
+                    <Info size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1 flex items-center gap-2">
+                      <div>
+                        <span className="text-slate-400 font-medium block text-[11px]">Process Status</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
+                          {processDetail?.processStatus || 'PENDING'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-100 my-0.5" />
+
+                  {/* Budget Controller / Assignee */}
+                  <div className="flex gap-3">
+                    <UserCheck size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-slate-400 font-medium block text-[11px]">Budget Controller Verification</span>
+                      <span className="text-slate-800 font-semibold">
+                        Assigned to {selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Task Started Date */}
+                  <div className="flex gap-3">
+                    <Calendar size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-slate-400 font-medium block text-[11px]">Task Started Date</span>
+                      <span className="text-slate-700 font-semibold">
+                        {formatDateCompact(selectedTask.created)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Task Status */}
+                  <div className="flex gap-3">
+                    <CheckCircle2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span className="text-slate-400 font-medium block text-[11px]">Task Status</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-blue-50 text-blue-600 border border-blue-100">
+                        Active
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            ── Tabs Segmented Control ──────────────────────────────────────
+            <div className="bg-white rounded-xl border border-slate-200/60 p-1 flex shadow-sm">
+              <button
+                onClick={() => setActiveTab('data-form')}
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'data-form'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                }`}
+              >
+                Data Form
+              </button>
+              <button
+                onClick={() => setActiveTab('activities')}
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'activities'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                }`}
+              >
+                Activities
+              </button>
+              <button
+                onClick={() => setActiveTab('attachments')}
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'attachments'
+                    ? 'bg-slate-800 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                }`}
+              >
+                Attachments
+              </button>
+            </div>
+
+            {/* ── Data Form Tab Content ──────────────────────────────────────── */}
+            {activeTab === 'data-form' && processDetail && (
+              <div className="flex flex-col gap-3.5">
+                {/* Requisition Card */}
+                <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-3">
+                  <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
+                    Requisition Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
+                    <div>
+                      <span className="text-slate-400 block font-medium">From No</span>
+                      <span className="text-slate-800 font-bold">{processDetail.formNo}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Expected Date</span>
+                      <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.acquisitionDate)}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 block font-medium">Reason</span>
+                      <span className="text-slate-800 font-medium">{processDetail.reason || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">BU</span>
+                      <span className="text-slate-800 font-semibold">{processDetail.buName}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Created By</span>
+                      <span className="text-slate-800 font-semibold">{processDetail.createdBy}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Budget Code Required</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 font-bold mt-0.5">
+                        {processDetail.budgetCodeRequired ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-medium">Created Date</span>
+                      <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.createdDate)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Section */}
+                <div className="flex flex-col gap-2">
+                  <h4 className="text-[13px] font-bold text-slate-500 px-1">Items List</h4>
+                  {processDetail.items?.map((item, idx) => (
+                    <div key={item.id || idx} className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-2.5">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-50">
+                        <span className="text-[13px] font-bold text-slate-800 truncate">
+                          {item.itemName}
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-400 shrink-0">
+                          {item.itemCode}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-y-2 text-[12px] text-slate-600">
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Quantity / UoM</span>
+                          <span className="font-semibold text-slate-800">{item.qty} {item.uom}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Unit Price</span>
+                          <span className="font-semibold text-slate-800">${item.unitPrice.toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Budget Code</span>
+                          <span className="font-semibold text-slate-800">{item.budgetCode || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Subtotal</span>
+                          <span className="font-bold text-slate-900">${item.amount.toFixed(2)}</span>
+                        </div>
+                        {item.description && (
+                          <div className="col-span-2">
+                            <span className="text-slate-400 block text-[11px]">Description</span>
+                            <span className="text-slate-700 italic">{item.description}</span>
+                          </div>
+                        )}
+                        {item.remarks && (
+                          <div className="col-span-2">
+                            <span className="text-slate-400 block text-[11px]">Remarks</span>
+                            <span className="text-slate-700">{item.remarks}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Summary amount banner */}
+                  <div className="bg-slate-800 rounded-xl p-4 mt-1.5 flex items-center justify-between shadow-sm">
+                    <span className="text-[13px] font-bold text-slate-300">Total Requisition Amount</span>
+                    <span className="text-[16px] font-black text-white">
+                      ${processDetail.totalAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Activities Tab Content (Timeline) ─────────────────────────── */}
+            {activeTab === 'activities' && instanceData && (
+              <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm">
+                <h3 className="text-[14px] font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                  Workflow Timeline
+                </h3>
+                <div className="relative border-l border-slate-150 pl-5 ml-2.5 flex flex-col gap-6">
+                  {instanceData.activities?.map((activity, idx) => (
+                    <div key={activity.id || idx} className="relative">
+                      {/* Timeline dot */}
+                      <span className="absolute -left-[27px] top-1.5 bg-white p-0.5 rounded-full z-10">
+                        <span className="block w-2.5 h-2.5 rounded-full bg-slate-800 ring-[3px] ring-slate-100" />
+                      </span>
+
+                      {/* Header */}
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[13px] font-extrabold text-slate-800">
+                          {activity.taskName}
+                        </span>
+                        <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                          {formatDateCompact(activity.actionDate)}
+                        </span>
+                      </div>
+
+                      {/* Actor info */}
+                      <p className="text-[12px] text-slate-500 mt-0.5">
+                        {activity.action} by <span className="font-semibold text-slate-700">{activity.actionBy}</span>
+                      </p>
+
+                      {/* Comment bubble */}
+                      {activity.comment && (
+                        <div className="mt-1.5 bg-slate-50 rounded-lg px-3 py-2 text-[12px] text-slate-600 border border-slate-100 italic relative">
+                          {activity.comment}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Attachments Tab Content ─────────────────────────────────────── */}
+            {activeTab === 'attachments' && instanceData && (
+              <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-3">
+                <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
+                  Attachments
+                </h3>
+                {instanceData.attachmentFiles && instanceData.attachmentFiles.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {instanceData.attachmentFiles.map((file, idx) => (
+                      <div
+                        key={file.fileId || idx}
+                        className="flex items-center justify-between p-2.5 rounded-lg border border-slate-150 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Paperclip size={16} className="text-slate-400 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-[12px] font-semibold text-slate-700 block truncate">
+                              File Attachment
+                            </span>
+                            <span className="text-[10px] text-slate-400 truncate block">
+                              Source: {file.activity} · ID: {file.fileId.substring(0, 8)}...
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAction('Download')}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
+                        >
+                          <Download size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-400 text-[13px]">
+                    <Paperclip size={28} className="mx-auto text-slate-300 mb-1.5" />
+                    No attachments uploaded for this task.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
+      {!loading && !error && selectedTask && (
+        <div className="absolute bottom-0 inset-x-0 bg-white border-t border-slate-150 p-4 flex gap-3 z-50 max-w-[480px] mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+          <button
+            onClick={() => handleAction('Unclaim')}
+            className="flex-1 py-3 px-4 rounded-[12px] border border-slate-200 text-slate-700 text-[13px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer text-center"
+          >
+            Unclaim
+          </button>
+          
+          {(() => {
+            const actions =
+              selectedTask.actions && selectedTask.actions.length > 0
+                ? selectedTask.actions
+                : [{ name: 'Complete', value: 'Completed' }];
+
+            return actions.map((act, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleAction(act.name)}
+                className="flex-[2] py-3 px-4 rounded-[12px] bg-slate-800 text-white text-[13px] font-bold hover:bg-slate-900 active:bg-slate-950 shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
+              >
+                <SendHorizontal size={14} />
+                <span>{act.name}</span>
+              </button>
+            ));
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}

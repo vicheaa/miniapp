@@ -4,9 +4,11 @@ import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Header from '../../components/ui/Header';
 import { TaskListSkeleton } from '../../components/ui/SkeletonLoader';
+import BottomSheet from '../../components/ui/BottomSheet';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { useWorkflowTasksInfiniteQuery } from '../../hooks/useWorkflowQuery';
 import type { WorkflowTask } from '../../types/workflow';
+import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal } from 'lucide-react';
 
 /* ── Dynamic field helpers ─────────────────────────────────────────────── */
 
@@ -61,7 +63,15 @@ function getTaskDetailRows(task: WorkflowTask): { label: string; value: string }
 
 /* ── Task Card ─────────────────────────────────────────────────────────── */
 
-function TaskCard({ task, onClick }: { task: WorkflowTask; onClick: () => void }) {
+function TaskCard({
+  task,
+  onClick,
+  onEllipsisClick,
+}: {
+  task: WorkflowTask;
+  onClick: () => void;
+  onEllipsisClick: () => void;
+}) {
   const rows = getTaskDetailRows(task);
 
   return (
@@ -78,6 +88,16 @@ function TaskCard({ task, onClick }: { task: WorkflowTask; onClick: () => void }
         <span className="text-[13px] font-semibold text-slate-500 italic truncate">
           {task.instanceInfo.processName}
         </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEllipsisClick();
+          }}
+          className="ml-auto self-center flex items-center justify-center p-1.5 -m-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 active:bg-slate-100 transition-colors"
+        >
+          <Ellipsis size={18} className="shrink-0" />
+        </button>
       </div>
 
       {/* Detail rows */}
@@ -127,6 +147,24 @@ export default function TaskListPage() {
   const setView = useWorkflowStore((s) => s.setView);
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>('ALL');
+
+  /* ── Bottom Sheet State & Logic ────────────────────────────────────────── */
+  const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
+  const [isAnimateOpen, setIsAnimateOpen] = useState(false);
+
+  const openMenu = (task: WorkflowTask) => {
+    setActiveMenuTask(task);
+    setTimeout(() => {
+      setIsAnimateOpen(true);
+    }, 10);
+  };
+
+  const closeMenu = () => {
+    setIsAnimateOpen(false);
+    setTimeout(() => {
+      setActiveMenuTask(null);
+    }, 250);
+  };
 
   const {
     data,
@@ -282,6 +320,7 @@ export default function TaskListPage() {
                 key={task.taskId}
                 task={task}
                 onClick={() => handleTaskClick(task)}
+                onEllipsisClick={() => openMenu(task)}
               />
             ))}
 
@@ -300,6 +339,99 @@ export default function TaskListPage() {
           </div>
         )}
       </main>
+
+      {/* ── Bottom Sheet Drawer Overlay ────────────────────────────────────── */}
+      <BottomSheet isOpen={isAnimateOpen} onClose={closeMenu}>
+        {activeMenuTask && (
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => {
+                handleTaskClick(activeMenuTask);
+                closeMenu();
+              }}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+            >
+              <Eye size={18} className="text-slate-400 shrink-0" />
+              <span className="text-[15px] font-medium">Detail</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                superApp?.showToast('View Diagram');
+                closeMenu();
+              }}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+            >
+              <Workflow size={18} className="text-slate-400 shrink-0" />
+              <span className="text-[15px] font-medium">View Diagram</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                superApp?.showToast('Approvers');
+                closeMenu();
+              }}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+            >
+              <Users size={18} className="text-slate-400 shrink-0" />
+              <span className="text-[15px] font-medium">Approvers</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                superApp?.showToast('Unclaim');
+                closeMenu();
+              }}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+            >
+              <Ban size={18} className="text-slate-400 shrink-0" />
+              <span className="text-[15px] font-medium">Unclaim</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                superApp?.showToast('Assign');
+                closeMenu();
+              }}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+            >
+              <User size={18} className="text-slate-400 shrink-0" />
+              <span className="text-[15px] font-medium">Assign</span>
+            </button>
+
+            {/* Separator */}
+            <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
+
+            {/* Dynamic Actions */}
+            {(() => {
+              const actions =
+                activeMenuTask.actions && activeMenuTask.actions.length > 0
+                  ? activeMenuTask.actions
+                  : [{ name: 'Complete', value: 'Completed' }];
+
+              return actions.map((act, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
+                    closeMenu();
+                  }}
+                  className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                >
+                  <SendHorizontal size={18} className="text-slate-400 shrink-0" />
+                  <span className="text-[15px] font-medium">{act.name}</span>
+                </button>
+              ));
+            })()}
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }
