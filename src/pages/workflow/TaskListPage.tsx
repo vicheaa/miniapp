@@ -234,7 +234,7 @@ export default function TaskListPage() {
   };
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-screen overflow-y-auto flex flex-col box-border">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-screen overflow-hidden flex flex-col box-border">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       {superApp && (
         <Header
@@ -247,7 +247,7 @@ export default function TaskListPage() {
       )}
 
       {/* ── Search Bar + Filter Tabs ──────────────────────────────────── */}
-      <div className="bg-white px-4 pt-3 pb-3 border-b border-slate-100 sticky top-[52px] z-[99]">
+      <div className="bg-white px-4 pt-3 pb-3 border-b border-slate-100 shrink-0">
         <div className="relative">
           <svg
             width="16"
@@ -282,7 +282,7 @@ export default function TaskListPage() {
                 onClick={() => setActiveFilter(tab.key)}
                 className={`shrink-0 px-4 py-[7px] rounded-full text-[13px] font-semibold border cursor-pointer transition-all duration-200 ${
                   isActive
-                    ? 'bg-slate-800 text-white border-slate-800'
+                    ? 'bg-[#063E89] text-white border-[#063E89]'
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 active:bg-slate-50'
                 }`}
               >
@@ -295,7 +295,7 @@ export default function TaskListPage() {
 
       {/* ── Task Count ──────────────────────────────────────────────────── */}
       {!isLoading && !error && total > 0 && (
-        <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+        <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
           <span className="text-[12px] text-slate-400 font-medium">
             {filteredTasks.length} of {total} tasks
           </span>
@@ -303,7 +303,7 @@ export default function TaskListPage() {
       )}
 
       {/* ── Content ─────────────────────────────────────────────────────── */}
-      <main className="flex-1 p-3 pt-1">
+      <main className="flex-1 p-3 pt-1 overflow-y-auto">
         {isLoading ? (
           <TaskListSkeleton />
         ) : error ? (

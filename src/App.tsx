@@ -43,10 +43,10 @@ export default function App() {
   }, [superApp, setSuperApp]);
 
   useEffect(() => {
-    if (authToken) {
+    if (isMock && authToken) {
       setAuthTokenInStore(authToken);
     }
-  }, [authToken, setAuthTokenInStore]);
+  }, [authToken, isMock, setAuthTokenInStore]);
 
   const handleSaveToken = useCallback((newToken: string) => {
     localStorage.setItem('dev_auth_token', newToken);

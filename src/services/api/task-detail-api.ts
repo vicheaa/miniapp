@@ -137,7 +137,7 @@ export interface ProcessFlowDetail {
   fileIds: any[];
 }
 
-const BASE_URL = '';
+// const BASE_URL = '';
 
 function getHeaders(token: string) {
   return {
@@ -150,7 +150,7 @@ function getHeaders(token: string) {
  * Fetch task instance data (API 1).
  */
 export async function fetchTaskInstanceData(token: string, taskId: string): Promise<TaskInstanceData> {
-  const url = `${BASE_URL}/services/workflow/api/v1/workflow/name/fetchInstanceData/find`;
+  const url = `/services/workflow/api/v1/workflow/name/fetchInstanceData/find`;
   const res = await fetch(url, {
     method: 'POST',
     headers: getHeaders(token),
@@ -164,7 +164,7 @@ export async function fetchTaskInstanceData(token: string, taskId: string): Prom
  * Fetch process flow details (API 3).
  */
 export async function fetchProcessFlowDetail(token: string, processInstanceId: string): Promise<ProcessFlowDetail> {
-  const url = `${BASE_URL}/services/pro/api/name/detail-by-process-flow/find`;
+  const url = `/services/pro/api/name/detail-by-process-flow/find`;
   const res = await fetch(url, {
     method: 'POST',
     headers: getHeaders(token),
@@ -178,7 +178,7 @@ export async function fetchProcessFlowDetail(token: string, processInstanceId: s
  * Fetch basic contact info of employee (API 2).
  */
 export async function fetchBasicContactInfo(token: string, username: string): Promise<BasicContactInfo> {
-  const url = `${BASE_URL}/services/hrm/api/name/fetch-basic-contact-info/find`;
+  const url = `/services/hrm/api/name/fetch-basic-contact-info/find`;
   const res = await fetch(url, {
     method: 'POST',
     headers: getHeaders(token),

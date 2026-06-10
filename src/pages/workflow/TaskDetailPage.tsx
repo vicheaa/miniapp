@@ -2,23 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { formatDateCompact } from '../../utils/format';
 import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  Workflow,
-  Users,
-  Ban,
   User,
   SendHorizontal,
   FileText,
   Paperclip,
-  CheckCircle2,
-  Clock,
   Info,
   Calendar,
   Building2,
-  DollarSign,
   AlertCircle,
   Download,
   Mail,
@@ -57,29 +47,51 @@ export default function TaskDetailPage() {
     setLoading(true);
     setError(null);
 
+    let instData: TaskInstanceData | null = null;
+    let flowDetail: ProcessFlowDetail | null = null;
+
     try {
-      // Step 1: Fetch instance data and process flow details in parallel
-      const [instData, flowDetail] = await Promise.all([
-        fetchTaskInstanceData(authToken, selectedTask.taskId),
-        fetchProcessFlowDetail(authToken, selectedTask.instanceInfo.processInstanceId)
-      ]);
+      // Fetch task instance data (API 1)
+      try {
+        instData = await fetchTaskInstanceData(authToken, selectedTask.taskId);
+        setInstanceData(instData);
+      } catch (instErr: any) {
+        console.error('[TaskDetailPage] Error loading task instance data:', instErr);
+        setError(instErr?.message || 'Failed to load task instance data.');
+        setLoading(false);
+        return;
+      }
 
-      setInstanceData(instData);
-      setProcessDetail(flowDetail);
+      // Fetch process details (API 3)
+      try {
+        flowDetail = await fetchProcessFlowDetail(authToken, selectedTask.instanceInfo.processInstanceId);
+        setProcessDetail(flowDetail);
+      } catch (flowErr) {
+        console.warn('[TaskDetailPage] Error loading process flow details (possibly not a PR task or API is down):', flowErr);
+        // Do not set page-level error; allow other panels to render
+      }
 
-      // Step 2: Fetch basic contact info of the creator
-      if (flowDetail.createdBy) {
+      // Determine creator username to query contact info
+      let creatorId = '';
+      if (flowDetail?.createdBy) {
+        creatorId = flowDetail.createdBy;
+      } else if (instData?.processInstance?.startUserId) {
+        creatorId = instData.processInstance.startUserId;
+      } else if (instData?.requestor?.id) {
+        creatorId = instData.requestor.id;
+      }
+
+      if (creatorId) {
         try {
-          const contact = await fetchBasicContactInfo(authToken, flowDetail.createdBy);
+          const contact = await fetchBasicContactInfo(authToken, creatorId);
           setContactInfo(contact);
         } catch (contactErr) {
           console.error('[TaskDetailPage] Failed to fetch contact info:', contactErr);
-          // Don't fail the whole load if only contact info fails
         }
       }
     } catch (err: any) {
-      console.error('[TaskDetailPage] Error loading details:', err);
-      setError(err?.message || 'Failed to load task details. Please check connection.');
+      console.error('[TaskDetailPage] Unexpected error loading details:', err);
+      setError(err?.message || 'Failed to load task details.');
     } finally {
       setLoading(false);
     }
@@ -133,7 +145,7 @@ export default function TaskDetailPage() {
             {selectedTask.instanceInfo.processName}
           </p>
         </div>
-        <div className="shrink-0 flex gap-1.5">
+        {/* <div className="shrink-0 flex gap-1.5">
           <button
             onClick={() => handleAction('Flow')}
             className="px-2.5 py-1 rounded-[6px] border border-slate-200 text-slate-600 text-[11px] font-semibold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer"
@@ -146,7 +158,7 @@ export default function TaskDetailPage() {
           >
             Diagram
           </button>
-        </div>
+        </div> */}
       </header>
 
       {/* ── Scrollable Body ──────────────────────────────────────────────── */}
@@ -176,40 +188,64 @@ export default function TaskDetailPage() {
         ) : (
           <div className="p-3.5 flex flex-col gap-3.5">
             {/* ── Request Info Collapsible Card ──────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-200/60 overflow-hidden shadow-sm">
-              <button
-                onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <span className="text-[14px] font-bold text-slate-800">Request Info</span>
-                <span className="text-slate-400">
-                  {isRequestInfoExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                </span>
-              </button>
-
-              {isRequestInfoExpanded && (
-                <div className="px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px]">
+            <div className="overflow-hidden">
+              
+                <div className="bg-white px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px] rounded-sm">
+                  <button
+                    onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
+                    className="w-full flex items-center justify-between text-left "
+                  >
+                    <span className="text-[14px] font-bold text-slate-800">Request Info</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
+                      {processDetail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
+                    </span>
+                  </button>
                   {/* Requester Info */}
                   <div className="flex gap-3">
                     <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <span className="text-slate-400 font-medium block text-[11px]">Requested By</span>
                       <span className="text-slate-800 font-semibold">
-                        {contactInfo
-                          ? `${contactInfo.empNo} ${contactInfo.lastName} ${contactInfo.firstName}`
-                          : processDetail?.createdBy || '—'}
+                        {(() => {
+                          let nameStr = '—';
+                          let titleStr = '';
+                          
+                          if (contactInfo) {
+                            nameStr = `${contactInfo.empNo} ${contactInfo.lastName} ${contactInfo.firstName}`;
+                            const empInfo = instanceData?.requestor?.employee;
+                            if (empInfo?.jobTitle) {
+                              titleStr = ` - ${empInfo.jobTitle}`;
+                            }
+                          } else if (instanceData?.requestor) {
+                            const req = instanceData.requestor;
+                            const emp = req.employee;
+                            if (emp) {
+                              nameStr = `${emp.empNo} ${emp.lastName} ${emp.firstName}`;
+                              titleStr = ` - ${emp.jobTitle}`;
+                            } else {
+                              nameStr = req.name || req.id;
+                            }
+                          } else if (processDetail) {
+                            nameStr = processDetail.createdBy;
+                          }
+                          
+                          return `${nameStr}${titleStr}`;
+                        })()}
                       </span>
                     </div>
                   </div>
 
                   {/* Contact Email */}
-                  {contactInfo?.mail && (
+                  {(contactInfo?.mail || instanceData?.requestor?.email) && (
                     <div className="flex gap-3">
                       <Mail size={16} className="text-slate-400 mt-0.5 shrink-0" />
                       <div className="flex-1">
                         <span className="text-slate-400 font-medium block text-[11px]">Contact</span>
-                        <a href={`mailto:${contactInfo.mail}`} className="text-blue-600 font-medium hover:underline">
-                          {contactInfo.mail}
+                        <a 
+                          href={`mailto:${contactInfo?.mail || instanceData?.requestor?.email}`} 
+                          className="text-blue-600 font-medium hover:underline"
+                        >
+                          {contactInfo?.mail || instanceData?.requestor?.email}
                         </a>
                       </div>
                     </div>
@@ -221,34 +257,32 @@ export default function TaskDetailPage() {
                     <div className="flex-1">
                       <span className="text-slate-400 font-medium block text-[11px]">Org Info</span>
                       <span className="text-slate-800 font-semibold">
-                        {processDetail?.buName || '—'}
+                        {instanceData?.requestor?.employee 
+                          ? `${instanceData.requestor.employee.department}, ${instanceData.requestor.employee.buName}` 
+                          : (processDetail?.buName || '—')}
                       </span>
                     </div>
                   </div>
+                </div>    
 
-                  {/* Process Status */}
-                  <div className="flex gap-3">
-                    <Info size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1 flex items-center gap-2">
-                      <div>
-                        <span className="text-slate-400 font-medium block text-[11px]">Process Status</span>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
-                          {processDetail?.processStatus || 'PENDING'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr className="border-slate-100 my-0.5" />
-
+                <div className='bg-white px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px] my-2 rounded-sm'>
+                  <button
+                    onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
+                    className="w-full flex items-center justify-between text-left "
+                  >
+                    <span className="text-[14px] font-bold text-slate-800">Request Info</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-blue-50 text-blue-600 border border-blue-100">
+                        Active
+                      </span>
+                  </button>
                   {/* Budget Controller / Assignee */}
                   <div className="flex gap-3">
                     <UserCheck size={16} className="text-slate-400 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <span className="text-slate-400 font-medium block text-[11px]">Budget Controller Verification</span>
-                      <span className="text-slate-800 font-semibold">
-                        Assigned to {selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}
-                      </span>
+                      <p className="text-slate-800">
+                        Assigned to <span className="font-semibold">{selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}</span>
+                      </p>
                     </div>
                   </div>
 
@@ -263,27 +297,16 @@ export default function TaskDetailPage() {
                     </div>
                   </div>
 
-                  {/* Task Status */}
-                  <div className="flex gap-3">
-                    <CheckCircle2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <span className="text-slate-400 font-medium block text-[11px]">Task Status</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-blue-50 text-blue-600 border border-blue-100">
-                        Active
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+                </div>      
             </div>
 
-            ── Tabs Segmented Control ──────────────────────────────────────
-            <div className="bg-white rounded-xl border border-slate-200/60 p-1 flex shadow-sm">
+            {/* ── Tabs Segmented Control ────────────────────────────────────── */}
+            <div className="bg-white rounded-xl border border-slate-200/60 p-1 flex">
               <button
                 onClick={() => setActiveTab('data-form')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'data-form'
-                    ? 'bg-slate-800 text-white shadow-sm'
+                    ? 'bg-[#063E89] text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -293,7 +316,7 @@ export default function TaskDetailPage() {
                 onClick={() => setActiveTab('activities')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'activities'
-                    ? 'bg-slate-800 text-white shadow-sm'
+                    ? 'bg-[#063E89] text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -303,7 +326,7 @@ export default function TaskDetailPage() {
                 onClick={() => setActiveTab('attachments')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
                   activeTab === 'attachments'
-                    ? 'bg-slate-800 text-white shadow-sm'
+                    ? 'bg-[#063E89] text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -312,102 +335,109 @@ export default function TaskDetailPage() {
             </div>
 
             {/* ── Data Form Tab Content ──────────────────────────────────────── */}
-            {activeTab === 'data-form' && processDetail && (
-              <div className="flex flex-col gap-3.5">
-                {/* Requisition Card */}
-                <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-3">
-                  <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
-                    Requisition Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
-                    <div>
-                      <span className="text-slate-400 block font-medium">From No</span>
-                      <span className="text-slate-800 font-bold">{processDetail.formNo}</span>
+            {activeTab === 'data-form' && (
+              processDetail ? (
+                <div className="flex flex-col gap-3.5">
+                  {/* Requisition Card */}
+                  <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-3">
+                    <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
+                      Requisition Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
+                      <div>
+                        <span className="text-slate-400 block font-medium">From No</span>
+                        <span className="text-slate-800 font-bold">{processDetail.formNo}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">Expected Date</span>
+                        <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.acquisitionDate)}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-slate-400 block font-medium">Reason</span>
+                        <span className="text-slate-800 font-medium">{processDetail.reason || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">BU</span>
+                        <span className="text-slate-800 font-semibold">{processDetail.buName}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">Created By</span>
+                        <span className="text-slate-800 font-semibold">{processDetail.createdBy}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">Budget Code Required</span>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 font-bold mt-0.5">
+                          {processDetail.budgetCodeRequired ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">Created Date</span>
+                        <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.createdDate)}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">Expected Date</span>
-                      <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.acquisitionDate)}</span>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-slate-400 block font-medium">Reason</span>
-                      <span className="text-slate-800 font-medium">{processDetail.reason || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">BU</span>
-                      <span className="text-slate-800 font-semibold">{processDetail.buName}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">Created By</span>
-                      <span className="text-slate-800 font-semibold">{processDetail.createdBy}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">Budget Code Required</span>
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 font-bold mt-0.5">
-                        {processDetail.budgetCodeRequired ? 'Yes' : 'No'}
+                  </div>
+
+                  {/* Items Section */}
+                  <div className="flex flex-col gap-2">
+                    <h4 className="text-[13px] font-bold text-slate-500 px-1">Items List</h4>
+                    {processDetail.items?.map((item, idx) => (
+                      <div key={item.id || idx} className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-2.5">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-50">
+                          <span className="text-[13px] font-bold text-slate-800 truncate">
+                            {item.itemName}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-400 shrink-0">
+                            {item.itemCode}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-y-2 text-[12px] text-slate-600">
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Quantity / UoM</span>
+                            <span className="font-semibold text-slate-800">{item.qty} {item.uom}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Unit Price</span>
+                            <span className="font-semibold text-slate-800">${item.unitPrice.toFixed(2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Budget Code</span>
+                            <span className="font-semibold text-slate-800">{item.budgetCode || '—'}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[11px]">Subtotal</span>
+                            <span className="font-bold text-slate-900">${item.amount.toFixed(2)}</span>
+                          </div>
+                          {item.description && (
+                            <div className="col-span-2">
+                              <span className="text-slate-400 block text-[11px]">Description</span>
+                              <span className="text-slate-700 italic">{item.description}</span>
+                            </div>
+                          )}
+                          {item.remarks && (
+                            <div className="col-span-2">
+                              <span className="text-slate-400 block text-[11px]">Remarks</span>
+                              <span className="text-slate-700">{item.remarks}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Summary amount banner */}
+                    <div className="bg-slate-800 rounded-xl p-4 mt-1.5 flex items-center justify-between shadow-sm">
+                      <span className="text-[13px] font-bold text-slate-300">Total Requisition Amount</span>
+                      <span className="text-[16px] font-black text-white">
+                        ${processDetail.totalAmount.toFixed(2)}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block font-medium">Created Date</span>
-                      <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.createdDate)}</span>
-                    </div>
                   </div>
                 </div>
-
-                {/* Items Section */}
-                <div className="flex flex-col gap-2">
-                  <h4 className="text-[13px] font-bold text-slate-500 px-1">Items List</h4>
-                  {processDetail.items?.map((item, idx) => (
-                    <div key={item.id || idx} className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-2.5">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-50">
-                        <span className="text-[13px] font-bold text-slate-800 truncate">
-                          {item.itemName}
-                        </span>
-                        <span className="text-[11px] font-semibold text-slate-400 shrink-0">
-                          {item.itemCode}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-y-2 text-[12px] text-slate-600">
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Quantity / UoM</span>
-                          <span className="font-semibold text-slate-800">{item.qty} {item.uom}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Unit Price</span>
-                          <span className="font-semibold text-slate-800">${item.unitPrice.toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Budget Code</span>
-                          <span className="font-semibold text-slate-800">{item.budgetCode || '—'}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Subtotal</span>
-                          <span className="font-bold text-slate-900">${item.amount.toFixed(2)}</span>
-                        </div>
-                        {item.description && (
-                          <div className="col-span-2">
-                            <span className="text-slate-400 block text-[11px]">Description</span>
-                            <span className="text-slate-700 italic">{item.description}</span>
-                          </div>
-                        )}
-                        {item.remarks && (
-                          <div className="col-span-2">
-                            <span className="text-slate-400 block text-[11px]">Remarks</span>
-                            <span className="text-slate-700">{item.remarks}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Summary amount banner */}
-                  <div className="bg-slate-800 rounded-xl p-4 mt-1.5 flex items-center justify-between shadow-sm">
-                    <span className="text-[13px] font-bold text-slate-300">Total Requisition Amount</span>
-                    <span className="text-[16px] font-black text-white">
-                      ${processDetail.totalAmount.toFixed(2)}
-                    </span>
-                  </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-slate-200/60 p-8 text-center text-slate-400 text-[13px] shadow-sm">
+                  <FileText size={32} className="mx-auto text-slate-300 mb-2" />
+                  No form details available for this task.
                 </div>
-              </div>
+              )
             )}
 
             {/* ── Activities Tab Content (Timeline) ─────────────────────────── */}
@@ -453,7 +483,7 @@ export default function TaskDetailPage() {
 
             {/* ── Attachments Tab Content ─────────────────────────────────────── */}
             {activeTab === 'attachments' && instanceData && (
-              <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm flex flex-col gap-3">
+              <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex flex-col gap-3">
                 <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
                   Attachments
                 </h3>
@@ -498,7 +528,7 @@ export default function TaskDetailPage() {
 
       {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
       {!loading && !error && selectedTask && (
-        <div className="absolute bottom-0 inset-x-0 bg-white border-t border-slate-150 p-4 flex gap-3 z-50 max-w-[480px] mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+        <div className="absolute bottom-0 inset-x-0 bg-white p-4 flex gap-3 z-50 max-w-[480px] mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
           <button
             onClick={() => handleAction('Unclaim')}
             className="flex-1 py-3 px-4 rounded-[12px] border border-slate-200 text-slate-700 text-[13px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer text-center"
@@ -516,7 +546,7 @@ export default function TaskDetailPage() {
               <button
                 key={idx}
                 onClick={() => handleAction(act.name)}
-                className="flex-[2] py-3 px-4 rounded-[12px] bg-slate-800 text-white text-[13px] font-bold hover:bg-slate-900 active:bg-slate-950 shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
+                className="flex-[2] py-3 px-4 rounded-[12px] bg-[#063E89] text-white text-[13px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
               >
                 <SendHorizontal size={14} />
                 <span>{act.name}</span>
