@@ -1,10 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSuperApp } from './hooks/useSuperApp';
-import { useAssetStore } from './store/assetStore';
-import SessionListPage from './pages/asset-counting/SessionListPage';
-import SessionDetailPage from './pages/asset-counting/SessionDetailPage';
-import ReportsPage from './pages/asset-counting/ReportsPage';
+import { useWorkflowStore } from './store/workflowStore';
+import TaskListPage from './pages/workflow/TaskListPage';
 import DevPanel from './components/dev/DevPanel';
 
 // Initialize React Query Client
@@ -33,8 +31,8 @@ export default function App() {
 
   const { bridge: superApp, isMock } = useSuperApp(authToken);
 
-  const setSuperApp = useAssetStore((s) => s.setSuperApp);
-  const setAuthTokenInStore = useAssetStore((s) => s.setAuthToken);
+  const setSuperApp = useWorkflowStore((s) => s.setSuperApp);
+  const setAuthTokenInStore = useWorkflowStore((s) => s.setAuthToken);
 
   // Sync bridge and token to Zustand store when resolved
   useEffect(() => {
@@ -67,7 +65,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="relative min-h-screen">
-        <AssetCountingRouter key={authToken} superApp={superApp} />
+        <WorkflowRouter key={authToken} superApp={superApp} />
 
         {isMock && (
           <DevPanel
@@ -83,16 +81,15 @@ export default function App() {
 
 /* ── Internal router component ─────────────────────────────────────────── */
 
-function AssetCountingRouter({ superApp }: { superApp: NonNullable<typeof window.superApp> }) {
-  const view = useAssetStore((s) => s.view);
-  const selectedSession = useAssetStore((s) => s.selectedSession);
-  const selectedFunction = useAssetStore((s) => s.selectedFunction);
-  const token = useAssetStore((s) => s.authToken);
-  const setAuthToken = useAssetStore((s) => s.setAuthToken);
+function WorkflowRouter({ superApp }: { superApp: NonNullable<typeof window.superApp> }) {
+  const view = useWorkflowStore((s) => s.view);
+  const selectedTask = useWorkflowStore((s) => s.selectedTask);
+  const token = useWorkflowStore((s) => s.authToken);
+  const setAuthToken = useWorkflowStore((s) => s.setAuthToken);
 
   // Initialize bridge
   superApp.ready();
-  superApp.setTitle('Asset Counting');
+  superApp.setTitle('Workflow');
 
   // Pull dynamic auth token if store token is empty
   useEffect(() => {
@@ -109,7 +106,7 @@ function AssetCountingRouter({ superApp }: { superApp: NonNullable<typeof window
     fetchToken();
   }, [superApp, token, setAuthToken]);
 
-  const viewIndex = view === 'list' ? 0 : view === 'detail' ? 1 : 2;
+  const viewIndex = view === 'task-list' ? 0 : 1;
 
   return (
     <div className="w-full h-screen overflow-hidden relative bg-slate-50">
@@ -119,29 +116,24 @@ function AssetCountingRouter({ superApp }: { superApp: NonNullable<typeof window
           transform: `translate3d(-${viewIndex * 100}%, 0, 0)`,
         }}
       >
-        {/* Slide 1: Session List */}
+        {/* Slide 1: Task List */}
         <div className="flex-[0_0_100%] w-full h-screen box-border">
-          <SessionListPage />
+          <TaskListPage />
         </div>
 
-        {/* Slide 2: Session Detail */}
+        {/* Slide 2: Task Detail (placeholder for future) */}
         <div className="flex-[0_0_100%] w-full h-screen box-border">
-          {selectedSession ? (
-            <SessionDetailPage />
-          ) : (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 min-h-screen">
-              Waiting for session selection...
+          {selectedTask ? (
+            <div className="p-6 bg-slate-50 min-h-screen">
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                <h2 className="text-[18px] font-bold text-slate-900 mb-2">{selectedTask.taskName}</h2>
+                <p className="text-[13px] text-slate-500">{selectedTask.instanceInfo.processName}</p>
+                <p className="text-[13px] text-slate-400 mt-1">Business Key: {selectedTask.instanceInfo.businessKey}</p>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Slide 3: Reports */}
-        <div className="flex-[0_0_100%] w-full h-screen box-border">
-          {selectedSession && selectedFunction ? (
-            <ReportsPage />
           ) : (
             <div className="p-8 text-center text-slate-400 bg-slate-50 min-h-screen">
-              Waiting for group selection...
+              Waiting for task selection...
             </div>
           )}
         </div>

@@ -78,7 +78,7 @@ export default function Header({
         <button
           onClick={onRefresh}
           disabled={refreshing}
-          className="p-0 shrink-0 bg-[#e9eeff] border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-blue-100 disabled:opacity-50"
+          className="p-0 shrink-0 border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-blue-100 disabled:opacity-50"
         >
           <RefreshIcon spinning={refreshing} />
         </button>
