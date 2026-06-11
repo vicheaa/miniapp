@@ -96,6 +96,17 @@ export interface BasicContactInfo {
   profileImageId: string | null;
 }
 
+export interface FileMetadata {
+  id: string;
+  title: string | null;
+  description: string | null;
+  fileName: string;
+  fileType: string;
+  uri: string;
+  createdDate: string;
+  createdBy: string;
+}
+
 export interface RequisitionItem {
   id: number;
   itemId: number;
@@ -185,5 +196,16 @@ export async function fetchBasicContactInfo(token: string, username: string): Pr
     body: JSON.stringify({ id: username }),
   });
   if (!res.ok) throw new Error(`Failed to fetch basic contact info: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchFilesMetadata(token: string, fileIds: string[]): Promise<FileMetadata[]> {
+  const url = `/services/files/api/name/list-files-by-ids/list`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(token),
+    body: JSON.stringify({ list: fileIds }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch files metadata: ${res.statusText}`);
   return res.json();
 }

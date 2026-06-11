@@ -39,6 +39,9 @@ export interface SuperAppBridge {
   /** Check whether the bridge is available. */
   isAvailable(): boolean;
 
+  /** Open a URL in the browser or native webview. */
+  openUrl(url: string): void;
+
   /** Subscribe to events from the SuperApp. */
   on(event: string, cb: (data: any) => void): void;
 }

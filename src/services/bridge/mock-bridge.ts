@@ -59,6 +59,11 @@ export function createMockBridge(token: string): SuperAppBridge {
 
     isAvailable: () => true,
 
+    openUrl: (url: string) => {
+      console.log('[Mock SuperApp] openUrl called:', url);
+      window.open(url, '_blank');
+    },
+
     on: (event: string, _cb: (data: any) => void) => {
       console.log('[Mock SuperApp] registered listener for:', event);
     },

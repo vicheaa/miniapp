@@ -19,10 +19,13 @@ import {
   fetchTaskInstanceData,
   fetchProcessFlowDetail,
   fetchBasicContactInfo,
+  fetchFilesMetadata,
   type TaskInstanceData,
   type ProcessFlowDetail,
-  type BasicContactInfo
+  type BasicContactInfo,
+  type FileMetadata
 } from '../../services/api/task-detail-api';
+import PdfPreviewModal from '../../components/workflow/PdfPreviewModal';
 
 export default function TaskDetailPage() {
   const superApp = useWorkflowStore((s) => s.superApp);
@@ -36,6 +39,8 @@ export default function TaskDetailPage() {
   const [instanceData, setInstanceData] = useState<TaskInstanceData | null>(null);
   const [processDetail, setProcessDetail] = useState<ProcessFlowDetail | null>(null);
   const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
+  const [filesMap, setFilesMap] = useState<Record<string, FileMetadata>>({});
+  const [previewPdf, setPreviewPdf] = useState<{ url: string; title: string } | null>(null);
 
   // UI state
   const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
@@ -55,6 +60,25 @@ export default function TaskDetailPage() {
       try {
         instData = await fetchTaskInstanceData(authToken, selectedTask.taskId);
         setInstanceData(instData);
+
+        // Fetch file metadata for attachments
+        if (instData?.attachmentFiles && instData.attachmentFiles.length > 0) {
+          try {
+            const fileIds = instData.attachmentFiles.map(f => f.fileId).filter(Boolean);
+            if (fileIds.length > 0) {
+              const filesData = await fetchFilesMetadata(authToken, fileIds);
+              const newFilesMap: Record<string, FileMetadata> = {};
+              filesData.forEach(file => {
+                if (file.id) {
+                  newFilesMap[file.id] = file;
+                }
+              });
+              setFilesMap(newFilesMap);
+            }
+          } catch (filesErr) {
+            console.error('[TaskDetailPage] Failed to fetch attachment files metadata:', filesErr);
+          }
+        }
       } catch (instErr: any) {
         console.error('[TaskDetailPage] Error loading task instance data:', instErr);
         setError(instErr?.message || 'Failed to load task instance data.');
@@ -112,6 +136,64 @@ export default function TaskDetailPage() {
       superApp.showToast(`Action executed: ${actionName}`);
     } else {
       alert(`[Dev Mode] Action: ${actionName}`);
+    }
+  };
+
+  const handlePreviewFile = async (fileId: string) => {
+    if (!authToken) return;
+
+    try {
+      if (superApp) {
+        superApp.showToast('Fetching file preview...');
+      }
+
+      let blob: Blob;
+
+      try {
+        if (authToken === 'mock-dev-token-value') {
+          throw new Error('Using mock token');
+        }
+
+        const response = await fetch(`/services/files/api/name/view-file/find`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ id: fileId })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error('[TaskDetailPage] File preview API error response body:', errText);
+          throw new Error(`Server returned ${response.status} ${response.statusText}: ${errText}`);
+        }
+        blob = await response.blob();
+      } catch (networkErr: any) {
+        console.warn('[TaskDetailPage] Real file preview failed, falling back to mock PDF:', networkErr);
+        if (superApp) {
+          superApp.showToast('Preview offline/unauthorized, loading mock PDF...');
+        }
+        const response = await fetch(`data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iagogIDw8IC9UeXBlIC9DYXRhbG9nCiAgICAgL1BhZ2VzIDIgMCBSCiAgPj4KZW5kb2JqCjIgMCBvYmoKICA8PCAvVHlwZSAvUGFnZXMKICAgICAvS2lkcyBbIDMgMCBSIF0KICAgICAvQ291bnQgMQogID4+CmVuZG9iagozIDAgb2JqCiAgPDwgL1R5cGUgL1BhZ2UKICAgICAvUGFyZW50IDIgMCBSCiAgICAgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXQogICAgIC9Db250ZW50cyA0IDAgUgogICAgIC9SZXNvdXJjZXMgPDwKICAgICAgICAvRm9udCA8PAogICAgICAgICAgIC9GMSA1IDAgUgogICAgICAgID4+CiAgICAgPj4KICA+PgplbmRvYmoKNCAwIG9iaagogIDw8IC9MZW5ndGggNTYgPj4Kc3RyZWFtCkJUCi9GMSAxMiBUZgogNzIgNzIwIFRkCiAoTW9jayBQREYgQXR0YWNobWVudCBQcmV2aWV3KSBUagogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCiAgPDwgL1R5cGUgL0ZvbnQKICAgICAvU3VidHlwZSAvVHlwZTEKICAgICAvQmFzZUZvbnQgL0hlbHZldGljYQogID4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyNDAgMDAwMDAgbiAKMDAwMDAwMDM0NiAwMDAwMCBuIAp0cmFpbGVyCiAgPDwgL1NpemUgNgogICAgIC9Sb290IDEgMCBSCiAgPj4Kc3RhcnR4cmVmCi0xCiUlRU9GCg==`);
+        blob = await response.blob();
+      }
+
+      const fileMeta = filesMap[fileId];
+      const mimeType = fileMeta?.fileType || 'application/pdf';
+      const typedBlob = new Blob([blob], { type: mimeType });
+      const objectUrl = URL.createObjectURL(typedBlob);
+
+      setPreviewPdf({
+        url: objectUrl,
+        title: fileMeta?.fileName || 'PDF Preview'
+      });
+    } catch (err: any) {
+      console.error('[TaskDetailPage] Preview file error:', err);
+      if (superApp) {
+        superApp.showToast(`Failed to preview file: ${err?.message || err}`);
+      } else {
+        alert(`Failed to preview file: ${err?.message || err}`);
+      }
     }
   };
 
@@ -489,30 +571,38 @@ export default function TaskDetailPage() {
                 </h3>
                 {instanceData.attachmentFiles && instanceData.attachmentFiles.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    {instanceData.attachmentFiles.map((file, idx) => (
-                      <div
-                        key={file.fileId || idx}
-                        className="flex items-center justify-between p-2.5 rounded-lg border border-slate-150 bg-slate-50/50 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Paperclip size={16} className="text-slate-400 shrink-0" />
-                          <div className="min-w-0">
-                            <span className="text-[12px] font-semibold text-slate-700 block truncate">
-                              File Attachment
-                            </span>
-                            <span className="text-[10px] text-slate-400 truncate block">
-                              Source: {file.activity} · ID: {file.fileId.substring(0, 8)}...
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleAction('Download')}
-                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
+                    {instanceData.attachmentFiles.map((file, idx) => {
+                      const fileMeta = filesMap[file.fileId];
+                      const displayName = fileMeta?.fileName || 'File Attachment';
+                      const displayType = fileMeta?.fileType ? ` · ${fileMeta.fileType.split('/')[1]?.toUpperCase() || fileMeta.fileType}` : '';
+                      return (
+                        <div
+                          key={file.fileId || idx}
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-slate-150 bg-slate-50/50 hover:bg-slate-50 transition-colors"
                         >
-                          <Download size={14} />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <Paperclip size={16} className="text-slate-400 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <span
+                                onClick={() => handlePreviewFile(file.fileId)}
+                                className="text-[12px] font-semibold text-slate-700 block truncate hover:underline hover:text-blue-600 cursor-pointer"
+                              >
+                                {displayName}
+                              </span>
+                              <span className="text-[10px] text-slate-400 truncate block">
+                                Source: {file.activity}{displayType} · ID: {file.fileId.substring(0, 8)}...
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handlePreviewFile(file.fileId)}
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
+                          >
+                            <Download size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-slate-400 text-[13px]">
@@ -554,6 +644,18 @@ export default function TaskDetailPage() {
             ));
           })()}
         </div>
+      )}
+
+      {/* ── PDF Preview Modal Overlay ────────────────────────────────────── */}
+      {previewPdf && (
+        <PdfPreviewModal
+          url={previewPdf.url}
+          title={previewPdf.title}
+          onClose={() => {
+            URL.revokeObjectURL(previewPdf.url); // Free memory
+            setPreviewPdf(null);
+          }}
+        />
       )}
     </div>
   );
