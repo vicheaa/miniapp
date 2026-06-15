@@ -7,8 +7,10 @@ import { TaskListSkeleton } from '../../components/ui/SkeletonLoader';
 import BottomSheet from '../../components/ui/BottomSheet';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { useWorkflowTasksInfiniteQuery } from '../../hooks/useWorkflowQuery';
+import { claimTask } from '../../services/api/workflow-api';
 import type { WorkflowTask } from '../../types/workflow';
-import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal } from 'lucide-react';
+import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal, UserCheck } from 'lucide-react';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /* ── Dynamic field helpers ─────────────────────────────────────────────── */
 
@@ -16,7 +18,7 @@ import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal } from 'lucid
  * Build dynamic detail rows based on the businessKey prefix / process type.
  * Returns an array of { label, value } pairs to render in the card.
  */
-function getTaskDetailRows(task: WorkflowTask): { label: string; value: string }[] {
+function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
   const key = task.instanceInfo.businessKey || '';
   const prefix = key.split('-')[0]?.toUpperCase();
@@ -28,7 +30,7 @@ function getTaskDetailRows(task: WorkflowTask): { label: string; value: string }
     const amountAttr = task.instanceInfo.workflowAttrs?.find((a) => a.name === 'amount');
     if (amountAttr?.decimalValue != null) {
       rows.push({
-        label: 'Total Amount',
+        label: t('workflow.total_amount'),
         value: `$${amountAttr.decimalValue.toFixed(2)}`,
       });
     }
@@ -36,25 +38,25 @@ function getTaskDetailRows(task: WorkflowTask): { label: string; value: string }
 
   // Always show Requestor
   rows.push({
-    label: 'Requestor',
+    label: t('workflow.requestor'),
     value: task.owner || '—',
   });
 
   // Always show Task Name
   rows.push({
-    label: 'Task Name',
+    label: t('workflow.task_name'),
     value: task.taskName,
   });
 
   // Always show Assignee
   rows.push({
-    label: 'Assignee',
+    label: t('workflow.assignee'),
     value: task.assigneeInfo?.name || task.assignee || '—',
   });
 
   // Always show Created At
   rows.push({
-    label: 'Created At',
+    label: t('workflow.created_at'),
     value: formatDateCompact(task.created),
   });
 
@@ -67,12 +69,14 @@ function TaskCard({
   task,
   onClick,
   onEllipsisClick,
+  t,
 }: {
   task: WorkflowTask;
   onClick: () => void;
   onEllipsisClick: () => void;
+  t: (k: string) => string;
 }) {
-  const rows = getTaskDetailRows(task);
+  const rows = getTaskDetailRows(task, t);
 
   return (
     <div
@@ -117,22 +121,22 @@ function TaskCard({
 
 type FilterKey = 'ALL' | 'HIGH_PRIORITY' | 'SUB_TASKS';
 
-const FILTER_TABS: { key: FilterKey; label: string }[] = [
-  { key: 'ALL', label: 'All Tasks' },
-  { key: 'HIGH_PRIORITY', label: 'High Priority' },
-  { key: 'SUB_TASKS', label: 'With Sub-tasks' },
+const FILTER_TABS: { key: FilterKey; labelKey: string }[] = [
+  { key: 'ALL', labelKey: 'workflow.all_tasks' },
+  { key: 'HIGH_PRIORITY', labelKey: 'workflow.high_priority' },
+  { key: 'SUB_TASKS', labelKey: 'workflow.with_subtasks' },
 ];
 
 /* ── Loading Spinner ───────────────────────────────────────────────────── */
 
-function LoadingMore() {
+function LoadingMore({ t }: { t: (k: string) => string }) {
   return (
     <div className="flex items-center justify-center py-5 gap-2">
       <svg className="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>
-      <span className="text-[12px] text-slate-400 font-medium">Loading more…</span>
+      <span className="text-[12px] text-slate-400 font-medium">{t('workflow.loading_more')}</span>
     </div>
   );
 }
@@ -140,6 +144,7 @@ function LoadingMore() {
 /* ── Page Component ────────────────────────────────────────────────────── */
 
 export default function TaskListPage() {
+  const { t } = useTranslation();
   const superApp = useWorkflowStore((s) => s.superApp);
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
@@ -151,6 +156,28 @@ export default function TaskListPage() {
   /* ── Bottom Sheet State & Logic ────────────────────────────────────────── */
   const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
   const [isAnimateOpen, setIsAnimateOpen] = useState(false);
+  const authToken = useWorkflowStore((s) => s.authToken);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  const handleClaimToggle = async (task: WorkflowTask) => {
+    if (!authToken) {
+      superApp?.showToast('Error: No authentication token');
+      return;
+    }
+    setIsClaiming(true);
+    const actionLabel = task.claimed ? 'Unclaim' : 'Claim';
+    try {
+      await claimTask(authToken, task.taskId);
+      superApp?.showToast(`Task ${actionLabel.toLowerCase()}ed successfully`);
+      refetch();
+    } catch (err: any) {
+      console.error(`Failed to ${actionLabel.toLowerCase()} task:`, err);
+      superApp?.showToast(`Failed to ${actionLabel.toLowerCase()} task: ${err.message || err}`);
+    } finally {
+      setIsClaiming(false);
+      closeMenu();
+    }
+  };
 
   const openMenu = (task: WorkflowTask) => {
     setActiveMenuTask(task);
@@ -238,7 +265,7 @@ export default function TaskListPage() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       {superApp && (
         <Header
-          title="Workflow"
+          title={t('workflow.title')}
           onBack={() => superApp.close()}
           onRefresh={() => refetch()}
           refreshing={isFetching && !isFetchingNextPage}
@@ -265,7 +292,7 @@ export default function TaskListPage() {
           </svg>
           <input
             type="text"
-            placeholder="Search tasks, keys, requestors..."
+            placeholder={t('workflow.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200 rounded-[10px] pl-9 pr-3 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]"
@@ -286,7 +313,7 @@ export default function TaskListPage() {
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 active:bg-slate-50'
                 }`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             );
           })}
@@ -297,7 +324,7 @@ export default function TaskListPage() {
       {!isLoading && !error && total > 0 && (
         <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
           <span className="text-[12px] text-slate-400 font-medium">
-            {filteredTasks.length} of {total} tasks
+            {filteredTasks.length} / {total} {t('home.my_tasks')}
           </span>
         </div>
       )}
@@ -312,7 +339,7 @@ export default function TaskListPage() {
             onRetry={refetch}
           />
         ) : filteredTasks.length === 0 ? (
-          <EmptyState message="No pending tasks found." />
+          <EmptyState message={t('workflow.no_tasks')} />
         ) : (
           <div className="flex flex-col gap-3">
             {filteredTasks.map((task) => (
@@ -321,6 +348,7 @@ export default function TaskListPage() {
                 task={task}
                 onClick={() => handleTaskClick(task)}
                 onEllipsisClick={() => openMenu(task)}
+                t={t}
               />
             ))}
 
@@ -328,12 +356,12 @@ export default function TaskListPage() {
             <div ref={sentinelRef} className="h-1" />
 
             {/* Loading indicator */}
-            {isFetchingNextPage && <LoadingMore />}
+            {isFetchingNextPage && <LoadingMore t={t} />}
 
             {/* End of list */}
             {!hasNextPage && allTasks.length > 0 && (
               <div className="text-center py-4">
-                <span className="text-[12px] text-slate-400 font-medium">No more tasks</span>
+                <span className="text-[12px] text-slate-400 font-medium">{t('workflow.no_more_tasks')}</span>
               </div>
             )}
           </div>
@@ -353,7 +381,7 @@ export default function TaskListPage() {
               className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
             >
               <Eye size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">Detail</span>
+              <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
             </button>
 
             <button
@@ -365,7 +393,7 @@ export default function TaskListPage() {
               className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
             >
               <Workflow size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">View Diagram</span>
+              <span className="text-[15px] font-medium">{t('workflow.view_diagram')}</span>
             </button>
 
             <button
@@ -377,19 +405,26 @@ export default function TaskListPage() {
               className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
             >
               <Users size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">Approvers</span>
+              <span className="text-[15px] font-medium">{t('workflow.approvers')}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                superApp?.showToast('Unclaim');
-                closeMenu();
-              }}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+              disabled={isClaiming}
+              onClick={() => handleClaimToggle(activeMenuTask)}
+              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Ban size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">Unclaim</span>
+              {activeMenuTask.claimed ? (
+                 <>
+                   <Ban size={18} className="text-slate-400 shrink-0" />
+                   <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
+                 </>
+              ) : (
+                 <>
+                   <UserCheck size={18} className="text-slate-400 shrink-0" />
+                   <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
+                 </>
+              )}
             </button>
 
             <button
@@ -401,7 +436,7 @@ export default function TaskListPage() {
               className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
             >
               <User size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">Assign</span>
+              <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
             </button>
 
             {/* Separator */}

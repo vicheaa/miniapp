@@ -33,6 +33,9 @@ export interface SuperAppBridge {
   /** Retrieve device platform & OS information. */
   getDeviceInfo(): Promise<any>;
 
+  /** Retrieve current app localization/language. */
+  getLocalization(): Promise<{ localization: string; language: string }>;
+
   /** Signal that the mini-app has finished initialising. */
   ready(): void;
 

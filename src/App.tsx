@@ -34,13 +34,33 @@ export default function App() {
 
   const setSuperApp = useWorkflowStore((s) => s.setSuperApp);
   const setAuthTokenInStore = useWorkflowStore((s) => s.setAuthToken);
+  const setLanguage = useWorkflowStore((s) => s.setLanguage);
 
   // Sync bridge and token to Zustand store when resolved
   useEffect(() => {
     if (superApp) {
       setSuperApp(superApp);
+
+      // Initialize language from bridge
+      superApp
+        .getLocalization()
+        .then((loc) => {
+          if (loc && (loc.language || loc.localization)) {
+            setLanguage(loc.language || loc.localization);
+          }
+        })
+        .catch((err) => {
+          console.error('[App] Failed to fetch initial localization:', err);
+        });
+
+      // Listen for language changes from native host
+      superApp.on('onLanguageChanged', (data: any) => {
+        if (data && data.language) {
+          setLanguage(data.language);
+        }
+      });
     }
-  }, [superApp, setSuperApp]);
+  }, [superApp, setSuperApp, setLanguage]);
 
   useEffect(() => {
     if (isMock && authToken) {
@@ -53,6 +73,16 @@ export default function App() {
     setAuthToken(newToken);
     setAuthTokenInStore(newToken);
   }, [setAuthTokenInStore]);
+
+  const language = useWorkflowStore((s) => s.language);
+
+  const handleToggleLanguage = useCallback(() => {
+    const nextLang = language === 'en' ? 'km' : 'en';
+    (window as any).__mockLanguage = nextLang;
+    if ((window as any).triggerMockEvent) {
+      (window as any).triggerMockEvent('onLanguageChanged', { language: nextLang });
+    }
+  }, [language]);
 
   /* ── Waiting for bridge ──────────────────────────────────────────────── */
   if (!superApp) {
@@ -69,11 +99,44 @@ export default function App() {
         <WorkflowRouter key={authToken} superApp={superApp} />
 
         {isMock && (
-          <DevPanel
-            superApp={superApp}
-            authToken={authToken}
-            onSaveToken={handleSaveToken}
-          />
+          <>
+            {/* Floating Language Switch Button for Dev Mode */}
+            <button
+              onClick={handleToggleLanguage}
+              style={{
+                position: 'fixed',
+                bottom: '100px',
+                right: '20px',
+                zIndex: 9999,
+                width: '50px',
+                height: '50px',
+                borderRadius: '50%',
+                backgroundColor: '#063E89',
+                color: '#ffffff',
+                border: '2px solid rgba(255, 255, 255, 0.8)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                fontWeight: 'bold',
+                fontSize: '11px',
+                fontFamily: 'sans-serif',
+                transition: 'transform 0.1s active',
+              }}
+              title="Switch Language"
+            >
+              <span style={{ fontSize: '14px', marginBottom: '2px' }}>🌐</span>
+              <span>{language.toUpperCase()}</span>
+            </button>
+
+            <DevPanel
+              superApp={superApp}
+              authToken={authToken}
+              onSaveToken={handleSaveToken}
+            />
+          </>
         )}
       </div>
     </QueryClientProvider>

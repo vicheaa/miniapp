@@ -53,6 +53,14 @@ export function createMockBridge(token: string): SuperAppBridge {
       osVersion: 'DevMode',
     }),
 
+    getLocalization: async () => {
+      const currentLanguage = (window as any).__mockLanguage || 'en';
+      return {
+        localization: currentLanguage,
+        language: currentLanguage,
+      };
+    },
+
     ready: () => {
       console.log('[Mock SuperApp] ready called');
     },
@@ -64,8 +72,32 @@ export function createMockBridge(token: string): SuperAppBridge {
       window.open(url, '_blank');
     },
 
-    on: (event: string, _cb: (data: any) => void) => {
+    on: (event: string, cb: (data: any) => void) => {
       console.log('[Mock SuperApp] registered listener for:', event);
+      if (!(window as any).__mockEventListeners) {
+        (window as any).__mockEventListeners = {};
+      }
+      if (!(window as any).__mockEventListeners[event]) {
+        (window as any).__mockEventListeners[event] = [];
+      }
+      (window as any).__mockEventListeners[event].push(cb);
     },
+  };
+}
+
+// Global helper for DevPanel to trigger bridge listeners in standalone mock mode
+if (typeof window !== 'undefined') {
+  (window as any).triggerMockEvent = (event: string, data: any) => {
+    console.log(`[Mock SuperApp] Simulating event trigger: ${event}`, data);
+    const listeners = (window as any).__mockEventListeners?.[event];
+    if (listeners) {
+      listeners.forEach((cb: (d: any) => void) => {
+        try {
+          cb(data);
+        } catch (e) {
+          console.error(`[Mock SuperApp] Error in listener for event ${event}:`, e);
+        }
+      });
+    }
   };
 }

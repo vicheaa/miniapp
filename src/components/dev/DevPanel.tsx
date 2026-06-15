@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { SuperAppBridge } from '../../types/bridge';
+import { useWorkflowStore } from '../../store/workflowStore';
 
 interface DevPanelProps {
   superApp: SuperAppBridge;
@@ -10,6 +11,8 @@ interface DevPanelProps {
 export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [tokenInput, setTokenInput] = useState(authToken);
+
+  const language = useWorkflowStore((s) => s.language);
 
   // Keep input in sync when external token changes
   React.useEffect(() => {
@@ -34,6 +37,14 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
 
   const handleClose = () => {
     superApp.close();
+  };
+
+  const handleToggleLanguage = () => {
+    const nextLang = language === 'en' ? 'km' : 'en';
+    (window as any).__mockLanguage = nextLang;
+    if ((window as any).triggerMockEvent) {
+      (window as any).triggerMockEvent('onLanguageChanged', { language: nextLang });
+    }
   };
 
   if (!showPanel) {
@@ -92,6 +103,9 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
               </button>
               <button onClick={handleShowToast} style={styles.testBtn}>
                 Show Toast
+              </button>
+              <button onClick={handleToggleLanguage} style={styles.testBtn}>
+                Toggle Lang ({language === 'en' ? 'EN ➔ KM' : 'KM ➔ EN'})
               </button>
               <button onClick={handleClose} style={styles.testBtn}>
                 Close App

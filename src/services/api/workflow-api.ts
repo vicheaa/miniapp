@@ -33,3 +33,21 @@ export async function fetchWorkflowTasks(
     total: result.total ?? 0,
   };
 }
+
+/**
+ * Claim or unclaim a task.
+ */
+export async function claimTask(token: string, taskId: string): Promise<any> {
+  const url = `/services/central/api/name/task-claim/exec`;
+  console.log(`[WorkflowAPI] Executing task-claim for id=${taskId}…`);
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ id: taskId }),
+  });
+  if (!res.ok) throw new Error(`Claim task API error: ${res.status} ${res.statusText}`);
+
+  return res.json();
+}
+
