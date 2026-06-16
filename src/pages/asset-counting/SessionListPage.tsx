@@ -73,7 +73,7 @@ export default function SessionListPage() {
       )}
 
       {/* ── Welcome Banner ─────────────────────────────────────────────── */}
-      {userInfo?.name && (
+      {/* {userInfo?.name && (
         <div className="bg-white px-5 pt-4 pb-2 flex items-center justify-between border-b border-slate-100">
           <div>
             <span className="text-[12px] font-semibold text-slate-400 uppercase tracking-wider">Welcome back</span>
@@ -83,7 +83,7 @@ export default function SessionListPage() {
             {userInfo.name.split(' ').map((n: string) => n[0]).join('')}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* ── Tab Navigation ──────────────────────────────────────────────── */}
       <nav className="flex bg-white px-4 border-b border-slate-100 sticky top-14 z-[99]">
