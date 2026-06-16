@@ -4,12 +4,14 @@ import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Header from '../../components/ui/Header';
 import { TaskListSkeleton } from '../../components/ui/SkeletonLoader';
-import BottomSheet from '../../components/ui/BottomSheet';
+import { Drawer, DrawerContent, DrawerTitle } from '../../components/ui/drawer';
+import { Input } from '../../components/ui/input';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { useWorkflowTasksInfiniteQuery } from '../../hooks/useWorkflowQuery';
 import { claimTask } from '../../services/api/workflow-api';
 import type { WorkflowTask } from '../../types/workflow';
-import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal, UserCheck } from 'lucide-react';
+import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal, UserCheck, Search } from 'lucide-react';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { useTranslation } from '../../hooks/useTranslation';
 
 /* ── Dynamic field helpers ─────────────────────────────────────────────── */
@@ -155,7 +157,7 @@ export default function TaskListPage() {
 
   /* ── Bottom Sheet State & Logic ────────────────────────────────────────── */
   const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
-  const [isAnimateOpen, setIsAnimateOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const authToken = useWorkflowStore((s) => s.authToken);
   const [isClaiming, setIsClaiming] = useState(false);
 
@@ -181,16 +183,11 @@ export default function TaskListPage() {
 
   const openMenu = (task: WorkflowTask) => {
     setActiveMenuTask(task);
-    setTimeout(() => {
-      setIsAnimateOpen(true);
-    }, 10);
+    setIsDrawerOpen(true);
   };
 
   const closeMenu = () => {
-    setIsAnimateOpen(false);
-    setTimeout(() => {
-      setActiveMenuTask(null);
-    }, 250);
+    setIsDrawerOpen(false);
   };
 
   const {
@@ -261,7 +258,7 @@ export default function TaskListPage() {
   };
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-screen overflow-hidden flex flex-col box-border">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-dvh overflow-hidden flex flex-col box-border">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       {superApp && (
         <Header
@@ -276,26 +273,13 @@ export default function TaskListPage() {
       {/* ── Search Bar + Filter Tabs ──────────────────────────────────── */}
       <div className="bg-white px-4 pt-3 pb-3 border-b border-slate-100 shrink-0">
         <div className="relative">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#94a3b8"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+          <Input
             type="text"
             placeholder={t('workflow.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-[10px] pl-9 pr-3 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]"
+            className="h-10 bg-slate-50 rounded-[10px] pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400"
           />
         </div>
 
@@ -368,105 +352,110 @@ export default function TaskListPage() {
         )}
       </main>
 
-      {/* ── Bottom Sheet Drawer Overlay ────────────────────────────────────── */}
-      <BottomSheet isOpen={isAnimateOpen} onClose={closeMenu}>
-        {activeMenuTask && (
-          <div className="flex flex-col">
-            <button
-              type="button"
-              onClick={() => {
-                handleTaskClick(activeMenuTask);
-                closeMenu();
-              }}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-            >
-              <Eye size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
-            </button>
+      {/* ── Drawer (shadcn/ui) ──────────────────────────────────────────────── */}
+      <Drawer open={isDrawerOpen} onOpenChange={(open) => { if (!open) closeMenu(); }} onClose={() => setActiveMenuTask(null)}>
+        <DrawerContent className="max-w-[480px] mx-auto pb-8">
+          <VisuallyHidden.Root>
+            <DrawerTitle>Task actions</DrawerTitle>
+          </VisuallyHidden.Root>
+          {activeMenuTask && (
+            <div className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => {
+                  handleTaskClick(activeMenuTask);
+                  closeMenu();
+                }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+              >
+                <Eye size={18} className="text-slate-400 shrink-0" />
+                <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                superApp?.showToast('View Diagram');
-                closeMenu();
-              }}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-            >
-              <Workflow size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">{t('workflow.view_diagram')}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  superApp?.showToast('View Diagram');
+                  closeMenu();
+                }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+              >
+                <Workflow size={18} className="text-slate-400 shrink-0" />
+                <span className="text-[15px] font-medium">{t('workflow.view_diagram')}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                superApp?.showToast('Approvers');
-                closeMenu();
-              }}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-            >
-              <Users size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">{t('workflow.approvers')}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  superApp?.showToast('Approvers');
+                  closeMenu();
+                }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+              >
+                <Users size={18} className="text-slate-400 shrink-0" />
+                <span className="text-[15px] font-medium">{t('workflow.approvers')}</span>
+              </button>
 
-            <button
-              type="button"
-              disabled={isClaiming}
-              onClick={() => handleClaimToggle(activeMenuTask)}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {activeMenuTask.claimed ? (
-                 <>
-                   <Ban size={18} className="text-slate-400 shrink-0" />
-                   <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
-                 </>
-              ) : (
-                 <>
-                   <UserCheck size={18} className="text-slate-400 shrink-0" />
-                   <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
-                 </>
-              )}
-            </button>
+              <button
+                type="button"
+                disabled={isClaiming}
+                onClick={() => handleClaimToggle(activeMenuTask)}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {activeMenuTask.claimed ? (
+                   <>
+                     <Ban size={18} className="text-slate-400 shrink-0" />
+                     <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
+                   </>
+                ) : (
+                   <>
+                     <UserCheck size={18} className="text-slate-400 shrink-0" />
+                     <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
+                   </>
+                )}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                superApp?.showToast('Assign');
-                closeMenu();
-              }}
-              className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-            >
-              <User size={18} className="text-slate-400 shrink-0" />
-              <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  superApp?.showToast('Assign');
+                  closeMenu();
+                }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+              >
+                <User size={18} className="text-slate-400 shrink-0" />
+                <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
+              </button>
 
-            {/* Separator */}
-            <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
+              {/* Separator */}
+              <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
 
-            {/* Dynamic Actions */}
-            {(() => {
-              const actions =
-                activeMenuTask.actions && activeMenuTask.actions.length > 0
-                  ? activeMenuTask.actions
-                  : [{ name: 'Complete', value: 'Completed' }];
+              {/* Dynamic Actions */}
+              {(() => {
+                const actions =
+                  activeMenuTask.actions && activeMenuTask.actions.length > 0
+                    ? activeMenuTask.actions
+                    : [{ name: 'Complete', value: 'Completed' }];
 
-              return actions.map((act, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
-                    closeMenu();
-                  }}
-                  className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-                >
-                  <SendHorizontal size={18} className="text-slate-400 shrink-0" />
-                  <span className="text-[15px] font-medium">{act.name}</span>
-                </button>
-              ));
-            })()}
-          </div>
-        )}
-      </BottomSheet>
+                return actions.map((act, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
+                      closeMenu();
+                    }}
+                    className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                  >
+                    <SendHorizontal size={18} className="text-slate-400 shrink-0" />
+                    <span className="text-[15px] font-medium">{act.name}</span>
+                  </button>
+                ));
+              })()}
+            </div>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
