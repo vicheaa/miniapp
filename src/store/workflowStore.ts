@@ -16,11 +16,6 @@ interface WorkflowStore {
   setSuperApp: (bridge: SuperAppBridge) => void;
   setAuthToken: (token: string) => void;
 
-  // Navigation
-  view: 'task-list' | 'task-detail';
-  setView: (view: 'task-list' | 'task-detail') => void;
-  goBack: () => void;
-
   // Selection
   selectedTask: WorkflowTask | null;
   setSelectedTask: (task: WorkflowTask | null) => void;
@@ -40,15 +35,6 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   authToken: '',
   setSuperApp: (bridge) => set({ superApp: bridge }),
   setAuthToken: (token) => set({ authToken: token }),
-
-  view: 'task-list',
-  setView: (view) => set({ view }),
-  goBack: () => {
-    const { view } = get();
-    if (view === 'task-detail') {
-      set({ view: 'task-list' });
-    }
-  },
 
   selectedTask: null,
   setSelectedTask: (task) => set({ selectedTask: task }),

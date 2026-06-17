@@ -27,6 +27,9 @@ export interface SuperAppBridge {
   /** Update the native header title. */
   setTitle(title: string): void;
 
+  /** Dynamically enable/disable pull-to-refresh. */
+  setPullToRefreshEnabled(enabled: boolean): void;
+
   /** Trigger haptic feedback on the device. */
   hapticFeedback(type?: string): void;
 

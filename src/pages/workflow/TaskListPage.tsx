@@ -6,6 +6,7 @@ import Header from '../../components/ui/Header';
 import { TaskListSkeleton } from '../../components/ui/SkeletonLoader';
 import { Drawer, DrawerContent, DrawerTitle } from '../../components/ui/drawer';
 import { Input } from '../../components/ui/input';
+import { useNavigate } from 'react-router-dom';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { useWorkflowTasksInfiniteQuery } from '../../hooks/useWorkflowQuery';
 import { claimTask } from '../../services/api/workflow-api';
@@ -151,7 +152,7 @@ export default function TaskListPage() {
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
-  const setView = useWorkflowStore((s) => s.setView);
+  const navigate = useNavigate();
 
   const [activeFilter, setActiveFilter] = useState<FilterKey>('ALL');
 
@@ -189,6 +190,17 @@ export default function TaskListPage() {
   const closeMenu = () => {
     setIsDrawerOpen(false);
   };
+
+  useEffect(() => {
+    if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
+      (superApp as any).setPullToRefreshEnabled(!isDrawerOpen);
+    }
+    return () => {
+      if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
+        (superApp as any).setPullToRefreshEnabled(true);
+      }
+    };
+  }, [isDrawerOpen, superApp]);
 
   const {
     data,
@@ -254,18 +266,18 @@ export default function TaskListPage() {
 
   const handleTaskClick = (task: WorkflowTask) => {
     setSelectedTask(task);
-    setView('task-detail');
+    navigate(`/task/${task.taskId}`);
   };
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-dvh overflow-hidden flex flex-col box-border">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-full overflow-hidden flex flex-col box-border">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       {superApp && (
         <Header
           title={t('workflow.title')}
           onBack={() => superApp.close()}
-          onRefresh={() => refetch()}
-          refreshing={isFetching && !isFetchingNextPage}
+          // onRefresh={() => refetch()}
+          // refreshing={isFetching && !isFetchingNextPage}
           backTitle="Close Mini App"
         />
       )}

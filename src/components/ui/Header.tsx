@@ -2,8 +2,6 @@ interface HeaderProps {
   title: string;
   subtitle?: string;
   onBack: () => void;
-  onRefresh?: () => void;
-  refreshing?: boolean;
   backTitle?: string;
 }
 
@@ -26,31 +24,10 @@ function BackIcon() {
   );
 }
 
-/** Refresh arrow SVG icon */
-function RefreshIcon({ spinning }: { spinning?: boolean }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`text-slate-900 ${spinning ? 'animate-spin' : ''}`}
-    >
-      <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-    </svg>
-  );
-}
-
 export default function Header({
   title,
   subtitle,
   onBack,
-  onRefresh,
-  refreshing = false,
   backTitle = 'Back',
 }: HeaderProps) {
   return (
@@ -74,17 +51,8 @@ export default function Header({
         )}
       </div>
 
-      {onRefresh ? (
-        <button
-          onClick={onRefresh}
-          disabled={refreshing}
-          className="p-0 shrink-0 border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-blue-100 disabled:opacity-50"
-        >
-          <RefreshIcon spinning={refreshing} />
-        </button>
-      ) : (
-        <div className="w-10 shrink-0" />
-      )}
+      {/* Spacer to balance back button on the left and keep title centered */}
+      <div className="w-10 shrink-0" />
     </header>
   );
 }

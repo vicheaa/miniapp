@@ -44,6 +44,10 @@ export function createMockBridge(token: string): SuperAppBridge {
       document.title = title;
     },
 
+    setPullToRefreshEnabled: (enabled: boolean) => {
+      console.log('[Mock SuperApp] setPullToRefreshEnabled called:', enabled);
+    },
+
     hapticFeedback: (type?: string) => {
       console.log('[Mock SuperApp] hapticFeedback called:', type);
     },

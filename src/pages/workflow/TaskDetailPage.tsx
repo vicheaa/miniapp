@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkflowStore } from '../../store/workflowStore';
 import { formatDateCompact } from '../../utils/format';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -22,22 +23,73 @@ import {
   fetchProcessFlowDetail,
   fetchBasicContactInfo,
   fetchFilesMetadata,
-  type TaskInstanceData,
-  type ProcessFlowDetail,
-  type BasicContactInfo,
-  type FileMetadata
+  TaskInstanceData,
+  ProcessFlowDetail,
+  BasicContactInfo,
+  FileMetadata
 } from '../../services/api/task-detail-api';
-import { claimTask } from '../../services/api/workflow-api';
+import { claimTask, fetchWorkflowTasks } from '../../services/api/workflow-api';
 import PdfPreviewModal from '../../components/workflow/PdfPreviewModal';
+import PurchaseRequisitionForm from './task/purchase-requisition';
 
 export default function TaskDetailPage() {
   const { t } = useTranslation();
   const superApp = useWorkflowStore((s) => s.superApp);
   const selectedTask = useWorkflowStore((s) => s.selectedTask);
+  const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
   const authToken = useWorkflowStore((s) => s.authToken);
-  const setView = useWorkflowStore((s) => s.setView);
+  const navigate = useNavigate();
+  const { taskId } = useParams<{ taskId: string }>();
 
   const queryClient = useQueryClient();
+  const lastFetchedTaskIdRef = useRef<string | null>(null);
+  const [isSyncingTask, setIsSyncingTask] = useState(false);
+
+  // Sync / find task if not set or doesn't match taskId
+  useEffect(() => {
+    const syncTask = async () => {
+      if (!taskId || !authToken) return;
+      if (selectedTask && selectedTask.taskId === taskId) return;
+
+      // 1. Try to look up task in query cache
+      const cacheData = queryClient.getQueryData<{ pages: { items: any[] }[] }>([
+        'workflowTasks',
+        authToken,
+      ]);
+      let foundTask = cacheData?.pages
+        .flatMap((p) => p.items)
+        .find((t) => t.taskId === taskId);
+
+      // 2. If not found in cache (e.g. refresh), fetch first page of tasks from API
+      if (!foundTask) {
+        setIsSyncingTask(true);
+        try {
+          const pageData = await queryClient.fetchQuery({
+            queryKey: ['workflowTasks', authToken],
+            queryFn: async () => {
+              // Fetch page 0, size 10 to search for the task
+              const res = await fetchWorkflowTasks(authToken, 0, 10);
+              return { pages: [res], pageParams: [0] };
+            },
+          });
+          
+          foundTask = pageData.pages
+            .flatMap((p) => p.items)
+            .find((t) => t.taskId === taskId);
+        } catch (e) {
+          console.error('[TaskDetailPage] Failed to fetch tasks fallback:', e);
+        } finally {
+          setIsSyncingTask(false);
+        }
+      }
+
+      if (foundTask) {
+        setSelectedTask(foundTask);
+      }
+    };
+
+    syncTask();
+  }, [taskId, selectedTask, authToken, queryClient, setSelectedTask]);
   const [isClaiming, setIsClaiming] = useState(false);
 
   const handleClaimToggle = async () => {
@@ -64,7 +116,7 @@ export default function TaskDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['workflowTasks'] });
       
       // Reload task details to get fresh backend state
-      loadTaskDetails();
+      loadTaskDetails(true);
     } catch (err: any) {
       console.error(`Failed to ${actionLabel.toLowerCase()} task:`, err);
       if (superApp) {
@@ -91,8 +143,11 @@ export default function TaskDetailPage() {
   const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
 
   // Fetch all details
-  const loadTaskDetails = useCallback(async () => {
+  const loadTaskDetails = useCallback(async (force = false) => {
     if (!selectedTask || !authToken) return;
+    if (!force && lastFetchedTaskIdRef.current === selectedTask.taskId) return;
+
+    lastFetchedTaskIdRef.current = selectedTask.taskId;
     setLoading(true);
     setError(null);
 
@@ -171,7 +226,7 @@ export default function TaskDetailPage() {
 
   // Back button
   const handleBack = () => {
-    setView('task-list');
+    navigate('/');
   };
 
   // Action Handlers
@@ -241,7 +296,8 @@ export default function TaskDetailPage() {
     }
   };
 
-  if (!selectedTask) {
+  // Show error if we finished syncing and still don't have a task
+  if (!selectedTask && !isSyncingTask && authToken) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6 text-center text-slate-400">
         <Info size={40} className="mb-2 text-slate-300" />
@@ -253,8 +309,10 @@ export default function TaskDetailPage() {
     );
   }
 
+  const showContentLoading = !selectedTask || loading;
+
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-screen overflow-hidden flex flex-col box-border relative">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-full overflow-hidden flex flex-col box-border relative">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="bg-white px-4 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
         <button
@@ -264,18 +322,27 @@ export default function TaskDetailPage() {
           <ChevronLeft size={24} color='black' />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-[16px] font-bold text-slate-900 truncate">
-            {selectedTask.instanceInfo.businessKey || t('workflow.detail')}
-          </h1>
-          <p className="text-[11px] text-slate-400 font-medium truncate">
-            {selectedTask.instanceInfo.processName}
-          </p>
+          {selectedTask ? (
+            <>
+              <h1 className="text-[16px] font-bold text-slate-900 truncate">
+                {selectedTask.instanceInfo.businessKey || t('workflow.detail')}
+              </h1>
+              <p className="text-[11px] text-slate-400 font-medium truncate">
+                {selectedTask.instanceInfo.processName}
+              </p>
+            </>
+          ) : (
+            <div className="flex flex-col gap-1.5 py-0.5">
+              <div className="skeleton-shimmer h-3.5 w-[45%] rounded" />
+              <div className="skeleton-shimmer h-2.5 w-[65%] rounded" />
+            </div>
+          )}
         </div>
       </header>
 
       {/* ── Scrollable Body ──────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto pb-24">
-        {loading ? (
+        {showContentLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <svg className="animate-spin h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
@@ -291,7 +358,7 @@ export default function TaskDetailPage() {
             <h3 className="text-[15px] font-bold text-slate-800 mb-1">{t('global.error')}</h3>
             <p className="text-[13px] text-slate-500 mb-4 px-4">{error}</p>
             <button
-              onClick={loadTaskDetails}
+              onClick={() => loadTaskDetails() ?? loadTaskDetails(true)}
               className="px-4 py-2 rounded-lg bg-slate-800 text-white text-[13px] font-semibold hover:bg-slate-900 transition-all cursor-pointer"
             >
               {t('global.loading')}
@@ -449,101 +516,7 @@ export default function TaskDetailPage() {
             {/* ── Data Form Tab Content ──────────────────────────────────────── */}
             {activeTab === 'data-form' && (
               processDetail ? (
-                <div className="flex flex-col gap-3.5">
-                  {/* Requisition Card */}
-                  <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex flex-col gap-3">
-                    <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
-                      {t('workflow.requisition_info')}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[12px]">
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.from_no')}</span>
-                        <span className="text-slate-800 font-bold">{processDetail.formNo}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.expected_date')}</span>
-                        <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.acquisitionDate)}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-slate-400 block font-medium">{t('workflow.reason')}</span>
-                        <span className="text-slate-800 font-medium">{processDetail.reason || '—'}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.bu')}</span>
-                        <span className="text-slate-800 font-semibold">{processDetail.buName}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.created_by')}</span>
-                        <span className="text-slate-800 font-semibold">{processDetail.createdBy}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.budget_code_required')}</span>
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-100 font-bold mt-0.5">
-                          {processDetail.budgetCodeRequired ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-medium">{t('workflow.created_date')}</span>
-                        <span className="text-slate-800 font-semibold">{formatDateCompact(processDetail.createdDate)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Items Section */}
-                  <div className="flex flex-col gap-2">
-                    <h4 className="text-[13px] font-bold text-slate-500 px-1">{t('workflow.items_list')}</h4>
-                    {processDetail.items?.map((item, idx) => (
-                      <div key={item.id || idx} className="bg-white rounded-xl border border-slate-200/60 p-4 flex flex-col gap-2.5">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-50">
-                          <span className="text-[13px] font-bold text-slate-800 truncate">
-                            {item.itemName}
-                          </span>
-                          <span className="text-[11px] font-semibold text-slate-400 shrink-0">
-                            {item.itemCode}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-y-2 text-[12px] text-slate-600">
-                          <div>
-                            <span className="text-slate-400 block text-[11px]">{t('workflow.quantity_uom')}</span>
-                            <span className="font-semibold text-slate-800">{item.qty} {item.uom}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[11px]">{t('workflow.unit_price')}</span>
-                            <span className="font-semibold text-slate-800">${item.unitPrice.toFixed(2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[11px]">{t('workflow.budget_code')}</span>
-                            <span className="font-semibold text-slate-800">{item.budgetCode || '—'}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[11px]">{t('workflow.subtotal')}</span>
-                            <span className="font-bold text-slate-900">${item.amount.toFixed(2)}</span>
-                          </div>
-                          {item.description && (
-                            <div className="col-span-2">
-                              <span className="text-slate-400 block text-[11px]">{t('workflow.description')}</span>
-                              <span className="text-slate-700 italic">{item.description}</span>
-                            </div>
-                          )}
-                          {item.remarks && (
-                            <div className="col-span-2">
-                              <span className="text-slate-400 block text-[11px]">{t('workflow.remarks')}</span>
-                              <span className="text-slate-700">{item.remarks}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Summary amount banner */}
-                    <div className="bg-[#063E89] rounded-xl p-4 mt-1.5 flex items-center justify-between shadow-sm">
-                      <span className="text-[13px] font-bold text-slate-300">{t('workflow.total_requisition_amount')}</span>
-                      <span className="text-[16px] font-black text-white">
-                        ${processDetail.totalAmount.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                <PurchaseRequisitionForm processDetail={processDetail} />
               ) : (
                 <div className="bg-white rounded-xl border border-slate-200/60 p-8 text-center text-slate-400 text-[13px] shadow-sm">
                   <FileText size={32} className="mx-auto text-slate-300 mb-2" />
