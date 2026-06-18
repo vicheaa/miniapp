@@ -23,14 +23,16 @@ import {
   fetchProcessFlowDetail,
   fetchBasicContactInfo,
   fetchFilesMetadata,
-  TaskInstanceData,
-  ProcessFlowDetail,
-  BasicContactInfo,
-  FileMetadata
-} from '../../services/api/task-detail-api';
+} from '../../services/api/workflow-api';
 import { claimTask, fetchWorkflowTasks } from '../../services/api/workflow-api';
 import PdfPreviewModal from '../../components/workflow/PdfPreviewModal';
 import PurchaseRequisitionForm from './task/purchase-requisition';
+import { 
+  BasicContactInfo, 
+  FileMetadata, 
+  ProcessFlowDetail, 
+  TaskInstanceData 
+} from '@/types/workflow-detail';
 
 export default function TaskDetailPage() {
   const { t } = useTranslation();

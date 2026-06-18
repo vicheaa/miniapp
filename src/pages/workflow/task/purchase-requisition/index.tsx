@@ -1,6 +1,6 @@
-import type { ProcessFlowDetail } from '../../../../services/api/task-detail-api';
-import { formatDateCompact } from '../../../../utils/format';
-import { useTranslation } from '../../../../hooks/useTranslation';
+import type { ProcessFlowDetail } from '@/types/workflow-detail';
+import { formatDateCompact } from '@/utils/format';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface PurchaseRequisitionFormProps {
   processDetail: ProcessFlowDetail;

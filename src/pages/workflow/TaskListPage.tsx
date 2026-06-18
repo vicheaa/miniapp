@@ -1,134 +1,20 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { formatDateCompact } from '../../utils/format';
-import ErrorState from '../../components/ui/ErrorState';
-import EmptyState from '../../components/ui/EmptyState';
-import Header from '../../components/ui/Header';
-import { TaskListSkeleton } from '../../components/ui/SkeletonLoader';
-import { Drawer, DrawerContent, DrawerTitle } from '../../components/ui/drawer';
-import { Input } from '../../components/ui/input';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useWorkflowStore } from '../../store/workflowStore';
-import { useWorkflowTasksInfiniteQuery } from '../../hooks/useWorkflowQuery';
-import { claimTask } from '../../services/api/workflow-api';
-import type { WorkflowTask } from '../../types/workflow';
-import { Ellipsis, Eye, Workflow, Users, Ban, User, SendHorizontal, UserCheck, Search } from 'lucide-react';
-import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
-import { useTranslation } from '../../hooks/useTranslation';
+import { Eye, Users, Ban, User, SendHorizontal, UserCheck, Search } from 'lucide-react';
 
-/* ── Dynamic field helpers ─────────────────────────────────────────────── */
+import ErrorState from '@/components/ui/ErrorState';
+import EmptyState from '@/components/ui/EmptyState';
+import Header from '@/components/ui/Header';
+import { TaskListSkeleton } from '@/components/ui/SkeletonLoader';
+import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import TaskCard from '@/components/workflow/TaskCard';
 
-/**
- * Build dynamic detail rows based on the businessKey prefix / process type.
- * Returns an array of { label, value } pairs to render in the card.
- */
-function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { label: string; value: string }[] {
-  const rows: { label: string; value: string }[] = [];
-  const key = task.instanceInfo.businessKey || '';
-  const prefix = key.split('-')[0]?.toUpperCase();
-
-  // --- Dynamic rows based on process / businessKey prefix ---
-
-  // Purchase Requisition → show Total Amount from workflowAttrs
-  if (prefix === 'PR') {
-    const amountAttr = task.instanceInfo.workflowAttrs?.find((a) => a.name === 'amount');
-    if (amountAttr?.decimalValue != null) {
-      rows.push({
-        label: t('workflow.total_amount'),
-        value: `$${amountAttr.decimalValue.toFixed(2)}`,
-      });
-    }
-  }
-
-  // Always show Requestor
-  rows.push({
-    label: t('workflow.requestor'),
-    value: task.owner || '—',
-  });
-
-  // Always show Task Name
-  rows.push({
-    label: t('workflow.task_name'),
-    value: task.taskName,
-  });
-
-  // Always show Assignee
-  rows.push({
-    label: t('workflow.assignee'),
-    value: task.assigneeInfo?.name || task.assignee || '—',
-  });
-
-  // Always show Created At
-  rows.push({
-    label: t('workflow.created_at'),
-    value: formatDateCompact(task.created),
-  });
-
-  return rows;
-}
-
-/* ── Task Card ─────────────────────────────────────────────────────────── */
-
-function TaskCard({
-  task,
-  onClick,
-  onEllipsisClick,
-  t,
-}: {
-  task: WorkflowTask;
-  onClick: () => void;
-  onEllipsisClick: () => void;
-  t: (k: string) => string;
-}) {
-  const rows = getTaskDetailRows(task, t);
-
-  return (
-    <div
-      className="bg-white rounded-[14px] px-[18px] py-4 border border-slate-200/80 cursor-pointer transition-all duration-200 active:scale-[0.99] active:bg-slate-50"
-      onClick={onClick}
-    >
-      {/* Title: BusinessKey · Process Name */}
-      <div className="flex items-baseline gap-1.5 mb-3">
-        <span className="text-[15px] font-bold text-slate-900 shrink-0">
-          {task.instanceInfo.businessKey}
-        </span>
-        <span className="text-[13px] text-slate-400 font-medium">·</span>
-        <span className="text-[13px] font-semibold text-slate-500 italic truncate">
-          {task.instanceInfo.processName}
-        </span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEllipsisClick();
-          }}
-          className="ml-auto self-center flex items-center justify-center p-1.5 -m-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 active:bg-slate-100 transition-colors"
-        >
-          <Ellipsis size={18} className="shrink-0" />
-        </button>
-      </div>
-
-      {/* Detail rows */}
-      <div className="flex flex-col gap-[7px]">
-        {rows.map((row, i) => (
-          <div key={i} className="flex items-baseline justify-between gap-4">
-            <span className="text-[13px] text-slate-400 font-medium shrink-0">{row.label}</span>
-            <span className="text-[13px] text-slate-700 font-medium text-right truncate">{row.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Filter Tabs ───────────────────────────────────────────────────────── */
-
-type FilterKey = 'ALL' | 'HIGH_PRIORITY' | 'SUB_TASKS';
-
-const FILTER_TABS: { key: FilterKey; labelKey: string }[] = [
-  { key: 'ALL', labelKey: 'workflow.all_tasks' },
-  { key: 'HIGH_PRIORITY', labelKey: 'workflow.high_priority' },
-  { key: 'SUB_TASKS', labelKey: 'workflow.with_subtasks' },
-];
+import { useWorkflowStore } from '@/store/workflowStore';
+import { useWorkflowTasksInfiniteQuery } from '@/hooks/useWorkflowQuery';
+import { claimTask } from '@/services/api/workflow-api';
+import { useTranslation } from '@/hooks/useTranslation';
+import type { WorkflowTask } from '@/types/workflow';
 
 /* ── Loading Spinner ───────────────────────────────────────────────────── */
 
@@ -148,20 +34,49 @@ function LoadingMore({ t }: { t: (k: string) => string }) {
 
 export default function TaskListPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // ── Hooks & Store ────────────────────────────────────────────────────────
   const superApp = useWorkflowStore((s) => s.superApp);
+  const authToken = useWorkflowStore((s) => s.authToken);
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
-  const navigate = useNavigate();
 
-  const [activeFilter, setActiveFilter] = useState<FilterKey>('ALL');
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useWorkflowTasksInfiniteQuery();
 
-  /* ── Bottom Sheet State & Logic ────────────────────────────────────────── */
+  // ── Local State ──────────────────────────────────────────────────────────
   const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const authToken = useWorkflowStore((s) => s.authToken);
   const [isClaiming, setIsClaiming] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Flatten all pages into a single task list
+  const allTasks = data?.pages.flatMap((p) => p.items) || [];
+  const total = data?.pages[0]?.total || 0;
+
+  // Client-side search using useMemo for performance
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery) return allTasks;
+    const q = searchQuery.toLowerCase();
+    return allTasks.filter((t) => 
+      t.taskName.toLowerCase().includes(q) ||
+      t.instanceInfo.businessKey.toLowerCase().includes(q) ||
+      t.instanceInfo.processName.toLowerCase().includes(q) ||
+      (t.assigneeInfo?.name || '').toLowerCase().includes(q) ||
+      (t.owner || '').toLowerCase().includes(q)
+    );
+  }, [allTasks, searchQuery]);
+
+  // ── Claim / Unclaim Action ──────────────────────────────────────────────
   const handleClaimToggle = async (task: WorkflowTask) => {
     if (!authToken) {
       superApp?.showToast('Error: No authentication token');
@@ -182,6 +97,7 @@ export default function TaskListPage() {
     }
   };
 
+  // ── Drawer Menu Actions ──────────────────────────────────────────────────
   const openMenu = (task: WorkflowTask) => {
     setActiveMenuTask(task);
     setIsDrawerOpen(true);
@@ -191,6 +107,12 @@ export default function TaskListPage() {
     setIsDrawerOpen(false);
   };
 
+  const handleTaskClick = (task: WorkflowTask) => {
+    setSelectedTask(task);
+    navigate(`/task/${task.taskId}`);
+  };
+
+  // Enable/disable pull-to-refresh depending on drawer state
   useEffect(() => {
     if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
       (superApp as any).setPullToRefreshEnabled(!isDrawerOpen);
@@ -202,45 +124,7 @@ export default function TaskListPage() {
     };
   }, [isDrawerOpen, superApp]);
 
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useWorkflowTasksInfiniteQuery();
-
-  // Flatten all pages into a single task list
-  const allTasks = data?.pages.flatMap((p) => p.items) || [];
-  const total = data?.pages[0]?.total || 0;
-
-  // Client-side search + filter
-  const filteredTasks = allTasks.filter((t) => {
-    // Search
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch =
-        t.taskName.toLowerCase().includes(q) ||
-        t.instanceInfo.businessKey.toLowerCase().includes(q) ||
-        t.instanceInfo.processName.toLowerCase().includes(q) ||
-        (t.assigneeInfo?.name || '').toLowerCase().includes(q) ||
-        (t.owner || '').toLowerCase().includes(q);
-      if (!matchesSearch) return false;
-    }
-
-    // Filter tabs
-    if (activeFilter === 'HIGH_PRIORITY') return t.priority > 50;
-    if (activeFilter === 'SUB_TASKS') return t.subTasks.length > 0 || t.subTask;
-
-    return true;
-  });
-
-  // ── Infinite scroll via IntersectionObserver ──────────────────────────
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
+  // ── Infinite Scroll Observer ─────────────────────────────────────────────
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -256,7 +140,7 @@ export default function TaskListPage() {
 
     const observer = new IntersectionObserver(handleIntersect, {
       root: null,
-      rootMargin: '200px', // trigger 200px before reaching the bottom
+      rootMargin: '200px',
       threshold: 0,
     });
     observer.observe(el);
@@ -264,25 +148,18 @@ export default function TaskListPage() {
     return () => observer.disconnect();
   }, [handleIntersect]);
 
-  const handleTaskClick = (task: WorkflowTask) => {
-    setSelectedTask(task);
-    navigate(`/task/${task.taskId}`);
-  };
-
   return (
     <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-full overflow-hidden flex flex-col box-border">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* Header */}
       {superApp && (
         <Header
           title={t('workflow.title')}
           onBack={() => superApp.close()}
-          // onRefresh={() => refetch()}
-          // refreshing={isFetching && !isFetchingNextPage}
           backTitle="Close Mini App"
         />
       )}
 
-      {/* ── Search Bar + Filter Tabs ──────────────────────────────────── */}
+      {/* Search Bar */}
       <div className="bg-white px-4 pt-3 pb-3 border-b border-slate-100 shrink-0">
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
@@ -294,29 +171,9 @@ export default function TaskListPage() {
             className="h-10 bg-slate-50 rounded-[10px] pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400"
           />
         </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mt-3">
-          {FILTER_TABS.map((tab) => {
-            const isActive = activeFilter === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveFilter(tab.key)}
-                className={`shrink-0 px-4 py-[7px] rounded-full text-[13px] font-semibold border cursor-pointer transition-all duration-200 ${
-                  isActive
-                    ? 'bg-[#063E89] text-white border-[#063E89]'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 active:bg-slate-50'
-                }`}
-              >
-                {t(tab.labelKey)}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
-      {/* ── Task Count ──────────────────────────────────────────────────── */}
+      {/* Task Count */}
       {!isLoading && !error && total > 0 && (
         <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
           <span className="text-[12px] text-slate-400 font-medium">
@@ -325,7 +182,7 @@ export default function TaskListPage() {
         </div>
       )}
 
-      {/* ── Content ─────────────────────────────────────────────────────── */}
+      {/* Content */}
       <main className="flex-1 p-3 pt-1 overflow-y-auto">
         {isLoading ? (
           <TaskListSkeleton />
@@ -364,12 +221,11 @@ export default function TaskListPage() {
         )}
       </main>
 
-      {/* ── Drawer (shadcn/ui) ──────────────────────────────────────────────── */}
+      {/* Drawer Menu */}
       <Drawer open={isDrawerOpen} onOpenChange={(open) => { if (!open) closeMenu(); }} onClose={() => setActiveMenuTask(null)}>
         <DrawerContent className="max-w-[480px] mx-auto pb-8">
-          <VisuallyHidden.Root>
-            <DrawerTitle>Task actions</DrawerTitle>
-          </VisuallyHidden.Root>
+          <DrawerTitle className="sr-only">Task Actions</DrawerTitle>
+          <DrawerDescription className="sr-only">Choose an action for the selected task</DrawerDescription>
           {activeMenuTask && (
             <div className="flex flex-col">
               <button
@@ -382,18 +238,6 @@ export default function TaskListPage() {
               >
                 <Eye size={18} className="text-slate-400 shrink-0" />
                 <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  superApp?.showToast('View Diagram');
-                  closeMenu();
-                }}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
-              >
-                <Workflow size={18} className="text-slate-400 shrink-0" />
-                <span className="text-[15px] font-medium">{t('workflow.view_diagram')}</span>
               </button>
 
               <button
@@ -415,15 +259,15 @@ export default function TaskListPage() {
                 className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {activeMenuTask.claimed ? (
-                   <>
-                     <Ban size={18} className="text-slate-400 shrink-0" />
-                     <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
-                   </>
+                  <>
+                    <Ban size={18} className="text-slate-400 shrink-0" />
+                    <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
+                  </>
                 ) : (
-                   <>
-                     <UserCheck size={18} className="text-slate-400 shrink-0" />
-                     <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
-                   </>
+                  <>
+                    <UserCheck size={18} className="text-slate-400 shrink-0" />
+                    <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
+                  </>
                 )}
               </button>
 
@@ -471,3 +315,4 @@ export default function TaskListPage() {
     </div>
   );
 }
+

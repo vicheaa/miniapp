@@ -28,7 +28,7 @@ export function useWorkflowTasksInfiniteQuery() {
     getNextPageParam: (lastPage, allPages) => {
       const loadedCount = allPages.reduce((acc, p) => acc + p.items.length, 0);
       if (loadedCount < lastPage.total && lastPage.items.length > 0) {
-        return allPages.length; // next page index (0-based)
+        return allPages.length;
       }
       return undefined;
     },
