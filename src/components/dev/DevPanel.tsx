@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { SuperAppBridge } from '../../types/bridge';
-import { useWorkflowStore } from '../../store/workflowStore';
+import { useMiniAppStore } from '../../store/miniAppStore';
 
 interface DevPanelProps {
   superApp: SuperAppBridge;
@@ -12,7 +12,7 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
   const [showPanel, setShowPanel] = useState(false);
   const [tokenInput, setTokenInput] = useState(authToken);
 
-  const language = useWorkflowStore((s) => s.language);
+  const language = useMiniAppStore((s) => s.language);
 
   // Keep input in sync when external token changes
   React.useEffect(() => {

@@ -68,16 +68,16 @@ export default function TaskCard({
 
   return (
     <div
-      className="bg-white rounded-[14px] px-[18px] py-4 border border-slate-200/80 cursor-pointer transition-all duration-200 active:scale-[0.99] active:bg-slate-50"
+      className="bg-white rounded-[14px] px-[18px] py-4 cursor-pointer"
       onClick={onClick}
     >
       {/* Title: BusinessKey · Process Name */}
       <div className="flex items-baseline gap-1.5 mb-3">
-        <span className="text-[15px] font-bold text-slate-900 shrink-0">
+        <span className="font-bold text-slate-900 shrink-0">
           {task.instanceInfo.businessKey}
         </span>
-        <span className="text-[13px] text-slate-400 font-medium">·</span>
-        <span className="text-[13px] font-semibold text-slate-500 italic truncate">
+        <span className="font-medium">·</span>
+        <span className="font-semibold truncate">
           {task.instanceInfo.processName}
         </span>
         <button
@@ -86,7 +86,7 @@ export default function TaskCard({
             e.stopPropagation();
             onEllipsisClick();
           }}
-          className="ml-auto self-center flex items-center justify-center p-1.5 -m-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 active:bg-slate-100 transition-colors"
+          className="ml-auto self-center flex items-center justify-center p-1.5 -m-1.5 rounded-full hover:text-slate-600 hover:bg-slate-100/50 active:bg-slate-100 transition-colors"
         >
           <Ellipsis size={18} className="shrink-0" />
         </button>
@@ -96,8 +96,8 @@ export default function TaskCard({
       <div className="flex flex-col gap-[7px]">
         {rows.map((row, i) => (
           <div key={i} className="flex items-baseline justify-between gap-4">
-            <span className="text-[13px] text-slate-400 font-medium shrink-0">{row.label}</span>
-            <span className="text-[13px] text-slate-700 font-medium text-right truncate">{row.value}</span>
+            <span className="text-[13px] text-gray-400 font-medium shrink-0">{row.label}</span>
+            <span className="text-[13px] font-medium text-right truncate">{row.value}</span>
           </div>
         ))}
       </div>

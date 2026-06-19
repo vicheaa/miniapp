@@ -3,7 +3,7 @@
  *
  * @example formatDateCompact('2026-05-28T09:24:11Z') // "28 May 2026 09:24:11"
  */
-export function formatDateCompact(dateStr?: string | null): string {
+export function formatDateTimeCompact(dateStr?: string | null): string {
   if (!dateStr) return 'N/A';
   try {
     const date = new Date(dateStr);
@@ -17,6 +17,21 @@ export function formatDateCompact(dateStr?: string | null): string {
     const seconds = String(date.getSeconds()).padStart(2, '0');
 
     return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+  } catch {
+    return dateStr;
+  }
+}
+export function formatDateCompact(dateStr?: string | null): string {
+  if (!dateStr) return 'N/A';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
   } catch {
     return dateStr;
   }

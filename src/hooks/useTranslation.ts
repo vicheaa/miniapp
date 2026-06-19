@@ -1,4 +1,4 @@
-import { useWorkflowStore } from '../store/workflowStore';
+import { useMiniAppStore } from '../store/miniAppStore';
 
 /**
  * A React hook for translating UI strings within the mini-app.
@@ -6,8 +6,8 @@ import { useWorkflowStore } from '../store/workflowStore';
  * Supports nested dot-separated keys (e.g. 'global.setting').
  */
 export function useTranslation() {
-  const translations = useWorkflowStore((s) => s.translations);
-  const language = useWorkflowStore((s) => s.language);
+  const translations = useMiniAppStore((s) => s.translations);
+  const language = useMiniAppStore((s) => s.language);
 
   const t = (key: string): string => {
     if (!translations) return key;

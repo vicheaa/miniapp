@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { useSuperApp } from './hooks/useSuperApp';
-import { useWorkflowStore } from './store/workflowStore';
+import { useMiniAppStore } from './store/miniAppStore';
 import TaskListPage from './pages/workflow/TaskListPage';
 import TaskDetailPage from './pages/workflow/TaskDetailPage';
 import DevPanel from './components/dev/DevPanel';
@@ -33,9 +33,9 @@ export default function App() {
 
   const { bridge: superApp, isMock } = useSuperApp(authToken);
 
-  const setSuperApp = useWorkflowStore((s) => s.setSuperApp);
-  const setAuthTokenInStore = useWorkflowStore((s) => s.setAuthToken);
-  const setLanguage = useWorkflowStore((s) => s.setLanguage);
+  const setSuperApp = useMiniAppStore((s) => s.setSuperApp);
+  const setAuthTokenInStore = useMiniAppStore((s) => s.setAuthToken);
+  const setLanguage = useMiniAppStore((s) => s.setLanguage);
 
   // Sync bridge and token to Zustand store when resolved
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function App() {
 
       // Pull dynamic auth token if store token is empty
       const fetchToken = async () => {
-        const token = useWorkflowStore.getState().authToken;
+        const token = useMiniAppStore.getState().authToken;
         if (!token) {
           try {
             const t = await superApp.getAuthToken();
@@ -93,7 +93,7 @@ export default function App() {
     setAuthTokenInStore(newToken);
   }, [setAuthTokenInStore]);
 
-  const language = useWorkflowStore((s) => s.language);
+  const language = useMiniAppStore((s) => s.language);
 
   const handleToggleLanguage = useCallback(() => {
     const nextLang = language === 'en' ? 'km' : 'en';
@@ -103,11 +103,13 @@ export default function App() {
     }
   }, [language]);
 
-  /* ── Waiting for bridge ──────────────────────────────────────────────── */
-  if (!superApp) {
+  const storeToken = useMiniAppStore((s) => s.authToken);
+
+  /* ── Waiting for bridge and token ────────────────────────────────────── */
+  if (!superApp || !storeToken) {
     return (
       <div className="font-sans max-w-[480px] mx-auto p-0 text-center pt-[100px] text-slate-400">
-        <p>Waiting for SuperApp Bridge...</p>
+        <p>Loading application...</p>
       </div>
     );
   }

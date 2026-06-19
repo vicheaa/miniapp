@@ -1,16 +1,33 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import {
+  useState,
+  useRef,
+  useCallback,
+  useEffect
+} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Users, Ban, User, SendHorizontal, UserCheck, Search } from 'lucide-react';
-
+import {
+  Eye,
+  Users,
+  Ban,
+  User,
+  SendHorizontal,
+  UserCheck,
+  Search
+} from 'lucide-react';
 import ErrorState from '@/components/ui/ErrorState';
 import EmptyState from '@/components/ui/EmptyState';
 import Header from '@/components/ui/Header';
 import { TaskListSkeleton } from '@/components/ui/SkeletonLoader';
-import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerTitle, 
+  DrawerDescription 
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import TaskCard from '@/components/workflow/TaskCard';
-
 import { useWorkflowStore } from '@/store/workflowStore';
+import { useMiniAppStore } from '@/store/miniAppStore';
 import { useWorkflowTasksInfiniteQuery } from '@/hooks/useWorkflowQuery';
 import { claimTask } from '@/services/api/workflow-api';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -37,8 +54,7 @@ export default function TaskListPage() {
   const navigate = useNavigate();
 
   // ── Hooks & Store ────────────────────────────────────────────────────────
-  const superApp = useWorkflowStore((s) => s.superApp);
-  const authToken = useWorkflowStore((s) => s.authToken);
+  const superApp = useMiniAppStore((s) => s.superApp);
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
@@ -63,29 +79,15 @@ export default function TaskListPage() {
   const allTasks = data?.pages.flatMap((p) => p.items) || [];
   const total = data?.pages[0]?.total || 0;
 
-  // Client-side search using useMemo for performance
-  const filteredTasks = useMemo(() => {
-    if (!searchQuery) return allTasks;
-    const q = searchQuery.toLowerCase();
-    return allTasks.filter((t) => 
-      t.taskName.toLowerCase().includes(q) ||
-      t.instanceInfo.businessKey.toLowerCase().includes(q) ||
-      t.instanceInfo.processName.toLowerCase().includes(q) ||
-      (t.assigneeInfo?.name || '').toLowerCase().includes(q) ||
-      (t.owner || '').toLowerCase().includes(q)
-    );
-  }, [allTasks, searchQuery]);
+  // API-side filtering: allTasks are already filtered by the API search value
+  const filteredTasks = allTasks;
 
   // ── Claim / Unclaim Action ──────────────────────────────────────────────
   const handleClaimToggle = async (task: WorkflowTask) => {
-    if (!authToken) {
-      superApp?.showToast('Error: No authentication token');
-      return;
-    }
     setIsClaiming(true);
     const actionLabel = task.claimed ? 'Unclaim' : 'Claim';
     try {
-      await claimTask(authToken, task.taskId);
+      await claimTask(task.taskId);
       superApp?.showToast(`Task ${actionLabel.toLowerCase()}ed successfully`);
       refetch();
     } catch (err: any) {
@@ -99,6 +101,9 @@ export default function TaskListPage() {
 
   // ── Drawer Menu Actions ──────────────────────────────────────────────────
   const openMenu = (task: WorkflowTask) => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setActiveMenuTask(task);
     setIsDrawerOpen(true);
   };
@@ -149,7 +154,7 @@ export default function TaskListPage() {
   }, [handleIntersect]);
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-full overflow-hidden flex flex-col box-border">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-100 h-full overflow-hidden flex flex-col box-border">
       {/* Header */}
       {superApp && (
         <Header
@@ -224,8 +229,6 @@ export default function TaskListPage() {
       {/* Drawer Menu */}
       <Drawer open={isDrawerOpen} onOpenChange={(open) => { if (!open) closeMenu(); }} onClose={() => setActiveMenuTask(null)}>
         <DrawerContent className="max-w-[480px] mx-auto pb-8">
-          <DrawerTitle className="sr-only">Task Actions</DrawerTitle>
-          <DrawerDescription className="sr-only">Choose an action for the selected task</DrawerDescription>
           {activeMenuTask && (
             <div className="flex flex-col">
               <button
@@ -234,21 +237,18 @@ export default function TaskListPage() {
                   handleTaskClick(activeMenuTask);
                   closeMenu();
                 }}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
               >
-                <Eye size={18} className="text-slate-400 shrink-0" />
+                <Eye size={18} className='text-gray-600' />
                 <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  superApp?.showToast('Approvers');
-                  closeMenu();
-                }}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                onClick={() => { superApp?.showToast('Approvers'); closeMenu(); }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
               >
-                <Users size={18} className="text-slate-400 shrink-0" />
+                <Users size={18} className='text-gray-600' />
                 <span className="text-[15px] font-medium">{t('workflow.approvers')}</span>
               </button>
 
@@ -256,16 +256,16 @@ export default function TaskListPage() {
                 type="button"
                 disabled={isClaiming}
                 onClick={() => handleClaimToggle(activeMenuTask)}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {activeMenuTask.claimed ? (
                   <>
-                    <Ban size={18} className="text-slate-400 shrink-0" />
+                    <Ban size={18} className='text-gray-600' />
                     <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
                   </>
                 ) : (
                   <>
-                    <UserCheck size={18} className="text-slate-400 shrink-0" />
+                    <UserCheck size={18} className='text-gray-600' />
                     <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
                   </>
                 )}
@@ -277,9 +277,9 @@ export default function TaskListPage() {
                   superApp?.showToast('Assign');
                   closeMenu();
                 }}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
               >
-                <User size={18} className="text-slate-400 shrink-0" />
+                <User size={18} className='text-gray-600' />
                 <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
               </button>
 
@@ -301,9 +301,9 @@ export default function TaskListPage() {
                       superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
                       closeMenu();
                     }}
-                    className="flex items-center gap-3.5 w-full px-6 py-[13px] text-left text-slate-700 hover:bg-slate-50 active:bg-slate-100/80 transition-colors cursor-pointer"
+                    className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
                   >
-                    <SendHorizontal size={18} className="text-slate-400 shrink-0" />
+                    <SendHorizontal size={18} className='text-gray-600' />
                     <span className="text-[15px] font-medium">{act.name}</span>
                   </button>
                 ));
@@ -315,4 +315,3 @@ export default function TaskListPage() {
     </div>
   );
 }
-

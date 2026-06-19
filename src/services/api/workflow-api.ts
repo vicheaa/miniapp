@@ -11,16 +11,24 @@ import type {
  * Fetch a paginated list of workflow tasks.
  */
 export async function fetchWorkflowTasks(
-  token: string,
   page: number = 0,
   size: number = 20,
+  filter?: string,
+  latest?: boolean,
+  myRequest?: boolean,
+  searchValue?: string,
 ): Promise<WorkflowTaskPage> {
   const url = `/services/central/api/name/task-page/list-paging/page/${page}/size/${size}`;
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
-    body: JSON.stringify({"filter": "AVAILABLE","latest": true,"myRequest": false})
+    headers: getHeaders(),
+    body: JSON.stringify({
+      filter: filter ?? "AVAILABLE",
+      latest: latest ?? true,
+      myRequest: myRequest ?? false,
+      ...(searchValue && { searchValue }),
+    })
   });
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
 
@@ -36,12 +44,12 @@ export async function fetchWorkflowTasks(
 /**
  * Claim or unclaim a task.
  */
-export async function claimTask(token: string, taskId: string): Promise<any> {
+export async function claimTask(taskId: string): Promise<any> {
   const url = `/services/central/api/name/task-claim/exec`;
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
+    headers: getHeaders(),
     body: JSON.stringify({ id: taskId })
   });
   if (!res.ok) throw new Error(`Claim task API error: ${res.status} ${res.statusText}`);
@@ -52,11 +60,11 @@ export async function claimTask(token: string, taskId: string): Promise<any> {
 /**
  * Fetch task instance data (API 1).
  */
-export async function fetchTaskInstanceData(token: string, taskId: string): Promise<TaskInstanceData> {
+export async function fetchTaskInstanceData(taskId: string): Promise<TaskInstanceData> {
   const url = `/services/workflow/api/v1/workflow/name/fetchInstanceData/find`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
+    headers: getHeaders(),
     body: JSON.stringify({ id: taskId, type: 'task' }),
   });
   if (!res.ok) throw new Error(`Failed to fetch instance data: ${res.statusText}`);
@@ -67,11 +75,11 @@ export async function fetchTaskInstanceData(token: string, taskId: string): Prom
 /**
  * Fetch process flow details (API 3).
  */
-export async function fetchProcessFlowDetail(token: string, processInstanceId: string): Promise<ProcessFlowDetail> {
+export async function fetchProcessFlowDetail(processInstanceId: string): Promise<ProcessFlowDetail> {
   const url = `/services/pro/api/name/detail-by-process-flow/find`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
+    headers: getHeaders(),
     body: JSON.stringify({ id: processInstanceId }),
   });
   if (!res.ok) throw new Error(`Failed to fetch process flow details: ${res.statusText}`);
@@ -81,22 +89,22 @@ export async function fetchProcessFlowDetail(token: string, processInstanceId: s
 /**
  * Fetch basic contact info of employee (API 2).
  */
-export async function fetchBasicContactInfo(token: string, username: string): Promise<BasicContactInfo> {
+export async function fetchBasicContactInfo(username: string): Promise<BasicContactInfo> {
   const url = `/services/hrm/api/name/fetch-basic-contact-info/find`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
+    headers: getHeaders(),
     body: JSON.stringify({ id: username }),
   });
   if (!res.ok) throw new Error(`Failed to fetch basic contact info: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchFilesMetadata(token: string, fileIds: string[]): Promise<FileMetadata[]> {
+export async function fetchFilesMetadata(fileIds: string[]): Promise<FileMetadata[]> {
   const url = `/services/files/api/name/list-files-by-ids/list`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: getHeaders(token),
+    headers: getHeaders(),
     body: JSON.stringify({ list: fileIds }),
   });
   if (!res.ok) throw new Error(`Failed to fetch files metadata: ${res.statusText}`);

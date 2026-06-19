@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useWorkflowStore } from '../../store/workflowStore';
-import { formatDateCompact } from '../../utils/format';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useWorkflowStore } from '@/store/workflowStore';
+import { useMiniAppStore } from '@/store/miniAppStore';
+import { formatDateCompact, formatDateTimeCompact } from '@/utils/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   User,
   SendHorizontal,
@@ -16,16 +17,16 @@ import {
   Download,
   Mail,
   UserCheck,
-  ChevronLeft
+  ChevronLeft,
+  ChevronDown
 } from 'lucide-react';
 import {
   fetchTaskInstanceData,
   fetchProcessFlowDetail,
   fetchBasicContactInfo,
   fetchFilesMetadata,
-} from '../../services/api/workflow-api';
-import { claimTask, fetchWorkflowTasks } from '../../services/api/workflow-api';
-import PdfPreviewModal from '../../components/workflow/PdfPreviewModal';
+} from '@/services/api/workflow-api';
+import { claimTask, fetchWorkflowTasks } from '@/services/api/workflow-api';
 import PurchaseRequisitionForm from './task/purchase-requisition';
 import { 
   BasicContactInfo, 
@@ -36,10 +37,9 @@ import {
 
 export default function TaskDetailPage() {
   const { t } = useTranslation();
-  const superApp = useWorkflowStore((s) => s.superApp);
+  const superApp = useMiniAppStore((s) => s.superApp);
   const selectedTask = useWorkflowStore((s) => s.selectedTask);
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
-  const authToken = useWorkflowStore((s) => s.authToken);
   const navigate = useNavigate();
   const { taskId } = useParams<{ taskId: string }>();
 
@@ -50,13 +50,12 @@ export default function TaskDetailPage() {
   // Sync / find task if not set or doesn't match taskId
   useEffect(() => {
     const syncTask = async () => {
-      if (!taskId || !authToken) return;
+      if (!taskId) return;
       if (selectedTask && selectedTask.taskId === taskId) return;
 
       // 1. Try to look up task in query cache
       const cacheData = queryClient.getQueryData<{ pages: { items: any[] }[] }>([
         'workflowTasks',
-        authToken,
       ]);
       let foundTask = cacheData?.pages
         .flatMap((p) => p.items)
@@ -67,10 +66,9 @@ export default function TaskDetailPage() {
         setIsSyncingTask(true);
         try {
           const pageData = await queryClient.fetchQuery({
-            queryKey: ['workflowTasks', authToken],
+            queryKey: ['workflowTasks'],
             queryFn: async () => {
-              // Fetch page 0, size 10 to search for the task
-              const res = await fetchWorkflowTasks(authToken, 0, 10);
+              const res = await fetchWorkflowTasks(0, 10);
               return { pages: [res], pageParams: [0] };
             },
           });
@@ -91,15 +89,15 @@ export default function TaskDetailPage() {
     };
 
     syncTask();
-  }, [taskId, selectedTask, authToken, queryClient, setSelectedTask]);
+  }, [taskId, selectedTask, queryClient, setSelectedTask]);
   const [isClaiming, setIsClaiming] = useState(false);
 
   const handleClaimToggle = async () => {
-    if (!selectedTask || !authToken) return;
+    if (!selectedTask) return;
     setIsClaiming(true);
     const actionLabel = selectedTask.claimed ? 'Unclaim' : 'Claim';
     try {
-      await claimTask(authToken, selectedTask.taskId);
+      await claimTask(selectedTask.taskId);
       if (superApp) {
         superApp.showToast(`Task ${actionLabel.toLowerCase()}ed successfully`);
       } else {
@@ -138,15 +136,23 @@ export default function TaskDetailPage() {
   const [processDetail, setProcessDetail] = useState<ProcessFlowDetail | null>(null);
   const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
   const [filesMap, setFilesMap] = useState<Record<string, FileMetadata>>({});
-  const [previewPdf, setPreviewPdf] = useState<{ url: string; title: string } | null>(null);
 
   // UI state
   const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
+  const [isCurrentStateExpanded, setIsCurrentStateExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
+
+  const hasAttachments = !!(instanceData?.attachmentFiles && instanceData.attachmentFiles.length > 0);
+
+  useEffect(() => {
+    if (!hasAttachments && activeTab === 'attachments') {
+      setActiveTab('data-form');
+    }
+  }, [hasAttachments, activeTab]);
 
   // Fetch all details
   const loadTaskDetails = useCallback(async (force = false) => {
-    if (!selectedTask || !authToken) return;
+    if (!selectedTask) return;
     if (!force && lastFetchedTaskIdRef.current === selectedTask.taskId) return;
 
     lastFetchedTaskIdRef.current = selectedTask.taskId;
@@ -159,7 +165,7 @@ export default function TaskDetailPage() {
     try {
       // Fetch task instance data (API 1)
       try {
-        instData = await fetchTaskInstanceData(authToken, selectedTask.taskId);
+        instData = await fetchTaskInstanceData(selectedTask.taskId);
         setInstanceData(instData);
 
         // Fetch file metadata for attachments
@@ -167,7 +173,7 @@ export default function TaskDetailPage() {
           try {
             const fileIds = instData.attachmentFiles.map(f => f.fileId).filter(Boolean);
             if (fileIds.length > 0) {
-              const filesData = await fetchFilesMetadata(authToken, fileIds);
+              const filesData = await fetchFilesMetadata(fileIds);
               const newFilesMap: Record<string, FileMetadata> = {};
               filesData.forEach(file => {
                 if (file.id) {
@@ -189,7 +195,7 @@ export default function TaskDetailPage() {
 
       // Fetch process details (API 3)
       try {
-        flowDetail = await fetchProcessFlowDetail(authToken, selectedTask.instanceInfo.processInstanceId);
+        flowDetail = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
         setProcessDetail(flowDetail);
       } catch (flowErr) {
         console.warn('[TaskDetailPage] Error loading process flow details (possibly not a PR task or API is down):', flowErr);
@@ -208,7 +214,7 @@ export default function TaskDetailPage() {
 
       if (creatorId) {
         try {
-          const contact = await fetchBasicContactInfo(authToken, creatorId);
+          const contact = await fetchBasicContactInfo(creatorId);
           setContactInfo(contact);
         } catch (contactErr) {
           console.error('[TaskDetailPage] Failed to fetch contact info:', contactErr);
@@ -220,7 +226,7 @@ export default function TaskDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedTask, authToken]);
+  }, [selectedTask]);
 
   useEffect(() => {
     loadTaskDetails();
@@ -240,66 +246,8 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handlePreviewFile = async (fileId: string) => {
-    if (!authToken) return;
-
-    try {
-      if (superApp) {
-        superApp.showToast('Fetching file preview...');
-      }
-
-      let blob: Blob;
-
-      try {
-        if (authToken === 'mock-dev-token-value') {
-          throw new Error('Using mock token');
-        }
-
-        const response = await fetch(`/services/files/api/name/view-file/find`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({ id: fileId })
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          console.error('[TaskDetailPage] File preview API error response body:', errText);
-          throw new Error(`Server returned ${response.status} ${response.statusText}: ${errText}`);
-        }
-        blob = await response.blob();
-      } catch (networkErr: any) {
-        console.warn('[TaskDetailPage] Real file preview failed, falling back to mock PDF:', networkErr);
-        if (superApp) {
-          superApp.showToast('Preview offline/unauthorized, loading mock PDF...');
-        }
-        const response = await fetch(`data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iagogIDw8IC9UeXBlIC9DYXRhbG9nCiAgICAgL1BhZ2VzIDIgMCBSCiAgPj4KZW5kb2JqCjIgMCBvYmoKICA8PCAvVHlwZSAvUGFnZXMKICAgICAvS2lkcyBbIDMgMCBSIF0KICAgICAvQ291bnQgMQogID4+CmVuZG9iagozIDAgb2JqCiAgPDwgL1R5cGUgL1BhZ2UKICAgICAvUGFyZW50IDIgMCBSCiAgICAgL01lZGlhQm94IFsgMCAwIDYxMiA3OTIgXQogICAgIC9Db250ZW50cyA0IDAgUgogICAgIC9SZXNvdXJjZXMgPDwKICAgICAgICAvRm9udCA8PAogICAgICAgICAgIC9GMSA1IDAgUgogICAgICAgID4+CiAgICAgPj4KICA+PgplbmRvYmoKNCAwIG9iaagogIDw8IC9MZW5ndGggNTYgPj4Kc3RyZWFtCkJUCi9GMSAxMiBUZgogNzIgNzIwIFRkCiAoTW9jayBQREYgQXR0YWNobWVudCBQcmV2aWV3KSBUagogRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCiAgPDwgL1R5cGUgL0ZvbnQKICAgICAvU3VidHlwZSAvVHlwZTEKICAgICAvQmFzZUZvbnQgL0hlbHZldGljYQogID4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyNDAgMDAwMDAgbiAKMDAwMDAwMDM0NiAwMDAwMCBuIAp0cmFpbGVyCiAgPDwgL1NpemUgNgogICAgIC9Sb290IDEgMCBSCiAgPj4Kc3RhcnR4cmVmCi0xCiUlRU9GCg==`);
-        blob = await response.blob();
-      }
-
-      const fileMeta = filesMap[fileId];
-      const mimeType = fileMeta?.fileType || 'application/pdf';
-      const typedBlob = new Blob([blob], { type: mimeType });
-      const objectUrl = URL.createObjectURL(typedBlob);
-
-      setPreviewPdf({
-        url: objectUrl,
-        title: fileMeta?.fileName || 'PDF Preview'
-      });
-    } catch (err: any) {
-      console.error('[TaskDetailPage] Preview file error:', err);
-      if (superApp) {
-        superApp.showToast(`Failed to preview file: ${err?.message || err}`);
-      } else {
-        alert(`Failed to preview file: ${err?.message || err}`);
-      }
-    }
-  };
-
   // Show error if we finished syncing and still don't have a task
-  if (!selectedTask && !isSyncingTask && authToken) {
+  if (!selectedTask && !isSyncingTask) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6 text-center text-slate-400">
         <Info size={40} className="mb-2 text-slate-300" />
@@ -314,36 +262,40 @@ export default function TaskDetailPage() {
   const showContentLoading = !selectedTask || loading;
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-50 h-full overflow-hidden flex flex-col box-border relative">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-full overflow-hidden flex flex-col box-border relative">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="bg-white px-4 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
         <button
           onClick={handleBack}
-          className="p-1 -ml-1 text-slate-500 hover:text-slate-900 active:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 active:bg-slate-50 rounded-lg transition-colors cursor-pointer shrink-0"
         >
           <ChevronLeft size={24} color='black' />
         </button>
         <div className="flex-1 min-w-0">
           {selectedTask ? (
             <>
-              <h1 className="text-[16px] font-bold text-slate-900 truncate">
-                {selectedTask.instanceInfo.businessKey || t('workflow.detail')}
-              </h1>
-              <p className="text-[11px] text-slate-400 font-medium truncate">
-                {selectedTask.instanceInfo.processName}
-              </p>
+              <div className='flex flex-col items-center'>
+                <h1 className="font-semibold truncate">
+                  {selectedTask.instanceInfo.businessKey || t('workflow.detail')}
+                </h1>
+                <p className="font-semibold truncate">
+                  {selectedTask.instanceInfo.processName}
+                </p>
+              </div>
             </>
           ) : (
             <div className="flex flex-col gap-1.5 py-0.5">
-              <div className="skeleton-shimmer h-3.5 w-[45%] rounded" />
-              <div className="skeleton-shimmer h-2.5 w-[65%] rounded" />
+              <div className="skeleton-shimmer h-3.5 w-[45%] rounded mx-auto" />
+              <div className="skeleton-shimmer h-2.5 w-[65%] rounded mx-auto" />
             </div>
           )}
         </div>
+        {/* Spacer to balance back button on the left and keep title centered */}
+        <div className="w-8 shrink-0" />
       </header>
 
       {/* ── Scrollable Body ──────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      <div className="flex-1 overflow-y-auto pb-4">
         {showContentLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <svg className="animate-spin h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none">
@@ -369,120 +321,146 @@ export default function TaskDetailPage() {
         ) : (
           <div className="p-3.5 flex flex-col gap-3.5">
             {/* ── Request Info Collapsible Card ──────────────────────────────── */}
-            <div className="overflow-hidden">
-              
-                <div className="bg-white px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px] rounded-sm">
+            <div className="overflow-hidden flex flex-col gap-2">
+                {/* Request Info Box */}
+                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-slate-200/50">
                   <button
                     onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
-                    className="w-full flex items-center justify-between text-left "
+                    className="w-full flex items-center justify-between text-left cursor-pointer"
                   >
                     <span className="text-[14px] font-bold text-slate-800">{t('workflow.request_info')}</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
-                      {processDetail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
-                    </span>
-                  </button>
-                  {/* Requester Info */}
-                  <div className="flex gap-3">
-                    <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.requested_by')}</span>
-                      <span className="text-slate-800 font-semibold">
-                        {(() => {
-                          let nameStr = '—';
-                          let titleStr = '';
-                          
-                          if (contactInfo) {
-                            nameStr = `${contactInfo.empNo} ${contactInfo.lastName} ${contactInfo.firstName}`;
-                            const empInfo = instanceData?.requestor?.employee;
-                            if (empInfo?.jobTitle) {
-                              titleStr = ` - ${empInfo.jobTitle}`;
-                            }
-                          } else if (instanceData?.requestor) {
-                            const req = instanceData.requestor;
-                            const emp = req.employee;
-                            if (emp) {
-                              nameStr = `${emp.empNo} ${emp.lastName} ${emp.firstName}`;
-                              titleStr = ` - ${emp.jobTitle}`;
-                            } else {
-                              nameStr = req.name || req.id;
-                            }
-                          } else if (processDetail) {
-                            nameStr = processDetail.createdBy;
-                          }
-                          
-                          return `${nameStr}${titleStr}`;
-                        })()}
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
+                        {processDetail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
                       </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-slate-400 transition-transform duration-200 ${
+                          isRequestInfoExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
                     </div>
-                  </div>
+                  </button>
 
-                  {/* Contact Email */}
-                  {(contactInfo?.mail || instanceData?.requestor?.email) && (
-                    <div className="flex gap-3">
-                      <Mail size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                      <div className="flex-1">
-                        <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.contact')}</span>
-                        <a 
-                          href={`mailto:${contactInfo?.mail || instanceData?.requestor?.email}`} 
-                          className="text-blue-600 font-medium hover:underline"
-                        >
-                          {contactInfo?.mail || instanceData?.requestor?.email}
-                        </a>
+                  {isRequestInfoExpanded && (
+                    <div className="flex flex-col gap-3 pt-1 border-t border-slate-100/60 mt-1">
+                      {/* Requester Info */}
+                      <div className="flex gap-3">
+                        <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.requested_by')}</span>
+                          <span className="text-slate-800 font-semibold">
+                            {(() => {
+                              let nameStr = '—';
+                              let titleStr = '';
+                              
+                              if (contactInfo) {
+                                nameStr = `${contactInfo.empNo} ${contactInfo.lastName} ${contactInfo.firstName}`;
+                                const empInfo = instanceData?.requestor?.employee;
+                                if (empInfo?.jobTitle) {
+                                  titleStr = ` - ${empInfo.jobTitle}`;
+                                }
+                              } else if (instanceData?.requestor) {
+                                const req = instanceData.requestor;
+                                const emp = req.employee;
+                                if (emp) {
+                                  nameStr = `${emp.empNo} ${emp.lastName} ${emp.firstName}`;
+                                  titleStr = ` - ${emp.jobTitle}`;
+                                } else {
+                                  nameStr = req.name || req.id;
+                                }
+                              } else if (processDetail) {
+                                nameStr = processDetail.createdBy;
+                              }
+                              
+                              return `${nameStr}${titleStr}`;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Contact Email */}
+                      {(contactInfo?.mail || instanceData?.requestor?.email) && (
+                        <div className="flex gap-3">
+                          <Mail size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.contact')}</span>
+                            <a 
+                              href={`mailto:${contactInfo?.mail || instanceData?.requestor?.email}`} 
+                              className="text-blue-600 font-medium hover:underline"
+                            >
+                              {contactInfo?.mail || instanceData?.requestor?.email}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Org / Business Unit */}
+                      <div className="flex gap-3">
+                        <Building2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.org_info')}</span>
+                          <span className="text-slate-800 font-semibold">
+                            {instanceData?.requestor?.employee 
+                              ? `${instanceData.requestor.employee.department}, ${instanceData.requestor.employee.buName}` 
+                              : (processDetail?.buName || '—')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
-
-                  {/* Org / Business Unit */}
-                  <div className="flex gap-3">
-                    <Building2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.org_info')}</span>
-                      <span className="text-slate-800 font-semibold">
-                        {instanceData?.requestor?.employee 
-                          ? `${instanceData.requestor.employee.department}, ${instanceData.requestor.employee.buName}` 
-                          : (processDetail?.buName || '—')}
-                      </span>
-                    </div>
-                  </div>
                 </div>    
 
-                <div className='bg-white px-4 pb-4 border-t border-slate-100/60 pt-3 flex flex-col gap-3 text-[13px] my-2 rounded-sm'>
+                {/* Current State Box */}
+                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-slate-200/50">
                   <button
-                    onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
-                    className="w-full flex items-center justify-between text-left "
+                    onClick={() => setIsCurrentStateExpanded(!isCurrentStateExpanded)}
+                    className="w-full flex items-center justify-between text-left cursor-pointer"
                   >
                     <span className="text-[14px] font-bold text-slate-800">{t('workflow.current_state')}</span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-blue-50 text-blue-600 border border-blue-100">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
                         Active
                       </span>
+                      <ChevronDown
+                        size={16}
+                        className={`text-slate-400 transition-transform duration-200 ${
+                          isCurrentStateExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </div>
                   </button>
-                  {/* Task name / Assignee */}
-                  <div className="flex gap-3">
-                    <UserCheck size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <span className="font-semibold">{selectedTask.taskName}</span>
-                      <p className="text-slate-800">
-                        {t('workflow.assigned_to')} <span className="font-semibold">{selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}</span>
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Task Started Date */}
-                  <div className="flex gap-3">
-                    <Calendar size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.task_started_date')}</span>
-                      <span className="text-slate-700 font-semibold">
-                        {formatDateCompact(selectedTask.created)}
-                      </span>
-                    </div>
-                  </div>
+                  {isCurrentStateExpanded && (
+                    <div className="flex flex-col gap-3 pt-1 border-t border-slate-100/60 mt-1">
+                      {/* Task name / Assignee */}
+                      <div className="flex gap-3">
+                        <UserCheck size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="font-semibold text-slate-800 block">{selectedTask.taskName}</span>
+                          <p className="text-slate-500 mt-0.5 text-[12px]">
+                            {t('workflow.assigned_to')} <span className="font-semibold text-slate-800">{selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}</span>
+                          </p>
+                        </div>
+                      </div>
 
+                      {/* Task Started Date */}
+                      <div className="flex gap-3">
+                        <Calendar size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.task_started_date')}</span>
+                          <span className="text-slate-700 font-semibold">
+                            {formatDateTimeCompact(selectedTask.created)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>      
             </div>
 
             {/* ── Tabs Segmented Control ────────────────────────────────────── */}
-            <div className="bg-white rounded-xl border border-slate-200/60 p-1 flex">
+            <div className="bg-white rounded-md p-1 flex">
               <button
                 onClick={() => setActiveTab('data-form')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
@@ -504,9 +482,12 @@ export default function TaskDetailPage() {
                 {t('workflow.activities')}
               </button>
               <button
+                disabled={!hasAttachments}
                 onClick={() => setActiveTab('attachments')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'attachments'
+                  !hasAttachments
+                    ? 'text-slate-500 cursor-not-allowed opacity-50'
+                    : activeTab === 'attachments'
                     ? 'bg-[#063E89] text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
@@ -547,7 +528,7 @@ export default function TaskDetailPage() {
                           {activity.taskName}
                         </span>
                         <span className="text-[10px] text-slate-400 shrink-0 font-medium">
-                          {formatDateCompact(activity.actionDate)}
+                          {formatDateTimeCompact(activity.actionDate)}
                         </span>
                       </div>
 
@@ -589,7 +570,7 @@ export default function TaskDetailPage() {
                             <Paperclip size={16} className="text-slate-400 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <span
-                                onClick={() => handlePreviewFile(file.fileId)}
+                                // onClick={() => handlePreviewFile(file.fileId)}
                                 className="text-[12px] font-semibold text-slate-700 block truncate hover:underline hover:text-blue-600 cursor-pointer"
                               >
                                 {displayName}
@@ -600,7 +581,7 @@ export default function TaskDetailPage() {
                             </div>
                           </div>
                           <button
-                            onClick={() => handlePreviewFile(file.fileId)}
+                            // onClick={() => handlePreviewFile(file.fileId)}
                             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
                           >
                             <Download size={14} />
@@ -623,45 +604,45 @@ export default function TaskDetailPage() {
 
       {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
       {!loading && !error && selectedTask && (
-        <div className="absolute bottom-0 inset-x-0 bg-white p-4 flex gap-3 z-50 max-w-[480px] mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
-          <button
-            disabled={isClaiming}
-            onClick={handleClaimToggle}
-            className="flex-1 py-3 px-4 rounded-[12px] border border-slate-200 text-slate-700 text-[13px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
-          </button>
-          
-          {(() => {
-            const actions =
-              selectedTask.actions && selectedTask.actions.length > 0
-                ? selectedTask.actions
-                : [{ name: 'Complete', value: 'Completed' }];
+        <div className="shrink-0 bg-white p-4 flex flex-col gap-3.5 z-50 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+          {/* Total Requisition Amount Banner */}
+          {processDetail?.totalAmount != null && (
+            <div className="px-1 flex items-center justify-between">
+              <span className="text-[14px] font-semibold">{t('workflow.total_requisition_amount')}</span>
+              <span className="text-[18px] font-bold text-[#063E89]">
+                ${processDetail.totalAmount.toFixed(2)}
+              </span>
+            </div>
+          )}
 
-            return actions.map((act, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleAction(act.name)}
-                className="flex-[2] py-3 px-4 rounded-[12px] bg-[#063E89] text-white text-[13px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
-              >
-                <SendHorizontal size={14} />
-                <span>{act.name}</span>
-              </button>
-            ));
-          })()}
+          <div className="flex gap-3">
+            <button
+              disabled={isClaiming}
+              onClick={handleClaimToggle}
+              className="flex-1 py-3 px-4 rounded-[12px] border border-slate-200 text-slate-700 text-[13px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
+            </button>
+            
+            {(() => {
+              const actions =
+                selectedTask.actions && selectedTask.actions.length > 0
+                  ? selectedTask.actions
+                  : [{ name: 'Complete', value: 'Completed' }];
+
+              return actions.map((act, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleAction(act.name)}
+                  className="flex-[2] py-3 px-4 rounded-[12px] bg-[#063E89] text-white text-[13px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
+                >
+                  <SendHorizontal size={14} />
+                  <span>{act.name}</span>
+                </button>
+              ));
+            })()}
+          </div>
         </div>
-      )}
-
-      {/* ── PDF Preview Modal Overlay ────────────────────────────────────── */}
-      {previewPdf && (
-        <PdfPreviewModal
-          url={previewPdf.url}
-          title={previewPdf.title}
-          onClose={() => {
-            URL.revokeObjectURL(previewPdf.url); // Free memory
-            setPreviewPdf(null);
-          }}
-        />
       )}
     </div>
   );
