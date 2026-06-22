@@ -29,7 +29,7 @@ import TaskCard from '@/components/workflow/TaskCard';
 import { useWorkflowStore } from '@/store/workflowStore';
 import { useMiniAppStore } from '@/store/miniAppStore';
 import { useWorkflowTasksInfiniteQuery } from '@/hooks/useWorkflowQuery';
-import { claimTask } from '@/services/api/workflow-api';
+import { claimTask, unclaimTask } from '@/services/api/workflow-api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { WorkflowTask } from '@/types/workflow';
 
@@ -87,7 +87,11 @@ export default function TaskListPage() {
     setIsClaiming(true);
     const actionLabel = task.claimed ? 'Unclaim' : 'Claim';
     try {
-      await claimTask(task.taskId);
+      if (task.claimed) {
+        await unclaimTask(task.taskId);
+      } else {
+        await claimTask(task.taskId);
+      }
       superApp?.showToast(`Task ${actionLabel.toLowerCase()}ed successfully`);
       refetch();
     } catch (err: any) {

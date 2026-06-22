@@ -127,7 +127,6 @@ export default function App() {
 
           {isMock && (
             <>
-              {/* Floating Language Switch Button for Dev Mode */}
               <button
                 onClick={handleToggleLanguage}
                 style={{

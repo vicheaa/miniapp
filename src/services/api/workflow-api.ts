@@ -42,7 +42,7 @@ export async function fetchWorkflowTasks(
 }
 
 /**
- * Claim or unclaim a task.
+ * Claim a task.
  */
 export async function claimTask(taskId: string): Promise<any> {
   const url = `/services/central/api/name/task-claim/exec`;
@@ -53,6 +53,22 @@ export async function claimTask(taskId: string): Promise<any> {
     body: JSON.stringify({ id: taskId })
   });
   if (!res.ok) throw new Error(`Claim task API error: ${res.status} ${res.statusText}`);
+
+  return res.json();
+}
+
+/**
+ * Unclaim a task.
+ */
+export async function unclaimTask(taskId: string): Promise<any> {
+  const url = `/services/central/api/name/task-unclaim/exec`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ id: taskId })
+  });
+  if (!res.ok) throw new Error(`Unclaim task API error: ${res.status} ${res.statusText}`);
 
   return res.json();
 }
@@ -108,5 +124,65 @@ export async function fetchFilesMetadata(fileIds: string[]): Promise<FileMetadat
     body: JSON.stringify({ list: fileIds }),
   });
   if (!res.ok) throw new Error(`Failed to fetch files metadata: ${res.statusText}`);
+  return res.json();
+}
+
+export interface BudgetCode {
+  id: number;
+  code: string;
+  name: string;
+  active: string;
+  deptId: number;
+  buId: number | null;
+}
+
+export async function fetchBudgetCodesByDept(deptId: number, buId: number): Promise<BudgetCode[]> {
+  const url = `/services/pro/api/name/list-budget-code-by-dept/list`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ deptId: deptId, buId: buId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch budget codes: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+export async function uploadFiles(files: File[]): Promise<{ fileId: string; publicUrl: string }[]> {
+  const url = `/services/central/api/upload/multi`;
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append('files', file);
+  }
+
+  const headers = { ...getHeaders() } as Record<string, string>;
+  delete headers['Content-Type'];
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`Failed to upload files: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+export async function saveBudgetReview(body: {
+  taskId: string;
+  actionName: string;
+  payload: {
+    id: number;
+    items: any[];
+    services: any[];
+  };
+  fileIds: string[];
+  comment?: string;
+}): Promise<any> {
+  const url = `/services/pro/api/name/save-budget-review/exec`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Failed to save budget review: ${res.status} ${res.statusText}`);
   return res.json();
 }
