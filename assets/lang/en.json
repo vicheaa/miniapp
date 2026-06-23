@@ -135,7 +135,28 @@
         "remarks": "Remarks",
         "total_requisition_amount": "Total Requisition Amount",
         "workflow_timeline": "Workflow Timeline",
-        "no_attachments": "No attachments uploaded for this task."
+        "no_attachments": "No attachments uploaded for this task.",
+        "fns": {
+            "no_items": "No items requested in this category.",
+            "personal_details_title": "1. Personal Details (Completed by HR)",
+            "employee_id": "Employee ID:",
+            "gender": "Gender:",
+            "position": "Position:",
+            "bu": "BU:",
+            "function": "Function:",
+            "location": "Location:",
+            "joining_date": "Joining Date:",
+            "workplace_arrangement_title": "2. Workplace arrangement (Initiated by HR, reviewed by hired Function Manager)",
+            "uniform_title": "3. Uniform (Initiated by HR, reviewed by hired Function Manager)",
+            "accessories_title": "4. Accessories (Initiated by HR, reviewed by hired Function Manager)",
+            "phone": "Phone",
+            "email": "Email",
+            "car_access_title": "5. System car access/Gate Pass (Initiated by HR, reviewed by hired Function Manager)",
+            "car_model": "Car Model",
+            "color": "Color",
+            "year": "Year",
+            "plate_number": "Plate Number"
+        }
     },
     "version": "0.0.7"
 }

@@ -1,12 +1,15 @@
 import type { FnsRequestDetail, FnsRequestItem } from '@/types/workflow-detail';
 import { formatDateCompact } from '@/utils/format';
 import { Check } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FmaNewStaffRequestFormProps {
   fnsDetail: FnsRequestDetail;
 }
 
 export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequestFormProps) {
+  const { t } = useTranslation();
+
   // Helper to filter items by category
   const getItemsByCategory = (category: string) => {
     return fnsDetail.items?.filter((item) => item.category === category) || [];
@@ -17,7 +20,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
     if (items.length === 0) {
       return (
         <div className="text-[12px] text-slate-400 py-2 text-center">
-          No items requested in this category.
+          {t('workflow.fns.no_items')}
         </div>
       );
     }
@@ -69,7 +72,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
         {/* ── 1. Personal Details ────────────────────────────────────────── */}
         <div className="bg-white rounded-md border border-slate-200/60 p-3.5 flex flex-col gap-2.5 text-[12px]">
             <h3 className="font-bold text-[13.5px]">
-                1. Personal Details (Completed by HR)
+                {t('workflow.fns.personal_details_title')}
             </h3>
         
             <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100/60">
@@ -84,10 +87,10 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
                         )}
                     </div>
                     <div className="flex items-center gap-2 text-[12px] mt-1">
-                        <span className="text-slate-400">Employee ID: </span> 
+                        <span className="text-slate-400">{t('workflow.fns.employee_id')} </span> 
                         <strong className="font-semibold">{fnsDetail.empNo || '—'}</strong>
                         <span className="font-normal text-slate-200">|</span>
-                        <span className="text-slate-400">Gender: </span>
+                        <span className="text-slate-400">{t('workflow.fns.gender')} </span>
                         <strong className="font-semibold capitalize">{fnsDetail.gender || '—'}</strong>
                     </div>
                 </div>
@@ -95,27 +98,27 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
                 {/* Rest of Details in a Grid */}
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-dashed border-slate-100">
                     <div className="col-span-2">
-                        <span className="text-slate-400 font-medium">Position: </span>
+                        <span className="text-slate-400 font-medium">{t('workflow.fns.position')} </span>
                         <span className="font-semibold">{fnsDetail.jobTitle || '—'}</span>
                     </div>
 
                     <div>
-                        <span className="text-slate-400 font-medium">BU: </span>
+                        <span className="text-slate-400 font-medium">{t('workflow.fns.bu')} </span>
                         <span className="font-semibold">{fnsDetail.bu || '—'}</span>
                     </div>
 
                     <div>
-                        <span className="text-slate-400 font-medium">Function: </span>
+                        <span className="text-slate-400 font-medium">{t('workflow.fns.function')} </span>
                         <span className="font-semibold">{fnsDetail.department || '—'}</span>
                     </div>
 
                     <div>
-                        <span className="text-slate-400 font-medium">Location: </span>
+                        <span className="text-slate-400 font-medium">{t('workflow.fns.location')} </span>
                         <span className="font-semibold">{fnsDetail.workplace || '—'}</span>
                     </div>
 
                     <div>
-                        <span className="text-slate-400 font-medium">Joining Date: </span>
+                        <span className="text-slate-400 font-medium">{t('workflow.fns.joining_date')} </span>
                         <span className="font-semibold">{formatDateCompact(fnsDetail.startingDate)}</span>
                     </div>
                 </div>
@@ -125,7 +128,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
     {/* ── 2. Workplace arrangement ─────────────────────────────────────── */}
     <div className="bg-white rounded-md border border-slate-200/60 p-4 flex flex-col gap-3">
         <h3 className="font-bold  text-[14px]">
-            2. Workplace arrangement (Initiated by HR, reviewed by hired Function Manager)
+            {t('workflow.fns.workplace_arrangement_title')}
         </h3>
         <div className="pt-1 border-t border-slate-100/60">
           {renderItemRows(getItemsByCategory('FMA_WORK_PLACE_ARRANGEMENT'), false)}
@@ -135,7 +138,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
     {/* ── 3. Uniform ─────────────────────────────────────────────────── */}
     <div className="bg-white rounded-md border border-slate-200/60 p-4 flex flex-col gap-3">
         <h3 className="font-bold  text-[14px]">
-            3. Uniform (Initiated by HR, reviewed by hired Function Manager)
+            {t('workflow.fns.uniform_title')}
         </h3>
         <div className="pt-1 border-t border-slate-100/60">
           {renderItemRows(getItemsByCategory('FMA_UNIFORM'), true)}
@@ -146,7 +149,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
       <div className="bg-white rounded-md border border-slate-200/60 flex flex-col">
         <div className="p-4 flex flex-col gap-3">
           <h3 className="font-bold  text-[14px]">
-            4. Accessories (Initiated by HR, reviewed by hired Function Manager)
+            {t('workflow.fns.accessories_title')}
           </h3>
           <div className="pt-1 border-t border-slate-100/60">
             {renderItemRows(getItemsByCategory('FMA_ACCESSORY'), true)}
@@ -156,11 +159,11 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
         {/* Phone & Email Banner */}
         <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 grid grid-cols-2 gap-3 text-[12px] rounded-b-md">
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Phone</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.phone')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px]">{fnsDetail.phoneNo || '-'}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Email</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.email')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px] break-all">{fnsDetail.email || '-'}</span>
           </div>
         </div>
@@ -170,7 +173,7 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
       <div className="bg-white rounded-md border border-slate-200/60 flex flex-col">
         <div className="p-4 flex flex-col gap-3">
           <h3 className="font-bold  text-[14px]">
-            5. System car access/Gate Pass (Initiated by HR, reviewed by hired Function Manager)
+            {t('workflow.fns.car_access_title')}
           </h3>
           <div className="pt-1 border-t border-slate-100/60">
             {renderItemRows(getItemsByCategory('FMA_ACCESS'), false)}
@@ -180,19 +183,19 @@ export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequest
         {/* Vehicle Details Banner */}
         <div className="bg-slate-50 border-t border-slate-100 px-4 py-3.5 grid grid-cols-2 gap-x-4 gap-y-3 text-[12px] rounded-b-md">
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Car Model</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.car_model')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px]">{fnsDetail.carModal || '-'}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Color</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.color')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px]">{fnsDetail.carColor || '-'}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Year</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.year')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px]">{fnsDetail.year || '-'}</span>
           </div>
           <div>
-            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Plate Number</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">{t('workflow.fns.plate_number')}</span>
             <span className="font-semibold text-slate-700 text-[12.5px]">{fnsDetail.plateNumber || '-'}</span>
           </div>
         </div>
