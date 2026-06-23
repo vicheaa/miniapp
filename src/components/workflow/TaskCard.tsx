@@ -1,6 +1,6 @@
 import { WorkflowTask } from "@/types/workflow";
 import { Ellipsis } from "lucide-react";
-import { formatDateCompact } from "@/utils/format";
+import { formatDateCompact, formatCurrency } from "@/utils/format";
 
 /**
  * Build dynamic detail rows based on the businessKey prefix / process type.
@@ -19,7 +19,7 @@ function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { labe
     if (amountAttr?.decimalValue != null) {
       rows.push({
         label: t('workflow.total_amount'),
-        value: `$${amountAttr.decimalValue.toFixed(2)}`,
+        value: `$${formatCurrency(amountAttr.decimalValue)}`,
       });
     }
   }

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkflowStore } from '@/store/workflowStore';
 import { useMiniAppStore } from '@/store/miniAppStore';
-import { formatDateCompact, formatDateTimeCompact } from '@/utils/format';
+import { formatDateTimeCompact, formatCurrency } from '@/utils/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   User,
@@ -14,11 +14,12 @@ import {
   Calendar,
   Building2,
   AlertCircle,
-  Download,
   Mail,
   UserCheck,
   ChevronLeft,
-  ChevronDown
+  ChevronDown,
+  Ban,
+  Eye
 } from 'lucide-react';
 import {
   fetchTaskInstanceData,
@@ -31,14 +32,18 @@ import {
   fetchBudgetCodesByDept,
   saveBudgetReview,
   uploadFiles,
-  type BudgetCode
+  fetchFmaNewStaffRequestDetail,
+  
 } from '@/services/api/workflow-api';
 import PurchaseRequisitionForm from './task/purchase-requisition';
+import FmaNewStaffRequestForm from './task/fma-new-staff-request';
 import { 
   BasicContactInfo, 
   FileMetadata, 
   ProcessFlowDetail, 
-  TaskInstanceData 
+  TaskInstanceData,
+  FnsRequestDetail,
+  BudgetCode
 } from '@/types/workflow-detail';
 
 export default function TaskDetailPage() {
@@ -144,6 +149,7 @@ export default function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [instanceData, setInstanceData] = useState<TaskInstanceData | null>(null);
   const [processDetail, setProcessDetail] = useState<ProcessFlowDetail | null>(null);
+  const [fnsDetail, setFnsDetail] = useState<FnsRequestDetail | null>(null);
   const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
   const [filesMap, setFilesMap] = useState<Record<string, FileMetadata>>({});
 
@@ -319,6 +325,8 @@ export default function TaskDetailPage() {
     lastFetchedTaskIdRef.current = selectedTask.taskId;
     setLoading(true);
     setError(null);
+    setProcessDetail(null);
+    setFnsDetail(null);
 
     let instData: TaskInstanceData | null = null;
     let flowDetail: ProcessFlowDetail | null = null;
@@ -354,13 +362,26 @@ export default function TaskDetailPage() {
         return;
       }
 
-      // Fetch process details (API 3)
-      try {
-        flowDetail = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
-        setProcessDetail(flowDetail);
-      } catch (flowErr) {
-        console.warn('[TaskDetailPage] Error loading process flow details (possibly not a PR task or API is down):', flowErr);
-        // Do not set page-level error; allow other panels to render
+      // Fetch process/form details
+      const prefix = selectedTask.instanceInfo.businessKey?.split('-')[0]?.toUpperCase();
+      if (prefix === 'FNS') {
+        try {
+          const fnsData = await fetchFmaNewStaffRequestDetail(selectedTask.instanceInfo.processInstanceId);
+          setFnsDetail(fnsData);
+        } catch (fnsErr: any) {
+          console.error('[TaskDetailPage] Error loading FNS details:', fnsErr);
+          setError(fnsErr?.message || 'Failed to load new staff request details.');
+          setLoading(false);
+          return;
+        }
+      } else {
+        try {
+          flowDetail = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
+          setProcessDetail(flowDetail);
+        } catch (flowErr) {
+          console.warn('[TaskDetailPage] Error loading process flow details (possibly not a PR task or API is down):', flowErr);
+          // Do not set page-level error; allow other panels to render
+        }
       }
 
       // Determine creator username to query contact info
@@ -413,6 +434,37 @@ export default function TaskDetailPage() {
     }
   };
 
+  // Helper to render the appropriate form based on business key prefix
+  const renderDataFormContent = () => {
+    if (!selectedTask) return null;
+
+    const key = selectedTask.instanceInfo.businessKey || '';
+    const prefix = key.split('-')[0]?.toUpperCase();
+
+    switch (prefix) {
+      case 'FNS':
+        if (fnsDetail) {
+          return <FmaNewStaffRequestForm fnsDetail={fnsDetail} />;
+        }
+        break;
+      case 'PR':
+        if (processDetail) {
+          return <PurchaseRequisitionForm processDetail={processDetail} />;
+        }
+        break;
+      default:
+        break;
+    }
+
+    // Fallback if data is still loading or form type is unknown
+    return (
+      <div className="bg-white rounded-md p-8 text-center text-slate-400 text-[13px]">
+        <FileText size={32} className="mx-auto text-slate-300 mb-2" />
+        No form details available for this task.
+      </div>
+    );
+  };
+
   // Show error if we finished syncing and still don't have a task
   if (!selectedTask && !isSyncingTask) {
     return (
@@ -462,14 +514,14 @@ export default function TaskDetailPage() {
       </header>
 
       {/* ── Scrollable Body ──────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="flex-1 overflow-y-auto pb-4 flex flex-col">
         {showContentLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
             <svg className="animate-spin h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <span className="text-[13px] text-slate-400 font-semibold">{t('workflow.loading_more')}</span>
+            <span className="text-[13px] text-slate-400 font-semibold">{t('global.loading')}</span>
           </div>
         ) : error ? (
           <div className="p-6 text-center">
@@ -627,12 +679,12 @@ export default function TaskDetailPage() {
             </div>
 
             {/* ── Tabs Segmented Control ────────────────────────────────────── */}
-            <div className="bg-white rounded-md p-1 flex">
+            <div className="bg-white rounded-full p-1 flex">
               <button
                 onClick={() => setActiveTab('data-form')}
-                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   activeTab === 'data-form'
-                    ? 'bg-[#063E89] text-white shadow-sm'
+                    ? 'bg-[#063E89]/80 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -640,9 +692,9 @@ export default function TaskDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('activities')}
-                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   activeTab === 'activities'
-                    ? 'bg-[#063E89] text-white shadow-sm'
+                    ? 'bg-[#063E89]/80 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -651,11 +703,11 @@ export default function TaskDetailPage() {
               <button
                 disabled={!hasAttachments}
                 onClick={() => setActiveTab('attachments')}
-                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-lg transition-all cursor-pointer ${
+                className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   !hasAttachments
                     ? 'text-slate-500 cursor-not-allowed opacity-50'
                     : activeTab === 'attachments'
-                    ? 'bg-[#063E89] text-white shadow-sm'
+                    ? 'bg-[#063E89]/80 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
                 }`}
               >
@@ -664,20 +716,11 @@ export default function TaskDetailPage() {
             </div>
 
             {/* ── Data Form Tab Content ──────────────────────────────────────── */}
-            {activeTab === 'data-form' && (
-              processDetail ? (
-                <PurchaseRequisitionForm processDetail={processDetail} />
-              ) : (
-                <div className="bg-white rounded-xl border border-slate-200/60 p-8 text-center text-slate-400 text-[13px] shadow-sm">
-                  <FileText size={32} className="mx-auto text-slate-300 mb-2" />
-                  No form details available for this task.
-                </div>
-              )
-            )}
+            {activeTab === 'data-form' && renderDataFormContent()}
 
             {/* ── Activities Tab Content (Timeline) ─────────────────────────── */}
             {activeTab === 'activities' && instanceData && (
-              <div className="bg-white rounded-xl border border-slate-200/60 p-4 shadow-sm">
+              <div className="bg-white rounded-md p-4">
                 <h3 className="text-[14px] font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
                   {t('workflow.workflow_timeline')}
                 </h3>
@@ -690,23 +733,23 @@ export default function TaskDetailPage() {
                       </span>
 
                       {/* Header */}
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[13px] font-extrabold text-slate-800">
+                      <div className="flex items-baseline gap-2 text-[12px] justify-between">
+                        <span className="font-semibold">
                           {activity.taskName}
                         </span>
-                        <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                        <span className="ml-3 font-medium">
                           {formatDateTimeCompact(activity.actionDate)}
                         </span>
                       </div>
 
                       {/* Actor info */}
-                      <p className="text-[12px] text-slate-500 mt-0.5">
-                        {activity.action} by <span className="font-semibold text-slate-700">{activity.actionBy}</span>
+                      <p className="text-[12px] mt-0.5">
+                        {activity.action} by <span className="font-semibold">{activity.actionBy}</span>
                       </p>
 
                       {/* Comment bubble */}
                       {activity.comment && (
-                        <div className="mt-1.5 bg-slate-50 rounded-lg px-3 py-2 text-[12px] text-slate-600 border border-slate-100 italic relative">
+                        <div className="mt-1.5 rounded-lg text-[12px] relative">
                           {activity.comment}
                         </div>
                       )}
@@ -718,7 +761,7 @@ export default function TaskDetailPage() {
 
             {/* ── Attachments Tab Content ─────────────────────────────────────── */}
             {activeTab === 'attachments' && instanceData && (
-              <div className="bg-white rounded-xl border border-slate-200/60 p-4 flex flex-col gap-3">
+              <div className="bg-white rounded-md border border-slate-200/60 p-4 flex flex-col gap-3">
                 <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
                   {t('workflow.attachments')}
                 </h3>
@@ -751,7 +794,7 @@ export default function TaskDetailPage() {
                             // onClick={() => handlePreviewFile(file.fileId)}
                             className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
                           >
-                            <Download size={14} />
+                            <Eye size={14} />
                           </button>
                         </div>
                       );
@@ -771,13 +814,13 @@ export default function TaskDetailPage() {
 
       {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
       {!loading && !error && selectedTask && (
-        <div className="shrink-0 bg-white p-4 flex flex-col gap-3.5 z-50 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <div className="shrink-0 bg-white p-3 flex flex-col gap-3 z-50 shadow-md">
           {/* Total Requisition Amount Banner */}
           {processDetail?.totalAmount != null && (
             <div className="px-1 flex items-center justify-between">
               <span className="text-[14px] font-semibold">{t('workflow.total_requisition_amount')}</span>
               <span className="text-[18px] font-bold text-[#063E89]">
-                ${processDetail.totalAmount.toFixed(2)}
+                ${formatCurrency(processDetail.totalAmount)}
               </span>
             </div>
           )}
@@ -786,7 +829,7 @@ export default function TaskDetailPage() {
             <button
               disabled={isClaiming}
               onClick={handleClaimToggle}
-              className="flex-1 py-3 px-4 rounded-[12px] border border-slate-200 text-slate-700 text-[13px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-all cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2 px-3 rounded-md border border-slate-200 text-slate-700 text-[13px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
             </button>
@@ -797,16 +840,23 @@ export default function TaskDetailPage() {
                   ? selectedTask.actions
                   : [{ name: 'Complete', value: 'Completed' }];
 
-              return actions.map((act, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleAction(act.name)}
-                  className="flex-[2] py-3 px-4 rounded-[12px] bg-[#063E89] text-white text-[13px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 text-center"
-                >
-                  <SendHorizontal size={14} />
-                  <span>{act.name}</span>
-                </button>
-              ));
+              return actions.map((act, idx) => {
+                const isReject = act.name.toLowerCase() === 'reject';
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleAction(act.name)}
+                    className={
+                      isReject
+                        ? "flex-[2] py-2 px-3 rounded-md border border-red-500 bg-white text-red-500 text-[13px] font-bold cursor-pointer flex items-center justify-center gap-1.5 text-center"
+                        : "flex-[2] py-2 px-3 rounded-md bg-[#063E89] text-white text-[13px] font-bold cursor-pointer flex items-center justify-center gap-1.5 text-center"
+                    }
+                  >
+                    {isReject ? <Ban size={14} /> : <SendHorizontal size={14} />}
+                    <span>{act.name}</span>
+                  </button>
+                );
+              });
             })()}
           </div>
         </div>
@@ -860,10 +910,10 @@ export default function TaskDetailPage() {
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-[13px] font-extrabold text-slate-900 block">
-                              ${(item.amount || 0).toFixed(2)}
+                              ${formatCurrency(item.amount)}
                             </span>
                             <span className="text-[10.5px] text-slate-500 block font-medium mt-0.5">
-                              {item.qty} {item.uom} x ${(item.unitPrice || 0).toFixed(2)}
+                              {item.qty} {item.uom} x ${formatCurrency(item.unitPrice)}
                             </span>
                           </div>
                         </div>

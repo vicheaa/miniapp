@@ -1,5 +1,5 @@
 import type { ProcessFlowDetail } from '@/types/workflow-detail';
-import { formatDateCompact, formatDateTimeCompact } from '@/utils/format';
+import { formatDateCompact, formatDateTimeCompact, formatCurrency } from '@/utils/format';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface PurchaseRequisitionFormProps {
@@ -70,10 +70,10 @@ export default function PurchaseRequisitionForm({ processDetail }: PurchaseRequi
               </div>
               <div className="text-right shrink-0">
                 <span className="text-[13px] font-bold text-slate-900 block">
-                  ${item.amount.toFixed(2)}
+                  ${formatCurrency(item.amount)}
                 </span>
                 <span className="text-[10.5px] text-slate-500 block font-medium mt-0.5">
-                  {item.qty} {item.uom} x ${item.unitPrice.toFixed(2)}
+                  {item.qty} {item.uom} x ${formatCurrency(item.unitPrice)}
                 </span>
               </div>
             </div>

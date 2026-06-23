@@ -156,12 +156,12 @@ export default function App() {
                 <span style={{ fontSize: '14px', marginBottom: '2px' }}>🌐</span>
                 <span>{language.toUpperCase()}</span>
               </button>
-
+{/* 
               <DevPanel
                 superApp={superApp}
                 authToken={authToken}
                 onSaveToken={handleSaveToken}
-              />
+              /> */}
             </>
           )}
         </div>

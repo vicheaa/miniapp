@@ -4,8 +4,11 @@ import type {
   TaskInstanceData,
   BasicContactInfo,
   FileMetadata,
-  ProcessFlowDetail
+  ProcessFlowDetail,
+  FnsRequestDetail,
+  BudgetCode
 } from '../../types/workflow-detail';
+export type { BudgetCode };
 
 /**
  * Fetch a paginated list of workflow tasks.
@@ -127,14 +130,6 @@ export async function fetchFilesMetadata(fileIds: string[]): Promise<FileMetadat
   return res.json();
 }
 
-export interface BudgetCode {
-  id: number;
-  code: string;
-  name: string;
-  active: string;
-  deptId: number;
-  buId: number | null;
-}
 
 export async function fetchBudgetCodesByDept(deptId: number, buId: number): Promise<BudgetCode[]> {
   const url = `/services/pro/api/name/list-budget-code-by-dept/list`;
@@ -184,5 +179,19 @@ export async function saveBudgetReview(body: {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Failed to save budget review: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+/**
+ * Fetch FMA New Staff Request detail (FNS).
+ */
+export async function fetchFmaNewStaffRequestDetail(processInstanceId: string): Promise<FnsRequestDetail> {
+  const url = `/services/hrm/api/name/fetch-item-fma-new-staff-request/find`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ id: processInstanceId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch FNS request detail: ${res.statusText}`);
   return res.json();
 }

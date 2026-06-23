@@ -147,3 +147,49 @@ export interface ProcessFlowDetail {
   services: any[];
   fileIds: any[];
 }
+
+export interface BudgetCode {
+  id: number;
+  code: string;
+  name: string;
+  active: string;
+  deptId: number;
+  buId: number | null;
+}
+
+export interface FnsRequestItem {
+  id: number;
+  itemId: number;
+  itemName: string;
+  itemType: string | null;
+  qty: number;
+  checked: boolean;
+  category: string;
+  remarks: string | null;
+}
+
+export interface FnsRequestDetail {
+  id: number;
+  processInstId: string;
+  formNo: string;
+  requestedDate: string;
+  requestedBy: string;
+  requesterBuId: number;
+  status: string;
+  empNo: string;
+  empName: string;
+  gender: string;
+  empLocalName: string;
+  jobTitle: string;
+  bu: string;
+  department: string;
+  workplace: string;
+  startingDate: string;
+  items: FnsRequestItem[];
+  phoneNo: string | null;
+  email: string | null;
+  carModal: string | null;
+  carColor: string | null;
+  year: string | null;
+  plateNumber: string | null;
+}
