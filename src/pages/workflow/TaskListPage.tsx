@@ -12,7 +12,8 @@ import {
   User,
   SendHorizontal,
   UserCheck,
-  Search
+  Search,
+  ChevronDown
 } from 'lucide-react';
 import ErrorState from '@/components/ui/ErrorState';
 import EmptyState from '@/components/ui/EmptyState';
@@ -20,9 +21,7 @@ import Header from '@/components/ui/Header';
 import { TaskListSkeleton } from '@/components/ui/SkeletonLoader';
 import { 
   Drawer, 
-  DrawerContent, 
-  DrawerTitle, 
-  DrawerDescription 
+  DrawerContent,
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import TaskCard from '@/components/workflow/TaskCard';
@@ -58,6 +57,8 @@ export default function TaskListPage() {
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
+  const filter = useWorkflowStore((s) => s.filter);
+  const setFilter = useWorkflowStore((s) => s.setFilter);
 
   const {
     data,
@@ -79,7 +80,6 @@ export default function TaskListPage() {
   const allTasks = data?.pages.flatMap((p) => p.items) || [];
   const total = data?.pages[0]?.total || 0;
 
-  // API-side filtering: allTasks are already filtered by the API search value
   const filteredTasks = allTasks;
 
   // ── Claim / Unclaim Action ──────────────────────────────────────────────
@@ -177,19 +177,35 @@ export default function TaskListPage() {
             placeholder={t('workflow.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 bg-slate-50 rounded-[10px] pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400"
+            className="h-10 bg-slate-50 rounded-[10px] pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400 w-full"
           />
         </div>
       </div>
 
-      {/* Task Count */}
-      {!isLoading && !error && total > 0 && (
-        <div className="px-4 pt-3 pb-1 flex items-center justify-between shrink-0">
-          <span className="text-[12px] text-slate-400 font-medium">
-            {filteredTasks.length} / {total} {t('home.my_tasks')}
-          </span>
+      {/* Task Count & Filter Row */}
+      <div className="px-4 pt-3.5 pb-1 flex items-center justify-between shrink-0 select-none">
+        <span className="text-[12.5px] text-slate-450 font-bold uppercase tracking-wider">
+          {!isLoading && !error && total > 0
+            ? `${filteredTasks.length} / ${total} ${t('home.my_tasks')}`
+            : ''}
+        </span>
+        
+        {/* Dropdown filter */}
+        <div className="relative select-none flex justify-end">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as any)}
+            className="bg-transparent border-0 py-1 pl-1 pr-6 text-[13.5px] font-extrabold text-[#063E89] focus:outline-none cursor-pointer appearance-none select-none text-right"
+          >
+            <option value="AVAILABLE">{t('workflow.available_tasks')}</option>
+            <option value="ASSIGNED">{t('workflow.my_tasks')}</option>
+            <option value="COMPLETED">{t('workflow.completed_tasks')}</option>
+          </select>
+          <div className="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#063E89]">
+            <ChevronDown size={14} className="stroke-[3]" />
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Content */}
       <main className="flex-1 p-3 pt-1 overflow-y-auto">
@@ -288,10 +304,12 @@ export default function TaskListPage() {
               </button>
 
               {/* Separator */}
-              <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
+              {activeMenuTask.claimed && (
+                <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
+              )}
 
               {/* Dynamic Actions */}
-              {(() => {
+              {activeMenuTask.claimed && (() => {
                 const actions =
                   activeMenuTask.actions && activeMenuTask.actions.length > 0
                     ? activeMenuTask.actions

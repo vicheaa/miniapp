@@ -29,21 +29,13 @@ import {
   claimTask,
   unclaimTask,
   fetchWorkflowTasks,
-  fetchBudgetCodesByDept,
-  saveBudgetReview,
-  uploadFiles,
-  fetchFmaNewStaffRequestDetail,
-  
 } from '@/services/api/workflow-api';
-import PurchaseRequisitionForm from './task/purchase-requisition';
-import FmaNewStaffRequestForm from './task/fma-new-staff-request';
+import { taskRegistry } from './task/registry';
+import DefaultActions from './task/DefaultActions';
 import { 
   BasicContactInfo, 
   FileMetadata, 
-  ProcessFlowDetail, 
   TaskInstanceData,
-  FnsRequestDetail,
-  BudgetCode
 } from '@/types/workflow-detail';
 
 export default function TaskDetailPage() {
@@ -148,161 +140,9 @@ export default function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [instanceData, setInstanceData] = useState<TaskInstanceData | null>(null);
-  const [processDetail, setProcessDetail] = useState<ProcessFlowDetail | null>(null);
-  const [fnsDetail, setFnsDetail] = useState<FnsRequestDetail | null>(null);
+  const [detail, setDetail] = useState<any>(null);
   const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
   const [filesMap, setFilesMap] = useState<Record<string, FileMetadata>>({});
-
-  // Budget Review Modal States
-  const [isBudgetReviewOpen, setIsBudgetReviewOpen] = useState(false);
-  const [budgetCodes, setBudgetCodes] = useState<BudgetCode[]>([]);
-  const [loadingBudgetCodes, setLoadingBudgetCodes] = useState(false);
-  const [reviewItems, setReviewItems] = useState<any[]>([]);
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewFiles, setReviewFiles] = useState<File[]>([]);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-
-  // File Upload Handlers
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setReviewFiles((prev) => [...prev, ...filesArray]);
-    }
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setReviewFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Close, Reset, and Submit Handlers
-  const handleCloseReview = () => {
-    setIsBudgetReviewOpen(false);
-    setReviewItems([]);
-    setReviewComment('');
-    setReviewFiles([]);
-    setBudgetCodes([]);
-  };
-
-  const handleResetReview = () => {
-    if (processDetail) {
-      setReviewItems(
-        (processDetail.items || []).map((item) => ({
-          ...item,
-          budgetCode: item.budgetCode || '',
-        }))
-      );
-    }
-    setReviewComment('');
-    setReviewFiles([]);
-  };
-
-  const openBudgetReview = async () => {
-    if (!selectedTask) return;
-    
-    setIsBudgetReviewOpen(true);
-    setLoadingBudgetCodes(true);
-    setReviewComment('');
-    setReviewFiles([]);
-    
-    let currentDetail = processDetail;
-    try {
-      if (!currentDetail) {
-        currentDetail = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
-        setProcessDetail(currentDetail);
-      }
-      
-      setReviewItems(
-        (currentDetail?.items || []).map((item) => ({
-          ...item,
-          budgetCode: item.budgetCode || '',
-        }))
-      );
-      
-      if (currentDetail?.deptId != null && currentDetail?.buId != null) {
-        const codes = await fetchBudgetCodesByDept(currentDetail.deptId, currentDetail.buId);
-        setBudgetCodes(codes || []);
-      }
-    } catch (err: any) {
-      console.error('Failed to initialize budget review:', err);
-      if (superApp) {
-        superApp.showToast(`Failed to initialize budget review: ${err.message || err}`);
-      }
-    } finally {
-      setLoadingBudgetCodes(false);
-    }
-  };
-
-  const handleSubmitReview = async () => {
-    if (!selectedTask || !processDetail) return;
-
-    if (processDetail.budgetCodeRequired) {
-      const missingBudget = reviewItems.some((item) => !item.budgetCode);
-      if (missingBudget) {
-        if (superApp) {
-          superApp.showToast('Please select a budget code for all items.');
-        } else {
-          alert('Please select a budget code for all items.');
-        }
-        return;
-      }
-    }
-
-    setIsSubmittingReview(true);
-    try {
-      let fileIds: string[] = [];
-      if (reviewFiles.length > 0) {
-        const uploadRes = await uploadFiles(reviewFiles);
-        fileIds = uploadRes.map((f) => f.fileId);
-      }
-
-      const payload = {
-        taskId: selectedTask.taskId,
-        actionName: 'Completed',
-        payload: {
-          id: processDetail.id,
-          items: reviewItems.map((item, idx) => ({
-            id: item.id,
-            key: item.key || String(item.id),
-            seqNo: item.seqNo,
-            itemId: item.id,
-            itemCode: item.itemCode,
-            itemName: item.itemName,
-            description: item.description || '',
-            qty: item.qty,
-            unitPrice: item.unitPrice,
-            uom: item.uom,
-            amount: item.amount,
-            budgetCode: item.budgetCode,
-            remarks: item.remarks || '',
-          })),
-          services: processDetail.services || [],
-        },
-        fileIds,
-        comment: reviewComment,
-      };
-
-      await saveBudgetReview(payload);
-
-      if (superApp) {
-        superApp.showToast('Budget review submitted successfully');
-      } else {
-        alert('Budget review submitted successfully');
-      }
-
-      setIsBudgetReviewOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['workflowTasks'] });
-      navigate('/');
-    } catch (err: any) {
-      console.error('Failed to submit budget review:', err);
-      if (superApp) {
-        superApp.showToast(`Failed to submit budget review: ${err.message || err}`);
-      } else {
-        alert(`Failed to submit budget review: ${err.message || err}`);
-      }
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
 
   // UI state
   const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
@@ -325,11 +165,10 @@ export default function TaskDetailPage() {
     lastFetchedTaskIdRef.current = selectedTask.taskId;
     setLoading(true);
     setError(null);
-    setProcessDetail(null);
-    setFnsDetail(null);
+    setDetail(null);
 
     let instData: TaskInstanceData | null = null;
-    let flowDetail: ProcessFlowDetail | null = null;
+    let detailData: any = null;
 
     try {
       // Fetch task instance data (API 1)
@@ -363,31 +202,23 @@ export default function TaskDetailPage() {
       }
 
       // Fetch process/form details
-      const prefix = selectedTask.instanceInfo.businessKey?.split('-')[0]?.toUpperCase();
-      if (prefix === 'FNS') {
-        try {
-          const fnsData = await fetchFmaNewStaffRequestDetail(selectedTask.instanceInfo.processInstanceId);
-          setFnsDetail(fnsData);
-        } catch (fnsErr: any) {
-          console.error('[TaskDetailPage] Error loading FNS details:', fnsErr);
-          setError(fnsErr?.message || 'Failed to load new staff request details.');
-          setLoading(false);
-          return;
+      const prefix = selectedTask.instanceInfo.businessKey?.split('-')[0]?.toUpperCase() || '';
+      const taskConfig = taskRegistry[prefix];
+      try {
+        if (taskConfig?.fetchDetail) {
+          detailData = await taskConfig.fetchDetail(selectedTask.instanceInfo.processInstanceId);
+        } else {
+          detailData = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
         }
-      } else {
-        try {
-          flowDetail = await fetchProcessFlowDetail(selectedTask.instanceInfo.processInstanceId);
-          setProcessDetail(flowDetail);
-        } catch (flowErr) {
-          console.warn('[TaskDetailPage] Error loading process flow details (possibly not a PR task or API is down):', flowErr);
-          // Do not set page-level error; allow other panels to render
-        }
+        setDetail(detailData);
+      } catch (detailErr: any) {
+        console.warn('[TaskDetailPage] Error loading workflow details:', detailErr);
       }
 
       // Determine creator username to query contact info
       let creatorId = '';
-      if (flowDetail?.createdBy) {
-        creatorId = flowDetail.createdBy;
+      if (detailData?.createdBy) {
+        creatorId = detailData.createdBy;
       } else if (instData?.processInstance?.startUserId) {
         creatorId = instData.processInstance.startUserId;
       } else if (instData?.requestor?.id) {
@@ -419,41 +250,17 @@ export default function TaskDetailPage() {
     navigate('/');
   };
 
-  // Action Handlers
-  const handleAction = (actionName: string) => {
-    const isPR = selectedTask?.instanceInfo?.businessKey?.startsWith('PR');
-    if (isPR && actionName === 'Complete') {
-      openBudgetReview();
-      return;
-    }
-
-    if (superApp) {
-      superApp.showToast(`Action executed: ${actionName}`);
-    } else {
-      alert(`[Dev Mode] Action: ${actionName}`);
-    }
-  };
-
   // Helper to render the appropriate form based on business key prefix
   const renderDataFormContent = () => {
     if (!selectedTask) return null;
 
     const key = selectedTask.instanceInfo.businessKey || '';
-    const prefix = key.split('-')[0]?.toUpperCase();
+    const prefix = key.split('-')[0]?.toUpperCase() || '';
+    const taskConfig = taskRegistry[prefix];
 
-    switch (prefix) {
-      case 'FNS':
-        if (fnsDetail) {
-          return <FmaNewStaffRequestForm fnsDetail={fnsDetail} />;
-        }
-        break;
-      case 'PR':
-        if (processDetail) {
-          return <PurchaseRequisitionForm processDetail={processDetail} />;
-        }
-        break;
-      default:
-        break;
+    if (taskConfig && detail) {
+      const FormComponent = taskConfig.Form;
+      return <FormComponent selectedTask={selectedTask} instanceData={instanceData} detail={detail} />;
     }
 
     // Fallback if data is still loading or form type is unknown
@@ -550,7 +357,7 @@ export default function TaskDetailPage() {
                     <span className="text-[14px] font-bold text-slate-800">{t('workflow.request_info')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        {processDetail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
+                        {detail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
                       </span>
                       <ChevronDown
                         size={16}
@@ -588,8 +395,8 @@ export default function TaskDetailPage() {
                                 } else {
                                   nameStr = req.name || req.id;
                                 }
-                              } else if (processDetail) {
-                                nameStr = processDetail.createdBy;
+                              } else if (detail) {
+                                nameStr = detail.createdBy || '—';
                               }
                               
                               return `${nameStr}${titleStr}`;
@@ -622,7 +429,7 @@ export default function TaskDetailPage() {
                           <span className="text-slate-800 font-semibold">
                             {instanceData?.requestor?.employee 
                               ? `${instanceData.requestor.employee.department}, ${instanceData.requestor.employee.buName}` 
-                              : (processDetail?.buName || '—')}
+                              : (detail?.buName || '—')}
                           </span>
                         </div>
                       </div>
@@ -813,253 +620,21 @@ export default function TaskDetailPage() {
       </div>
 
       {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
-      {!loading && !error && selectedTask && (
-        <div className="shrink-0 bg-white p-3 flex flex-col gap-3 z-50 shadow-md">
-          {/* Total Requisition Amount Banner */}
-          {processDetail?.totalAmount != null && (
-            <div className="px-1 flex items-center justify-between">
-              <span className="text-[14px] font-semibold">{t('workflow.total_requisition_amount')}</span>
-              <span className="text-[18px] font-bold text-[#063E89]">
-                ${formatCurrency(processDetail.totalAmount)}
-              </span>
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              disabled={isClaiming}
-              onClick={handleClaimToggle}
-              className="flex-1 py-2 px-3 rounded-md border border-slate-200 text-slate-700 text-[13px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
-            </button>
-            
-            {(() => {
-              const actions =
-                selectedTask.actions && selectedTask.actions.length > 0
-                  ? selectedTask.actions
-                  : [{ name: 'Complete', value: 'Completed' }];
-
-              return actions.map((act, idx) => {
-                const isReject = act.name.toLowerCase() === 'reject';
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleAction(act.name)}
-                    className={
-                      isReject
-                        ? "flex-[2] py-2 px-3 rounded-md border border-red-500 bg-white text-red-500 text-[13px] font-bold cursor-pointer flex items-center justify-center gap-1.5 text-center"
-                        : "flex-[2] py-2 px-3 rounded-md bg-[#063E89] text-white text-[13px] font-bold cursor-pointer flex items-center justify-center gap-1.5 text-center"
-                    }
-                  >
-                    {isReject ? <Ban size={14} /> : <SendHorizontal size={14} />}
-                    <span>{act.name}</span>
-                  </button>
-                );
-              });
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* ── Budget Review Modal ─────────────────────────────────────────── */}
-      {isBudgetReviewOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/45 backdrop-blur-xs p-0">
-          <div className="bg-white w-full max-w-[480px] rounded-t-[20px] shadow-2xl flex flex-col max-h-[92vh] animate-in slide-in-from-bottom duration-250">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-              <h2 className="text-[16px] font-bold text-slate-800">Budget Review</h2>
-              <button
-                onClick={handleCloseReview}
-                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-650 active:bg-slate-50 rounded-full transition-colors cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5">
-              {loadingBudgetCodes ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-2 text-slate-400">
-                  <svg className="animate-spin h-6 w-6 text-slate-500" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="text-[12px] font-medium">Loading budget codes...</span>
-                </div>
-              ) : (
-                <>
-                  {/* Item card list for mobile */}
-                  <div className="flex flex-col gap-3">
-                    {reviewItems.map((item, idx) => (
-                      <div key={item.id || idx} className="bg-slate-50 border border-slate-200/60 rounded-xl p-3.5 flex flex-col gap-2.5">
-                        {/* Header: No, Name & Price */}
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="inline-flex items-center justify-center bg-slate-200 text-slate-700 font-bold text-[10px] w-5 h-5 rounded-full mr-2">
-                              {idx + 1}
-                            </span>
-                            <span className="text-[13px] font-bold text-slate-800">
-                              {item.itemName}
-                            </span>
-                            <span className="text-[10px] text-slate-450 font-semibold block mt-0.5 ml-7">
-                              {item.itemCode}
-                            </span>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-[13px] font-extrabold text-slate-900 block">
-                              ${formatCurrency(item.amount)}
-                            </span>
-                            <span className="text-[10.5px] text-slate-500 block font-medium mt-0.5">
-                              {item.qty} {item.uom} x ${formatCurrency(item.unitPrice)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Description & Remarks */}
-                        {item.description && (
-                          <div className="text-[12px] text-slate-650 ml-7">
-                            <span className="font-semibold text-slate-400">Description: </span>
-                            {item.description}
-                          </div>
-                        )}
-                        {item.remarks && (
-                          <div className="text-[12px] text-slate-650 ml-7">
-                            <span className="font-semibold text-slate-400">Remarks: </span>
-                            {item.remarks}
-                          </div>
-                        )}
-
-                        {/* Budget Code Selector */}
-                        <div className="flex flex-col gap-1 mt-1 ml-7">
-                          <label className="text-[11px] font-bold text-slate-400 uppercase">Budget Code</label>
-                          <select
-                            value={item.budgetCode || ''}
-                            onChange={(e) => {
-                              const newVal = e.target.value;
-                              setReviewItems((prev) =>
-                                prev.map((i, oIdx) => (oIdx === idx ? { ...i, budgetCode: newVal } : i))
-                              );
-                            }}
-                            className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-[12.5px] font-semibold text-slate-850 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-                          >
-                            <option value="">Select budget code</option>
-                            {budgetCodes.map((code) => (
-                              <option key={code.id} value={code.code}>
-                                {code.code} ({code.name})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Comment Section */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[13px] font-bold text-slate-800">Comment</label>
-                    <textarea
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      placeholder="Please provide a clear justification for your decision. Include assessment of business need, impact, priority, and conditions for approval."
-                      className="w-full min-h-[100px] border border-slate-200 rounded-lg p-3 text-[13px] leading-relaxed text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  {/* Files Attachment Section */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-bold text-slate-800">Attachments</span>
-                      <span className="text-[11px] text-slate-450 font-medium">
-                        {reviewFiles.length} file(s) chosen
-                      </span>
-                    </div>
-
-                    {/* Add Files button */}
-                    <div className="flex items-center gap-3">
-                      <label className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-slate-200 text-slate-700 text-[12px] font-semibold hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer select-none">
-                        <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        Add Files
-                        <input
-                          type="file"
-                          multiple
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
-                    {/* List of files with delete option */}
-                    {reviewFiles.length > 0 && (
-                      <div className="grid grid-cols-1 gap-2 mt-1">
-                        {reviewFiles.map((file, fIdx) => (
-                          <div
-                            key={fIdx}
-                            className="flex items-center justify-between p-2 rounded-lg border border-slate-100 bg-slate-50 text-[12px] text-slate-650"
-                          >
-                            <span className="truncate font-medium pr-4">{file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFile(fIdx)}
-                              className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors cursor-pointer animate-in fade-in duration-100"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between gap-2 px-4 py-4 border-t border-slate-100 bg-slate-50 rounded-b-[20px] shrink-0">
-              <button
-                type="button"
-                disabled={isSubmittingReview}
-                onClick={handleCloseReview}
-                className="flex-1 p-2 rounded-lg border border-slate-200 bg-white text-slate-700 text-[12.5px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingReview}
-                onClick={handleResetReview}
-                className="flex-1 p-2 rounded-lg border border-red-200 bg-white text-red-500 text-[12.5px] font-bold hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
-              >
-                Reset
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingReview || loadingBudgetCodes}
-                onClick={handleSubmitReview}
-                className="flex-[1.5] p-2 rounded-lg bg-[#063E89] text-white text-[12.5px] font-bold shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 text-center"
-              >
-                {isSubmittingReview ? (
-                  <>
-                    <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Submitting
-                  </>
-                ) : (
-                  'Submit'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {!loading && !error && selectedTask && (() => {
+        const prefix = selectedTask.instanceInfo.businessKey?.split('-')[0]?.toUpperCase() || '';
+        const taskConfig = taskRegistry[prefix];
+        const ActionsComponent = taskConfig?.Actions || DefaultActions;
+        return (
+          <ActionsComponent
+            selectedTask={selectedTask}
+            instanceData={instanceData}
+            detail={detail}
+            isClaiming={isClaiming}
+            handleClaimToggle={handleClaimToggle}
+            onActionSuccess={() => loadTaskDetails(true)}
+          />
+        );
+      })()}
     </div>
   );
 }

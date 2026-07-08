@@ -182,6 +182,29 @@ export async function saveBudgetReview(body: {
   return res.json();
 }
 
+export async function completeTask(body: {
+  action: string;
+  payloadType: string;
+  taskId: string;
+  payloadData: {
+    id: number;
+    items: any[];
+    services: any[];
+  };
+  comment: string;
+  uploadedFiles: string[];
+  fetchCurrentTask?: boolean;
+}): Promise<any> {
+  const url = `/services/workflow/api/v1/workflow/name/completeTask/exec`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Failed to complete task: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
 /**
  * Fetch FMA New Staff Request detail (FNS).
  */

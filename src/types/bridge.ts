@@ -12,6 +12,9 @@ export interface SuperAppBridge {
   /** Get basic profile information about the logged-in user. */
   getUserInfo(): Promise<any>;
 
+  /** Retrieve the initial launch parameters map passed to this mini-app. */
+  getInitParams(): Promise<any>;
+
   /** Open the native QR-code scanner. */
   scanQR(): Promise<{ success: boolean; code?: string; error?: string }>;
 

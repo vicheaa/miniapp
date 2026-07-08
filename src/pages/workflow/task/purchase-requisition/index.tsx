@@ -3,10 +3,12 @@ import { formatDateCompact, formatDateTimeCompact, formatCurrency } from '@/util
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface PurchaseRequisitionFormProps {
-  processDetail: ProcessFlowDetail;
+  selectedTask: any;
+  instanceData: any;
+  detail: ProcessFlowDetail;
 }
 
-export default function PurchaseRequisitionForm({ processDetail }: PurchaseRequisitionFormProps) {
+export default function PurchaseRequisitionForm({ detail: processDetail }: PurchaseRequisitionFormProps) {
   const { t } = useTranslation();
 
   return (

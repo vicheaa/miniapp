@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { useSuperApp } from './hooks/useSuperApp';
 import { useMiniAppStore } from './store/miniAppStore';
+import { useWorkflowStore } from './store/workflowStore';
 import TaskListPage from './pages/workflow/TaskListPage';
 import TaskDetailPage from './pages/workflow/TaskDetailPage';
 import DevPanel from './components/dev/DevPanel';
@@ -59,6 +60,23 @@ export default function App() {
         }
       };
       fetchToken();
+
+      // Initialize query parameters from bridge launch parameters
+      const fetchInitParams = async () => {
+        try {
+          const params = await superApp.getInitParams();
+          if (params) {
+            const { filter, latest, myRequest } = params;
+            const store = useWorkflowStore.getState();
+            if (filter) store.setFilter(filter);
+            if (latest !== undefined) store.setLatest(latest);
+            if (myRequest !== undefined) store.setMyRequest(myRequest);
+          }
+        } catch (e) {
+          console.error('[App] Failed to fetch init params:', e);
+        }
+      };
+      fetchInitParams();
 
       // Initialize language from bridge
       superApp

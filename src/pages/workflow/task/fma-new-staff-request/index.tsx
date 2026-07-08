@@ -4,10 +4,12 @@ import { Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface FmaNewStaffRequestFormProps {
-  fnsDetail: FnsRequestDetail;
+  selectedTask: any;
+  instanceData: any;
+  detail: FnsRequestDetail;
 }
 
-export default function FmaNewStaffRequestForm({ fnsDetail }: FmaNewStaffRequestFormProps) {
+export default function FmaNewStaffRequestForm({ detail: fnsDetail }: FmaNewStaffRequestFormProps) {
   const { t } = useTranslation();
 
   // Helper to filter items by category

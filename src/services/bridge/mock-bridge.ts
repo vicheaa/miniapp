@@ -16,6 +16,15 @@ export function createMockBridge(token: string): SuperAppBridge {
       email: 'dev@example.com',
     }),
 
+    getInitParams: async () => {
+      console.log('[Mock SuperApp] getInitParams called');
+      const urlParams = new URLSearchParams(window.location.search);
+      const filter = urlParams.get('filter') || 'AVAILABLE';
+      const latest = urlParams.get('latest') !== 'false';
+      const myRequest = urlParams.get('myRequest') !== 'false';
+      return { filter, latest, myRequest };
+    },
+
     scanQR: async () => {
       console.log('[Mock SuperApp] scanQR called');
       return { success: true, code: 'MOCK-QR-CODE-12345' };
