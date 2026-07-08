@@ -7,7 +7,7 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="text-center py-[60px] px-4">
-      <p className="text-[14px] text-slate-500">{message}</p>
+      <p className="text-[14px] text-gray-500">{message}</p>
     </div>
   );
 }

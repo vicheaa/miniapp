@@ -8,7 +8,7 @@ export function TaskListSkeleton() {
       {cards.map((i) => (
         <div
           key={i}
-          className="bg-white rounded-[14px] px-[18px] py-4 border border-slate-200/80"
+          className="bg-white rounded-[14px] px-[18px] py-4 border border-[rgba(229,231,235,0.8)]"
         >
           {/* Title: BusinessKey · Process Name */}
           <div className="flex items-center gap-2 mb-3">

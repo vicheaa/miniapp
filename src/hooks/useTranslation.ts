@@ -1,10 +1,5 @@
 import { useMiniAppStore } from '../store/miniAppStore';
 
-/**
- * A React hook for translating UI strings within the mini-app.
- * 
- * Supports nested dot-separated keys (e.g. 'global.setting').
- */
 export function useTranslation() {
   const translations = useMiniAppStore((s) => s.translations);
   const language = useMiniAppStore((s) => s.language);

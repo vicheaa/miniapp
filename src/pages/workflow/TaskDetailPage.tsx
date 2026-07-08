@@ -3,11 +3,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWorkflowStore } from '@/store/workflowStore';
 import { useMiniAppStore } from '@/store/miniAppStore';
-import { formatDateTimeCompact, formatCurrency } from '@/utils/format';
+import { formatDateTimeCompact } from '@/utils/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   User,
-  SendHorizontal,
   FileText,
   Paperclip,
   Info,
@@ -265,8 +264,8 @@ export default function TaskDetailPage() {
 
     // Fallback if data is still loading or form type is unknown
     return (
-      <div className="bg-white rounded-md p-8 text-center text-slate-400 text-[13px]">
-        <FileText size={32} className="mx-auto text-slate-300 mb-2" />
+      <div className="bg-white rounded-md p-8 text-center text-gray-400 text-[13px]">
+        <FileText size={32} className="mx-auto text-gray-300 mb-2" />
         No form details available for this task.
       </div>
     );
@@ -275,8 +274,8 @@ export default function TaskDetailPage() {
   // Show error if we finished syncing and still don't have a task
   if (!selectedTask && !isSyncingTask) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-6 text-center text-slate-400">
-        <Info size={40} className="mb-2 text-slate-300" />
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-6 text-center text-gray-400">
+        <Info size={40} className="mb-2 text-gray-300" />
         <p>{t('workflow.no_tasks')}</p>
         <button onClick={handleBack} className="mt-4 text-[13px] text-blue-600 font-semibold underline">
           {t('workflow.no_more_tasks')}
@@ -290,10 +289,10 @@ export default function TaskDetailPage() {
   return (
     <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-full overflow-hidden flex flex-col box-border relative">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="bg-white px-4 py-3 border-b border-slate-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
+      <header className="bg-white px-4 py-3 border-b border-gray-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
         <button
           onClick={handleBack}
-          className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-900 active:bg-slate-50 rounded-lg transition-colors cursor-pointer shrink-0"
+          className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 active:bg-gray-50 rounded-lg transition-colors cursor-pointer shrink-0"
         >
           <ChevronLeft size={24} color='black' />
         </button>
@@ -324,22 +323,22 @@ export default function TaskDetailPage() {
       <div className="flex-1 overflow-y-auto pb-4 flex flex-col">
         {showContentLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <svg className="animate-spin h-7 w-7 text-slate-500" viewBox="0 0 24 24" fill="none">
+            <svg className="animate-spin h-7 w-7 text-gray-500" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <span className="text-[13px] text-slate-400 font-semibold">{t('global.loading')}</span>
+            <span className="text-[13px] text-gray-400 font-semibold">{t('global.loading')}</span>
           </div>
         ) : error ? (
           <div className="p-6 text-center">
             <div className="inline-flex items-center justify-center p-3 rounded-full bg-red-50 text-red-500 mb-3">
               <AlertCircle size={24} />
             </div>
-            <h3 className="text-[15px] font-bold text-slate-800 mb-1">{t('global.error')}</h3>
-            <p className="text-[13px] text-slate-500 mb-4 px-4">{error}</p>
+            <h3 className="text-[15px] font-bold text-gray-800 mb-1">{t('global.error')}</h3>
+            <p className="text-[13px] text-gray-500 mb-4 px-4">{error}</p>
             <button
               onClick={() => loadTaskDetails() ?? loadTaskDetails(true)}
-              className="px-4 py-2 rounded-lg bg-slate-800 text-white text-[13px] font-semibold hover:bg-slate-900 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-gray-800 text-white text-[13px] font-semibold hover:bg-gray-900 transition-all cursor-pointer"
             >
               {t('global.loading')}
             </button>
@@ -349,19 +348,19 @@ export default function TaskDetailPage() {
             {/* ── Request Info Collapsible Card ──────────────────────────────── */}
             <div className="overflow-hidden flex flex-col gap-2">
                 {/* Request Info Box */}
-                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-slate-200/50">
+                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-[rgba(229,231,235,0.5)]">
                   <button
                     onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
                     className="w-full flex items-center justify-between text-left cursor-pointer"
                   >
-                    <span className="text-[14px] font-bold text-slate-800">{t('workflow.request_info')}</span>
+                    <span className="text-[14px] font-bold text-gray-800">{t('workflow.request_info')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
                         {detail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-slate-400 transition-transform duration-200 ${
+                        className={`text-gray-400 transition-transform duration-200 ${
                           isRequestInfoExpanded ? 'rotate-180' : ''
                         }`}
                       />
@@ -369,13 +368,13 @@ export default function TaskDetailPage() {
                   </button>
 
                   {isRequestInfoExpanded && (
-                    <div className="flex flex-col gap-3 pt-1 border-t border-slate-100/60 mt-1">
+                    <div className="flex flex-col gap-3 pt-1 border-t border-[rgba(243,244,246,0.6)] mt-1">
                       {/* Requester Info */}
                       <div className="flex gap-3">
-                        <User size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
                         <div className="flex-1">
-                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.requested_by')}</span>
-                          <span className="text-slate-800 font-semibold">
+                          <span className="text-gray-400 font-medium block text-[11px]">{t('workflow.requested_by')}</span>
+                          <span className="text-gray-800 font-semibold">
                             {(() => {
                               let nameStr = '—';
                               let titleStr = '';
@@ -408,9 +407,9 @@ export default function TaskDetailPage() {
                       {/* Contact Email */}
                       {(contactInfo?.mail || instanceData?.requestor?.email) && (
                         <div className="flex gap-3">
-                          <Mail size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                          <Mail size={16} className="text-gray-400 mt-0.5 shrink-0" />
                           <div className="flex-1">
-                            <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.contact')}</span>
+                            <span className="text-gray-400 font-medium block text-[11px]">{t('workflow.contact')}</span>
                             <a 
                               href={`mailto:${contactInfo?.mail || instanceData?.requestor?.email}`} 
                               className="text-blue-600 font-medium hover:underline"
@@ -423,10 +422,10 @@ export default function TaskDetailPage() {
 
                       {/* Org / Business Unit */}
                       <div className="flex gap-3">
-                        <Building2 size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <Building2 size={16} className="text-gray-400 mt-0.5 shrink-0" />
                         <div className="flex-1">
-                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.org_info')}</span>
-                          <span className="text-slate-800 font-semibold">
+                          <span className="text-gray-400 font-medium block text-[11px]">{t('workflow.org_info')}</span>
+                          <span className="text-gray-800 font-semibold">
                             {instanceData?.requestor?.employee 
                               ? `${instanceData.requestor.employee.department}, ${instanceData.requestor.employee.buName}` 
                               : (detail?.buName || '—')}
@@ -438,19 +437,19 @@ export default function TaskDetailPage() {
                 </div>    
 
                 {/* Current State Box */}
-                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-slate-200/50">
+                <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-[rgba(229,231,235,0.5)]">
                   <button
                     onClick={() => setIsCurrentStateExpanded(!isCurrentStateExpanded)}
                     className="w-full flex items-center justify-between text-left cursor-pointer"
                   >
-                    <span className="text-[14px] font-bold text-slate-800">{t('workflow.current_state')}</span>
+                    <span className="text-[14px] font-bold text-gray-800">{t('workflow.current_state')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
                         Active
                       </span>
                       <ChevronDown
                         size={16}
-                        className={`text-slate-400 transition-transform duration-200 ${
+                        className={`text-gray-400 transition-transform duration-200 ${
                           isCurrentStateExpanded ? 'rotate-180' : ''
                         }`}
                       />
@@ -458,24 +457,24 @@ export default function TaskDetailPage() {
                   </button>
 
                   {isCurrentStateExpanded && (
-                    <div className="flex flex-col gap-3 pt-1 border-t border-slate-100/60 mt-1">
+                    <div className="flex flex-col gap-3 pt-1 border-t border-[rgba(243,244,246,0.6)] mt-1">
                       {/* Task name / Assignee */}
                       <div className="flex gap-3">
-                        <UserCheck size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <UserCheck size={16} className="text-gray-400 mt-0.5 shrink-0" />
                         <div className="flex-1">
-                          <span className="font-semibold text-slate-800 block">{selectedTask.taskName}</span>
-                          <p className="text-slate-500 mt-0.5 text-[12px]">
-                            {t('workflow.assigned_to')} <span className="font-semibold text-slate-800">{selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}</span>
+                          <span className="font-semibold text-gray-800 block">{selectedTask.taskName}</span>
+                          <p className="text-gray-500 mt-0.5 text-[12px]">
+                            {t('workflow.assigned_to')} <span className="font-semibold text-gray-800">{selectedTask.assigneeInfo?.name || selectedTask.assignee || '—'}</span>
                           </p>
                         </div>
                       </div>
 
                       {/* Task Started Date */}
                       <div className="flex gap-3">
-                        <Calendar size={16} className="text-slate-400 mt-0.5 shrink-0" />
+                        <Calendar size={16} className="text-gray-400 mt-0.5 shrink-0" />
                         <div className="flex-1">
-                          <span className="text-slate-400 font-medium block text-[11px]">{t('workflow.task_started_date')}</span>
-                          <span className="text-slate-700 font-semibold">
+                          <span className="text-gray-400 font-medium block text-[11px]">{t('workflow.task_started_date')}</span>
+                          <span className="text-gray-700 font-semibold">
                             {formatDateTimeCompact(selectedTask.created)}
                           </span>
                         </div>
@@ -491,8 +490,8 @@ export default function TaskDetailPage() {
                 onClick={() => setActiveTab('data-form')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   activeTab === 'data-form'
-                    ? 'bg-[#063E89]/80 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                    ? 'bg-[rgba(6,62,137,0.8)] text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 active:bg-gray-50'
                 }`}
               >
                 {t('workflow.data_form')}
@@ -501,8 +500,8 @@ export default function TaskDetailPage() {
                 onClick={() => setActiveTab('activities')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   activeTab === 'activities'
-                    ? 'bg-[#063E89]/80 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                    ? 'bg-[rgba(6,62,137,0.8)] text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 active:bg-gray-50'
                 }`}
               >
                 {t('workflow.activities')}
@@ -512,10 +511,10 @@ export default function TaskDetailPage() {
                 onClick={() => setActiveTab('attachments')}
                 className={`flex-1 text-center py-2 text-[13px] font-bold rounded-full transition-all cursor-pointer ${
                   !hasAttachments
-                    ? 'text-slate-500 cursor-not-allowed opacity-50'
+                    ? 'text-gray-500 cursor-not-allowed opacity-50'
                     : activeTab === 'attachments'
-                    ? 'bg-[#063E89]/80 text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 active:bg-slate-50'
+                    ? 'bg-[rgba(6,62,137,0.8)] text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-800 active:bg-gray-50'
                 }`}
               >
                 {t('workflow.attachments')}
@@ -528,15 +527,15 @@ export default function TaskDetailPage() {
             {/* ── Activities Tab Content (Timeline) ─────────────────────────── */}
             {activeTab === 'activities' && instanceData && (
               <div className="bg-white rounded-md p-4">
-                <h3 className="text-[14px] font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100">
+                <h3 className="text-[14px] font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">
                   {t('workflow.workflow_timeline')}
                 </h3>
-                <div className="relative border-l border-slate-150 pl-5 ml-2.5 flex flex-col gap-6">
+                <div className="relative border-l border-gray-150 pl-5 ml-2.5 flex flex-col gap-6">
                   {instanceData.activities?.map((activity, idx) => (
                     <div key={activity.id || idx} className="relative">
                       {/* Timeline dot */}
                       <span className="absolute -left-[27px] top-1.5 bg-white p-0.5 rounded-full z-10">
-                        <span className="block w-2.5 h-2.5 rounded-full bg-slate-800 ring-[3px] ring-slate-100" />
+                        <span className="block w-2.5 h-2.5 rounded-full bg-gray-800 ring-[3px] ring-gray-100" />
                       </span>
 
                       {/* Header */}
@@ -568,8 +567,8 @@ export default function TaskDetailPage() {
 
             {/* ── Attachments Tab Content ─────────────────────────────────────── */}
             {activeTab === 'attachments' && instanceData && (
-              <div className="bg-white rounded-md border border-slate-200/60 p-4 flex flex-col gap-3">
-                <h3 className="text-[14px] font-bold text-slate-800 pb-2 border-b border-slate-100">
+              <div className="bg-white rounded-md border border-[rgba(229,231,235,0.6)] p-4 flex flex-col gap-3">
+                <h3 className="text-[14px] font-bold text-gray-800 pb-2 border-b border-gray-100">
                   {t('workflow.attachments')}
                 </h3>
                 {instanceData.attachmentFiles && instanceData.attachmentFiles.length > 0 ? (
@@ -581,25 +580,25 @@ export default function TaskDetailPage() {
                       return (
                         <div
                           key={file.fileId || idx}
-                          className="flex items-center justify-between p-2.5 rounded-lg border border-slate-150 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                          className="flex items-center justify-between p-2.5 rounded-lg border border-gray-150 bg-[rgba(249,250,251,0.5)] hover:bg-gray-50 transition-colors"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <Paperclip size={16} className="text-slate-400 shrink-0" />
+                            <Paperclip size={16} className="text-gray-400 shrink-0" />
                             <div className="min-w-0 flex-1">
                               <span
                                 // onClick={() => handlePreviewFile(file.fileId)}
-                                className="text-[12px] font-semibold text-slate-700 block truncate hover:underline hover:text-blue-600 cursor-pointer"
+                                className="text-[12px] font-semibold text-gray-700 block truncate hover:underline hover:text-blue-600 cursor-pointer"
                               >
                                 {displayName}
                               </span>
-                              <span className="text-[10px] text-slate-400 truncate block">
+                              <span className="text-[10px] text-gray-400 truncate block">
                                 Source: {file.activity}{displayType} · ID: {file.fileId.substring(0, 8)}...
                               </span>
                             </div>
                           </div>
                           <button
                             // onClick={() => handlePreviewFile(file.fileId)}
-                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 active:bg-slate-200 rounded-md transition-colors cursor-pointer shrink-0"
+                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-md transition-colors cursor-pointer shrink-0"
                           >
                             <Eye size={14} />
                           </button>
@@ -608,8 +607,8 @@ export default function TaskDetailPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-slate-400 text-[13px]">
-                    <Paperclip size={28} className="mx-auto text-slate-300 mb-1.5" />
+                  <div className="text-center py-8 text-gray-400 text-[13px]">
+                    <Paperclip size={28} className="mx-auto text-gray-300 mb-1.5" />
                     {t('workflow.no_attachments')}
                   </div>
                 )}

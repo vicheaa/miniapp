@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '');
-  const apiTarget = env.VITE_DEV_API_BASE_URL || 'http://10.0.12.229:8282';
+  const apiTarget = env.VITE_DEV_API_BASE_URL || 'http://10.0.12.247:85';
 
   return {
     plugins: [react(), tailwindcss()],

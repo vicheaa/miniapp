@@ -37,11 +37,11 @@ import type { WorkflowTask } from '@/types/workflow';
 function LoadingMore({ t }: { t: (k: string) => string }) {
   return (
     <div className="flex items-center justify-center py-5 gap-2">
-      <svg className="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none">
+      <svg className="animate-spin h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none">
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>
-      <span className="text-[12px] text-slate-400 font-medium">{t('workflow.loading_more')}</span>
+      <span className="text-[12px] text-gray-400 font-medium">{t('workflow.loading_more')}</span>
     </div>
   );
 }
@@ -158,7 +158,7 @@ export default function TaskListPage() {
   }, [handleIntersect]);
 
   return (
-    <div className="font-sans max-w-[480px] mx-auto p-0 bg-slate-100 h-full overflow-hidden flex flex-col box-border">
+    <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-full overflow-hidden flex flex-col box-border">
       {/* Header */}
       {superApp && (
         <Header
@@ -169,22 +169,22 @@ export default function TaskListPage() {
       )}
 
       {/* Search Bar */}
-      <div className="bg-white px-4 pt-3 pb-3 border-b border-slate-100 shrink-0">
+      <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 shrink-0">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
           <Input
             type="text"
             placeholder={t('workflow.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 bg-slate-50 rounded-[10px] pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400 w-full"
+            className="h-10 bg-gray-50 rounded-[10px] pl-9 pr-3 text-[13px] text-gray-800 placeholder:text-gray-400 w-full"
           />
         </div>
       </div>
 
       {/* Task Count & Filter Row */}
       <div className="px-4 pt-3.5 pb-1 flex items-center justify-between shrink-0 select-none">
-        <span className="text-[12.5px] text-slate-450 font-bold uppercase tracking-wider">
+        <span className="text-[12.5px] text-gray-450 font-bold uppercase tracking-wider">
           {!isLoading && !error && total > 0
             ? `${filteredTasks.length} / ${total} ${t('home.my_tasks')}`
             : ''}
@@ -239,7 +239,7 @@ export default function TaskListPage() {
             {/* End of list */}
             {!hasNextPage && allTasks.length > 0 && (
               <div className="text-center py-4">
-                <span className="text-[12px] text-slate-400 font-medium">{t('workflow.no_more_tasks')}</span>
+                <span className="text-[12px] text-gray-400 font-medium">{t('workflow.no_more_tasks')}</span>
               </div>
             )}
           </div>
@@ -305,7 +305,7 @@ export default function TaskListPage() {
 
               {/* Separator */}
               {activeMenuTask.claimed && (
-                <div className="h-[1px] bg-slate-100 my-1.5 mx-6" />
+                <div className="h-[1px] bg-gray-100 my-1.5 mx-6" />
               )}
 
               {/* Dynamic Actions */}

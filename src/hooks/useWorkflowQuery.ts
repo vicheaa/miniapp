@@ -6,9 +6,6 @@ import { useDebounce } from './useDebounce';
 
 const PAGE_SIZE = 20;
 
-/**
- * Infinite-scroll query for workflow tasks.
- */
 export function useWorkflowTasksInfiniteQuery() {
   const token = useMiniAppStore((s) => s.authToken);
   const superApp = useMiniAppStore((s) => s.superApp);

@@ -38,7 +38,7 @@ export default function DefaultActions({
         <button
           disabled={isClaiming}
           onClick={handleClaimToggle}
-          className="flex-1 py-2 px-2 rounded-md border border-slate-200 text-slate-700 text-[12px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
+          className="flex-1 py-2 px-2 rounded-md border border-gray-200 text-gray-700 text-[12px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
         >
           {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
         </button>

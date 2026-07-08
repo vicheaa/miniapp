@@ -126,7 +126,7 @@ export default function App() {
   /* ── Waiting for bridge and token ────────────────────────────────────── */
   if (!superApp || !storeToken) {
     return (
-      <div className="font-sans max-w-[480px] mx-auto p-0 text-center pt-[100px] text-slate-400">
+      <div className="font-sans max-w-[480px] mx-auto p-0 text-center pt-[100px] text-gray-400">
         <p>Loading application...</p>
       </div>
     );
@@ -136,7 +136,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <HashRouter>
         <div className="relative min-h-screen">
-          <div className="w-full h-screen overflow-hidden relative bg-slate-50">
+          <div className="w-full h-screen overflow-hidden relative bg-gray-50">
             <Routes key={authToken}>
               <Route path="/" element={<TaskListPage />} />
               <Route path="/task/:taskId" element={<TaskDetailPage />} />

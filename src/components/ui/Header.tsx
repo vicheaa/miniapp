@@ -20,17 +20,17 @@ export default function Header({
       <button
         onClick={onBack}
         title={backTitle}
-        className="p-0 shrink-0 border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-slate-100"
+        className="p-0 shrink-0 border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-gray-100"
       >
         <ChevronLeft />
       </button>
 
       <div className="flex-1 flex flex-col items-center justify-center overflow-hidden px-2">
-        <h1 className="w-full text-center text-[18px] font-bold text-slate-900 truncate m-0">
+        <h1 className="w-full text-center text-[18px] font-bold text-gray-900 truncate m-0">
           {title}
         </h1>
         {subtitle && (
-          <span className="w-full text-center text-[12px] font-medium text-slate-500 mt-0.5 truncate">
+          <span className="w-full text-center text-[12px] font-medium text-gray-500 mt-0.5 truncate">
             {subtitle}
           </span>
         )}
