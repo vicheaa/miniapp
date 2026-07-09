@@ -24,6 +24,13 @@ import {
   DrawerContent,
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu';
 import TaskCard from '@/components/workflow/TaskCard';
 import { useWorkflowStore } from '@/store/workflowStore';
 import { useMiniAppStore } from '@/store/miniAppStore';
@@ -31,8 +38,6 @@ import { useWorkflowTasksInfiniteQuery } from '@/hooks/useWorkflowQuery';
 import { claimTask, unclaimTask } from '@/services/api/workflow-api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { WorkflowTask } from '@/types/workflow';
-
-/* ── Loading Spinner ───────────────────────────────────────────────────── */
 
 function LoadingMore({ t }: { t: (k: string) => string }) {
   return (
@@ -46,13 +51,11 @@ function LoadingMore({ t }: { t: (k: string) => string }) {
   );
 }
 
-/* ── Page Component ────────────────────────────────────────────────────── */
 
 export default function TaskListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // ── Hooks & Store ────────────────────────────────────────────────────────
   const superApp = useMiniAppStore((s) => s.superApp);
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const setSearchQuery = useWorkflowStore((s) => s.setSearchQuery);
@@ -70,19 +73,17 @@ export default function TaskListPage() {
     isFetchingNextPage,
   } = useWorkflowTasksInfiniteQuery();
 
-  // ── Local State ──────────────────────────────────────────────────────────
   const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isFilterOpen, setFilterOpen] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Flatten all pages into a single task list
   const allTasks = data?.pages.flatMap((p) => p.items) || [];
   const total = data?.pages[0]?.total || 0;
 
   const filteredTasks = allTasks;
 
-  // ── Claim / Unclaim Action ──────────────────────────────────────────────
   const handleClaimToggle = async (task: WorkflowTask) => {
     setIsClaiming(true);
     const actionLabel = task.claimed ? 'Unclaim' : 'Claim';
@@ -103,7 +104,6 @@ export default function TaskListPage() {
     }
   };
 
-  // ── Drawer Menu Actions ──────────────────────────────────────────────────
   const openMenu = (task: WorkflowTask) => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -121,7 +121,6 @@ export default function TaskListPage() {
     navigate(`/task/${task.taskId}`);
   };
 
-  // Enable/disable pull-to-refresh depending on drawer state
   useEffect(() => {
     if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
       (superApp as any).setPullToRefreshEnabled(!isDrawerOpen);
@@ -133,7 +132,6 @@ export default function TaskListPage() {
     };
   }, [isDrawerOpen, superApp]);
 
-  // ── Infinite Scroll Observer ─────────────────────────────────────────────
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -177,7 +175,7 @@ export default function TaskListPage() {
             placeholder={t('workflow.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 bg-gray-50 rounded-[10px] pl-9 pr-3 text-[13px] text-gray-800 placeholder:text-gray-400 w-full"
+            className="ring-0 focus:ring-0 focus-visible:ring-0 h-10 rounded-[10px] pl-9 pr-3 text-[13px] placeholder:text-gray-400 w-full"
           />
         </div>
       </div>
@@ -191,43 +189,67 @@ export default function TaskListPage() {
         </span>
         
         {/* Dropdown filter */}
-        <div className="relative select-none flex justify-end">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
-            className="bg-transparent border-0 py-1 pl-1 pr-6 text-[13.5px] font-extrabold text-[#063E89] focus:outline-none cursor-pointer appearance-none select-none text-right"
-          >
-            <option value="AVAILABLE">{t('workflow.available_tasks')}</option>
-            <option value="ASSIGNED">{t('workflow.my_tasks')}</option>
-            <option value="COMPLETED">{t('workflow.completed_tasks')}</option>
-          </select>
-          <div className="absolute right-0.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#063E89]">
+        <DropdownMenu open={isFilterOpen} onOpenChange={setFilterOpen}>
+          <DropdownMenuTrigger className="flex items-center gap-0.5 py-1 pl-1 pr-1 text-[13.5px] font-extrabold text-[#063E89] cursor-pointer select-none outline-none">
+            <span>
+              {filter === 'AVAILABLE' ? t('workflow.available_tasks')
+                : filter === 'ASSIGNED' ? t('workflow.my_tasks')
+                : t('workflow.completed_tasks')}
+            </span>
             <ChevronDown size={14} className="stroke-[3]" />
-          </div>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[160px]">
+            <DropdownMenuRadioGroup
+              value={filter}
+              onValueChange={(val) => {
+                setFilter(val as any);
+                setFilterOpen(false);
+              }}
+            >
+              <DropdownMenuRadioItem value="AVAILABLE">
+                {t('workflow.available_tasks')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="ASSIGNED">
+                {t('workflow.my_tasks')}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="COMPLETED">
+                {t('workflow.completed_tasks')}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Content */}
       <main className="flex-1 p-3 pt-1 overflow-y-auto">
-        {isLoading ? (
+        {isLoading && !data ? (
           <TaskListSkeleton />
         ) : error ? (
-          <ErrorState
-            message={(error as Error).message || 'Failed to fetch tasks'}
-            onRetry={refetch}
-          />
+          <div className="fade-in">
+            <ErrorState
+              message={(error as Error).message || 'Failed to fetch tasks'}
+              onRetry={refetch}
+            />
+          </div>
         ) : filteredTasks.length === 0 ? (
-          <EmptyState message={t('workflow.no_tasks')} />
+          <div className="fade-in">
+            <EmptyState message={t('workflow.no_tasks')} />
+          </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {filteredTasks.map((task) => (
-              <TaskCard
+          <div className="flex flex-col gap-3 fade-in">
+            {filteredTasks.map((task, index) => (
+              <div
                 key={task.taskId}
-                task={task}
-                onClick={() => handleTaskClick(task)}
-                onEllipsisClick={() => openMenu(task)}
-                t={t}
-              />
+                className="task-card-enter"
+                style={{ animationDelay: `${Math.min(index * 40, 300)}ms` }}
+              >
+                <TaskCard
+                  task={task}
+                  onClick={() => handleTaskClick(task)}
+                  onEllipsisClick={() => openMenu(task)}
+                  t={t}
+                />
+              </div>
             ))}
 
             {/* Infinite scroll sentinel */}

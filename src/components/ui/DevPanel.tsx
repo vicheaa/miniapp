@@ -129,7 +129,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 9999,
     width: '90%',
     maxWidth: '440px',
-    fontFamily: "'Kantumruy Pro', 'Kantumruy', -apple-system, sans-serif",
+    fontFamily: "'Kantumruy Pro', sans-serif",
   },
   pillBtn: {
     display: 'flex',

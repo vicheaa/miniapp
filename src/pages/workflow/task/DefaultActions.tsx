@@ -1,4 +1,3 @@
-import { Ban, SendHorizontal } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMiniAppStore } from '@/store/miniAppStore';
 
@@ -38,7 +37,7 @@ export default function DefaultActions({
         <button
           disabled={isClaiming}
           onClick={handleClaimToggle}
-          className="flex-1 py-2 px-2 rounded-md border border-gray-200 text-gray-700 text-[12px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
+          className="flex-1 py-2.5 px-2 rounded-md border border-gray-200 text-gray-700 text-[12px] font-bold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
         >
           {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
         </button>
@@ -52,8 +51,8 @@ export default function DefaultActions({
                 onClick={() => handleAction(act.name)}
                 className={
                   isReject
-                    ? 'flex-1 py-2 px-2 rounded-md border border-red-500 bg-white text-red-500 text-[12px] font-bold cursor-pointer text-center truncate'
-                    : 'flex-1 py-2 px-2 rounded-md bg-[#063E89] text-white text-[12px] font-bold cursor-pointer text-center truncate'
+                    ? 'flex-1 py-2.5 px-2 rounded-md border border-red-500 bg-white text-red-500 text-[12px] font-bold cursor-pointer text-center truncate'
+                    : 'flex-1 py-2.5 px-2 rounded-md bg-[#063E89] text-white text-[12px] font-bold cursor-pointer text-center truncate'
                 }
               >
                 {act.name}

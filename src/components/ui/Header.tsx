@@ -26,17 +26,16 @@ export default function Header({
       </button>
 
       <div className="flex-1 flex flex-col items-center justify-center overflow-hidden px-2">
-        <h1 className="w-full text-center text-[18px] font-bold text-gray-900 truncate m-0">
+        <h1 className="w-full text-center text-[16px] font-bold truncate m-0">
           {title}
         </h1>
         {subtitle && (
-          <span className="w-full text-center text-[12px] font-medium text-gray-500 mt-0.5 truncate">
+          <span className="w-full text-center text-[14px] font-medium truncate">
             {subtitle}
           </span>
         )}
       </div>
 
-      {/* Spacer to balance back button on the left and keep title centered */}
       <div className="w-10 shrink-0" />
     </header>
   );

@@ -104,7 +104,7 @@ export default function PurchaseRequisitionActions({
         </div>
       </div>
 
-      {/* ── Approval Modal ──────────────────────────────────────────────── */}
+      {/* Approval Modal */}
       <Drawer open={isApprovalOpen} onOpenChange={setApprovalOpen}>
         <DrawerContent
           className="max-w-[480px] mx-auto bg-white rounded-t-[20px] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
@@ -260,7 +260,7 @@ export default function PurchaseRequisitionActions({
               type="button"
               disabled={isSubmittingReview}
               onClick={() => setApprovalOpen(false)}
-              className="flex-1 p-2 rounded-md border border-gray-200 bg-white text-gray-700 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
+              className="flex-1 px-2 py-2.5 rounded-md border border-gray-200 bg-white text-gray-700 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
             >
               Cancel
             </button>
@@ -268,7 +268,7 @@ export default function PurchaseRequisitionActions({
               type="button"
               disabled={isSubmittingReview}
               onClick={handleResetApproval}
-              className="flex-1 p-2 rounded-md border border-red-500 bg-white text-red-500 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
+              className="flex-1 px-2 py-2.5 rounded-md border border-red-500 bg-white text-red-500 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
             >
               Reset
             </button>
@@ -276,7 +276,7 @@ export default function PurchaseRequisitionActions({
               type="button"
               disabled={isSubmittingReview}
               onClick={handleSubmitApproval}
-              className="flex-[1.5] p-2 rounded-md bg-[#063E89] text-white text-[12.5px] font-bold shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 text-center"
+              className="flex-[1.5] px-2 py-2.5 rounded-md bg-[#063E89] text-white text-[12.5px] font-bold shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 text-center"
             >
               {isSubmittingReview ? (
                 <>
@@ -291,7 +291,7 @@ export default function PurchaseRequisitionActions({
         </DrawerContent>
       </Drawer>
 
-      {/* ── Budget Review Modal ─────────────────────────────────────────── */}
+      {/* Budget Review Modal */}
       <Drawer open={isBudgetReviewOpen} onOpenChange={setBudgetReviewOpen}>
         <DrawerContent
           className="max-w-[480px] mx-auto bg-white rounded-t-[20px] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"

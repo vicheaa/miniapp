@@ -15,9 +15,7 @@ import {
   AlertCircle,
   Mail,
   UserCheck,
-  ChevronLeft,
   ChevronDown,
-  Ban,
   Eye
 } from 'lucide-react';
 import {
@@ -31,6 +29,8 @@ import {
 } from '@/services/api/workflow-api';
 import { taskRegistry } from './task/registry';
 import DefaultActions from './task/DefaultActions';
+import Header from '@/components/ui/Header';
+import { TaskDetailSkeleton } from '@/components/ui/SkeletonLoader';
 import { 
   BasicContactInfo, 
   FileMetadata, 
@@ -49,7 +49,6 @@ export default function TaskDetailPage() {
   const lastFetchedTaskIdRef = useRef<string | null>(null);
   const [isSyncingTask, setIsSyncingTask] = useState(false);
 
-  // Sync / find task if not set or doesn't match taskId
   useEffect(() => {
     const syncTask = async () => {
       if (!taskId) return;
@@ -92,6 +91,18 @@ export default function TaskDetailPage() {
 
     syncTask();
   }, [taskId, selectedTask, queryClient, setSelectedTask]);
+
+  useEffect(() => {
+    if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
+      (superApp as any).setPullToRefreshEnabled(false);
+    }
+    return () => {
+      if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
+        (superApp as any).setPullToRefreshEnabled(true);
+      }
+    };
+  }, [superApp]);
+
   const [isClaiming, setIsClaiming] = useState(false);
 
   const handleClaimToggle = async () => {
@@ -110,7 +121,6 @@ export default function TaskDetailPage() {
         alert(`Task ${actionLabel.toLowerCase()}ed successfully`);
       }
       
-      // Update selectedTask claimed state locally so the UI updates
       useWorkflowStore.setState({
         selectedTask: {
           ...selectedTask,
@@ -118,10 +128,8 @@ export default function TaskDetailPage() {
         }
       });
       
-      // Invalidate the task list query cache so it refreshes in the background/on next render
       queryClient.invalidateQueries({ queryKey: ['workflowTasks'] });
       
-      // Reload task details to get fresh backend state
       loadTaskDetails(true);
     } catch (err: any) {
       console.error(`Failed to ${actionLabel.toLowerCase()} task:`, err);
@@ -135,7 +143,6 @@ export default function TaskDetailPage() {
     }
   };
 
-  // States
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [instanceData, setInstanceData] = useState<TaskInstanceData | null>(null);
@@ -143,7 +150,6 @@ export default function TaskDetailPage() {
   const [contactInfo, setContactInfo] = useState<BasicContactInfo | null>(null);
   const [filesMap, setFilesMap] = useState<Record<string, FileMetadata>>({});
 
-  // UI state
   const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
   const [isCurrentStateExpanded, setIsCurrentStateExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
@@ -155,8 +161,6 @@ export default function TaskDetailPage() {
       setActiveTab('data-form');
     }
   }, [hasAttachments, activeTab]);
-
-  // Fetch all details
   const loadTaskDetails = useCallback(async (force = false) => {
     if (!selectedTask) return;
     if (!force && lastFetchedTaskIdRef.current === selectedTask.taskId) return;
@@ -174,25 +178,6 @@ export default function TaskDetailPage() {
       try {
         instData = await fetchTaskInstanceData(selectedTask.taskId);
         setInstanceData(instData);
-
-        // Fetch file metadata for attachments
-        if (instData?.attachmentFiles && instData.attachmentFiles.length > 0) {
-          try {
-            const fileIds = instData.attachmentFiles.map(f => f.fileId).filter(Boolean);
-            if (fileIds.length > 0) {
-              const filesData = await fetchFilesMetadata(fileIds);
-              const newFilesMap: Record<string, FileMetadata> = {};
-              filesData.forEach(file => {
-                if (file.id) {
-                  newFilesMap[file.id] = file;
-                }
-              });
-              setFilesMap(newFilesMap);
-            }
-          } catch (filesErr) {
-            console.error('[TaskDetailPage] Failed to fetch attachment files metadata:', filesErr);
-          }
-        }
       } catch (instErr: any) {
         console.error('[TaskDetailPage] Error loading task instance data:', instErr);
         setError(instErr?.message || 'Failed to load task instance data.');
@@ -214,7 +199,6 @@ export default function TaskDetailPage() {
         console.warn('[TaskDetailPage] Error loading workflow details:', detailErr);
       }
 
-      // Determine creator username to query contact info
       let creatorId = '';
       if (detailData?.createdBy) {
         creatorId = detailData.createdBy;
@@ -244,12 +228,9 @@ export default function TaskDetailPage() {
     loadTaskDetails();
   }, [loadTaskDetails]);
 
-  // Back button
   const handleBack = () => {
     navigate('/');
   };
-
-  // Helper to render the appropriate form based on business key prefix
   const renderDataFormContent = () => {
     if (!selectedTask) return null;
 
@@ -262,7 +243,6 @@ export default function TaskDetailPage() {
       return <FormComponent selectedTask={selectedTask} instanceData={instanceData} detail={detail} />;
     }
 
-    // Fallback if data is still loading or form type is unknown
     return (
       <div className="bg-white rounded-md p-8 text-center text-gray-400 text-[13px]">
         <FileText size={32} className="mx-auto text-gray-300 mb-2" />
@@ -288,47 +268,17 @@ export default function TaskDetailPage() {
 
   return (
     <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-full overflow-hidden flex flex-col box-border relative">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="bg-white px-4 py-3 border-b border-gray-100 flex items-center gap-3 shrink-0 sticky top-0 z-50">
-        <button
-          onClick={handleBack}
-          className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 active:bg-gray-50 rounded-lg transition-colors cursor-pointer shrink-0"
-        >
-          <ChevronLeft size={24} color='black' />
-        </button>
-        <div className="flex-1 min-w-0">
-          {selectedTask ? (
-            <>
-              <div className='flex flex-col items-center'>
-                <h1 className="font-semibold truncate">
-                  {selectedTask.instanceInfo.businessKey || t('workflow.detail')}
-                </h1>
-                <p className="font-semibold truncate">
-                  {selectedTask.instanceInfo.processName}
-                </p>
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col gap-1.5 py-0.5">
-              <div className="skeleton-shimmer h-3.5 w-[45%] rounded mx-auto" />
-              <div className="skeleton-shimmer h-2.5 w-[65%] rounded mx-auto" />
-            </div>
-          )}
-        </div>
-        {/* Spacer to balance back button on the left and keep title centered */}
-        <div className="w-8 shrink-0" />
-      </header>
 
-      {/* ── Scrollable Body ──────────────────────────────────────────────── */}
+      <Header
+        title={selectedTask?.instanceInfo.businessKey || t('workflow.detail')}
+        subtitle={selectedTask?.instanceInfo.processName || ''}
+        onBack={handleBack}
+        backTitle="Back"
+      />
+
       <div className="flex-1 overflow-y-auto pb-4 flex flex-col">
         {showContentLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <svg className="animate-spin h-7 w-7 text-gray-500" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span className="text-[13px] text-gray-400 font-semibold">{t('global.loading')}</span>
-          </div>
+          <TaskDetailSkeleton />
         ) : error ? (
           <div className="p-6 text-center">
             <div className="inline-flex items-center justify-center p-3 rounded-full bg-red-50 text-red-500 mb-3">
@@ -344,10 +294,8 @@ export default function TaskDetailPage() {
             </button>
           </div>
         ) : (
-          <div className="p-3.5 flex flex-col gap-3.5">
-            {/* ── Request Info Collapsible Card ──────────────────────────────── */}
+          <div className="p-3.5 flex flex-col gap-3.5 slide-up">
             <div className="overflow-hidden flex flex-col gap-2">
-                {/* Request Info Box */}
                 <div className="bg-white px-4 py-3 flex flex-col gap-3 text-[13px] rounded-md border border-[rgba(229,231,235,0.5)]">
                   <button
                     onClick={() => setIsRequestInfoExpanded(!isRequestInfoExpanded)}
@@ -369,7 +317,6 @@ export default function TaskDetailPage() {
 
                   {isRequestInfoExpanded && (
                     <div className="flex flex-col gap-3 pt-1 border-t border-[rgba(243,244,246,0.6)] mt-1">
-                      {/* Requester Info */}
                       <div className="flex gap-3">
                         <User size={16} className="text-gray-400 mt-0.5 shrink-0" />
                         <div className="flex-1">
@@ -520,11 +467,11 @@ export default function TaskDetailPage() {
                 {t('workflow.attachments')}
               </button>
             </div>
-
-            {/* ── Data Form Tab Content ──────────────────────────────────────── */}
+            
+            {/* Data render */}
             {activeTab === 'data-form' && renderDataFormContent()}
-
-            {/* ── Activities Tab Content (Timeline) ─────────────────────────── */}
+            
+            {/* Activities render */}
             {activeTab === 'activities' && instanceData && (
               <div className="bg-white rounded-md p-4">
                 <h3 className="text-[14px] font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">
@@ -533,12 +480,10 @@ export default function TaskDetailPage() {
                 <div className="relative border-l border-gray-150 pl-5 ml-2.5 flex flex-col gap-6">
                   {instanceData.activities?.map((activity, idx) => (
                     <div key={activity.id || idx} className="relative">
-                      {/* Timeline dot */}
                       <span className="absolute -left-[27px] top-1.5 bg-white p-0.5 rounded-full z-10">
                         <span className="block w-2.5 h-2.5 rounded-full bg-gray-800 ring-[3px] ring-gray-100" />
                       </span>
 
-                      {/* Header */}
                       <div className="flex items-baseline gap-2 text-[12px] justify-between">
                         <span className="font-semibold">
                           {activity.taskName}
@@ -548,12 +493,10 @@ export default function TaskDetailPage() {
                         </span>
                       </div>
 
-                      {/* Actor info */}
                       <p className="text-[12px] mt-0.5">
                         {activity.action} by <span className="font-semibold">{activity.actionBy}</span>
                       </p>
 
-                      {/* Comment bubble */}
                       {activity.comment && (
                         <div className="mt-1.5 rounded-lg text-[12px] relative">
                           {activity.comment}
@@ -565,7 +508,7 @@ export default function TaskDetailPage() {
               </div>
             )}
 
-            {/* ── Attachments Tab Content ─────────────────────────────────────── */}
+            {/* Attachments tab */}
             {activeTab === 'attachments' && instanceData && (
               <div className="bg-white rounded-md border border-[rgba(229,231,235,0.6)] p-4 flex flex-col gap-3">
                 <h3 className="text-[14px] font-bold text-gray-800 pb-2 border-b border-gray-100">
@@ -596,10 +539,7 @@ export default function TaskDetailPage() {
                               </span>
                             </div>
                           </div>
-                          <button
-                            // onClick={() => handlePreviewFile(file.fileId)}
-                            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-md transition-colors cursor-pointer shrink-0"
-                          >
+                          <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:bg-gray-200 rounded-md transition-colors cursor-pointer shrink-0">
                             <Eye size={14} />
                           </button>
                         </div>
@@ -618,7 +558,7 @@ export default function TaskDetailPage() {
         )}
       </div>
 
-      {/* ── Sticky Action Bottom Bar ─────────────────────────────────────── */}
+      {/* Action Bottom Bar */}
       {!loading && !error && selectedTask && (() => {
         const prefix = selectedTask.instanceInfo.businessKey?.split('-')[0]?.toUpperCase() || '';
         const taskConfig = taskRegistry[prefix];

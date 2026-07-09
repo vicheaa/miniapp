@@ -6,7 +6,9 @@ import { useMiniAppStore } from './store/miniAppStore';
 import { useWorkflowStore } from './store/workflowStore';
 import TaskListPage from './pages/workflow/TaskListPage';
 import TaskDetailPage from './pages/workflow/TaskDetailPage';
-import DevPanel from './components/dev/DevPanel';
+import DevPanel from './components/ui/DevPanel';
+import PageTransition from './components/ui/PageTransition';
+import { AppBootstrapSkeleton } from './components/ui/SkeletonLoader';
 
 // Initialize React Query Client
 const queryClient = new QueryClient({
@@ -125,11 +127,7 @@ export default function App() {
 
   /* ── Waiting for bridge and token ────────────────────────────────────── */
   if (!superApp || !storeToken) {
-    return (
-      <div className="font-sans max-w-[480px] mx-auto p-0 text-center pt-[100px] text-gray-400">
-        <p>Loading application...</p>
-      </div>
-    );
+    return <AppBootstrapSkeleton />;
   }
 
   return (
@@ -137,10 +135,12 @@ export default function App() {
       <HashRouter>
         <div className="relative min-h-screen">
           <div className="w-full h-screen overflow-hidden relative bg-gray-50">
-            <Routes key={authToken}>
-              <Route path="/" element={<TaskListPage />} />
-              <Route path="/task/:taskId" element={<TaskDetailPage />} />
-            </Routes>
+            <PageTransition>
+              <Routes key={authToken}>
+                <Route path="/" element={<TaskListPage />} />
+                <Route path="/task/:taskId" element={<TaskDetailPage />} />
+              </Routes>
+            </PageTransition>
           </div>
 
           {isMock && (
@@ -166,7 +166,7 @@ export default function App() {
                   flexDirection: 'column',
                   fontWeight: 'bold',
                   fontSize: '11px',
-                  fontFamily: 'sans-serif',
+                  fontFamily: 'inherit',
                   transition: 'transform 0.1s active',
                 }}
                 title="Switch Language"
@@ -174,8 +174,8 @@ export default function App() {
                 <span style={{ fontSize: '14px', marginBottom: '2px' }}>🌐</span>
                 <span>{language.toUpperCase()}</span>
               </button>
-{/* 
-              <DevPanel
+
+              {/* <DevPanel
                 superApp={superApp}
                 authToken={authToken}
                 onSaveToken={handleSaveToken}
