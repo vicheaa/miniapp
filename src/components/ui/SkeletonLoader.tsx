@@ -1,3 +1,9 @@
+import Header from '@/components/ui/Header';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useMiniAppStore } from '@/store/miniAppStore';
+
 /**
  * Skeleton Loaders for native-like loading experience.
  * 
@@ -110,34 +116,64 @@ export function TaskDetailSkeleton() {
 /* ── App Bootstrap Skeleton (shown during bridge init) ──────────────── */
 
 export function AppBootstrapSkeleton() {
+  const { t } = useTranslation();
+  const superApp = useMiniAppStore((s) => s.superApp);
+  const isDetailPage = window.location.hash.startsWith('#/task/');
+
+  const handleBack = () => {
+    const bridge = superApp || (window as any).superApp;
+    if (bridge) {
+      bridge.close();
+    } else {
+      window.location.hash = '#/';
+    }
+  };
+
   return (
     <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-screen overflow-hidden flex flex-col box-border bootstrap-skeleton">
-      {/* Header skeleton */}
-      <header className="flex items-center justify-between px-2 pt-3 pb-2 bg-white w-full">
-        <div className="w-10 h-10 flex items-center justify-center">
-          <div className="skeleton-shimmer h-5 w-5 rounded" />
-        </div>
-        <div className="flex-1 flex justify-center">
-          <div className="skeleton-shimmer h-4 w-[30%] rounded" />
-        </div>
-        <div className="w-10" />
-      </header>
-
-      {/* Search bar skeleton */}
-      <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100">
-        <div className="skeleton-shimmer h-10 w-full rounded-[10px]" />
-      </div>
-
-      {/* Filter row skeleton */}
-      <div className="px-4 pt-3.5 pb-1 flex items-center justify-between">
-        <div className="skeleton-shimmer h-3 w-[25%] rounded" />
-        <div className="skeleton-shimmer h-3.5 w-[22%] rounded" />
-      </div>
-
-      {/* Task cards skeleton */}
-      <div className="flex-1 p-3 pt-1">
-        <TaskListSkeleton />
-      </div>
+      {isDetailPage ? (
+        <>
+          <Header
+            title={t('workflow.detail')}
+            subtitle=""
+            onBack={handleBack}
+            backTitle="Back"
+          />
+          <div className="flex-1 p-3 pt-1 overflow-y-auto">
+            <TaskDetailSkeleton />
+          </div>
+        </>
+      ) : (
+        <>
+          <Header
+            title={t('workflow.title')}
+            onBack={handleBack}
+            backTitle="Close Mini App"
+          />
+          {/* Search Bar */}
+          <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 shrink-0">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+              <Input
+                type="text"
+                placeholder={t('workflow.search_placeholder')}
+                value=""
+                readOnly
+                className="ring-0 focus:ring-0 focus-visible:ring-0 h-10 rounded-[10px] pl-9 pr-3 text-[13px] placeholder:text-gray-400 w-full"
+              />
+            </div>
+          </div>
+          {/* Filter row skeleton */}
+          <div className="px-4 pt-3.5 pb-1 flex items-center justify-between shrink-0 select-none">
+            <div className="skeleton-shimmer h-3.5 w-[25%] rounded" />
+            <div className="skeleton-shimmer h-4 w-[22%] rounded" />
+          </div>
+          {/* Task cards skeleton */}
+          <div className="flex-1 p-3 pt-1 overflow-y-auto">
+            <TaskListSkeleton />
+          </div>
+        </>
+      )}
     </div>
   );
 }

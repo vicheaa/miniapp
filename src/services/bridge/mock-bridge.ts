@@ -1,11 +1,5 @@
 import type { SuperAppBridge } from '../../types/bridge';
 
-/**
- * Create a mock SuperApp bridge for standalone development.
- *
- * All methods log to the console and use browser-native fallbacks
- * (e.g. `window.confirm` for dialogs, `alert` for toasts).
- */
 export function createMockBridge(token: string): SuperAppBridge {
   return {
     getAuthToken: async () => token,
@@ -19,10 +13,12 @@ export function createMockBridge(token: string): SuperAppBridge {
     getInitParams: async () => {
       console.log('[Mock SuperApp] getInitParams called');
       const urlParams = new URLSearchParams(window.location.search);
-      const filter = urlParams.get('filter') || 'AVAILABLE';
+      const filter = urlParams.get('filter') || 'ASSIGNED';
       const latest = urlParams.get('latest') !== 'false';
-      const myRequest = urlParams.get('myRequest') !== 'false';
-      return { filter, latest, myRequest };
+      const myRequest = urlParams.get('myRequest') === 'true';
+      const isFilterBtndisable = urlParams.get('isFilterBtndisable') === 'true';
+      const setTitle = urlParams.get('setTitle') || urlParams.get('title');
+      return { filter, latest, myRequest, isFilterBtndisable, setTitle };
     },
 
     scanQR: async () => {

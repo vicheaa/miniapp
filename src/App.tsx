@@ -10,7 +10,6 @@ import DevPanel from './components/ui/DevPanel';
 import PageTransition from './components/ui/PageTransition';
 import { AppBootstrapSkeleton } from './components/ui/SkeletonLoader';
 
-// Initialize React Query Client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -21,11 +20,7 @@ const queryClient = new QueryClient({
   },
 });
 
-/**
- * Root application component.
- */
 export default function App() {
-  /* ── Auth token for standalone dev mode ──────────────────────────────── */
   const [authToken, setAuthToken] = useState<string>(() => {
     return (
       localStorage.getItem('dev_auth_token') ||
@@ -36,63 +31,67 @@ export default function App() {
 
   const { bridge: superApp, isMock } = useSuperApp(authToken);
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   const setSuperApp = useMiniAppStore((s) => s.setSuperApp);
   const setAuthTokenInStore = useMiniAppStore((s) => s.setAuthToken);
   const setLanguage = useMiniAppStore((s) => s.setLanguage);
 
-  // Sync bridge and token to Zustand store when resolved
   useEffect(() => {
     if (superApp) {
       setSuperApp(superApp);
-
-      // Initialize bridge
       superApp.ready();
       superApp.setTitle('Workflow');
 
-      // Pull dynamic auth token if store token is empty
-      const fetchToken = async () => {
-        const token = useMiniAppStore.getState().authToken;
-        if (!token) {
-          try {
-            const t = await superApp.getAuthToken();
-            if (t) setAuthTokenInStore(t);
-          } catch (e) {
-            console.error('[App] Failed to fetch dynamic token:', e);
-          }
-        }
-      };
-      fetchToken();
-
-      // Initialize query parameters from bridge launch parameters
-      const fetchInitParams = async () => {
+      const initializeApp = async () => {
         try {
-          const params = await superApp.getInitParams();
-          if (params) {
-            const { filter, latest, myRequest } = params;
-            const store = useWorkflowStore.getState();
-            if (filter) store.setFilter(filter);
-            if (latest !== undefined) store.setLatest(latest);
-            if (myRequest !== undefined) store.setMyRequest(myRequest);
+          // 1. Fetch token if not present
+          const token = useMiniAppStore.getState().authToken;
+          if (!token) {
+            try {
+              const t = await superApp.getAuthToken();
+              if (t) setAuthTokenInStore(t);
+            } catch (e) {
+              console.error('[App] Failed to fetch dynamic token:', e);
+            }
           }
-        } catch (e) {
-          console.error('[App] Failed to fetch init params:', e);
+
+          // 2. Fetch init params
+          try {
+            const params = await superApp.getInitParams();
+            if (params) {
+              const { filter, latest, myRequest, isFilterBtndisable, title, setTitle } = params;
+              const store = useWorkflowStore.getState();
+              if (filter) store.setFilter(filter);
+              if (latest !== undefined) store.setLatest(latest);
+              if (myRequest !== undefined) store.setMyRequest(myRequest);
+              if (isFilterBtndisable !== undefined) {
+                const isDisabled = isFilterBtndisable === true || isFilterBtndisable === 'true';
+                store.setIsFilterBtndisable(isDisabled);
+              }
+              const displayTitle = setTitle || title;
+              if (displayTitle) store.setTitle(displayTitle);
+            }
+          } catch (e) {
+            console.error('[App] Failed to fetch init params:', e);
+          }
+
+          // 3. Fetch localization
+          try {
+            const loc = await superApp.getLocalization();
+            if (loc && (loc.language || loc.localization)) {
+              setLanguage(loc.language || loc.localization);
+            }
+          } catch (err) {
+            console.error('[App] Failed to fetch initial localization:', err);
+          }
+        } finally {
+          setIsInitialized(true);
         }
       };
-      fetchInitParams();
 
-      // Initialize language from bridge
-      superApp
-        .getLocalization()
-        .then((loc) => {
-          if (loc && (loc.language || loc.localization)) {
-            setLanguage(loc.language || loc.localization);
-          }
-        })
-        .catch((err) => {
-          console.error('[App] Failed to fetch initial localization:', err);
-        });
+      initializeApp();
 
-      // Listen for language changes from native host
       superApp.on('onLanguageChanged', (data: any) => {
         if (data && data.language) {
           setLanguage(data.language);
@@ -124,9 +123,10 @@ export default function App() {
   }, [language]);
 
   const storeToken = useMiniAppStore((s) => s.authToken);
+  const superAppFromStore = useMiniAppStore((s) => s.superApp);
 
-  /* ── Waiting for bridge and token ────────────────────────────────────── */
-  if (!superApp || !storeToken) {
+  /* ── Waiting for bridge, token and initialization ────────────────────── */
+  if (!superAppFromStore || !storeToken || !isInitialized) {
     return <AppBootstrapSkeleton />;
   }
 

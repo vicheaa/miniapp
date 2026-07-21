@@ -45,7 +45,8 @@
         "asset_counting": "Asset Counting",
         "mobile_attendance": "Mobile Attendance",
         "services": "Services",
-        "workflow": "Workflow"
+        "workflow": "Workflow",
+        "tasks": "Tasks"
     },
     "localization": {
         "title": "Language",
@@ -87,6 +88,9 @@
         "disclaimer_checkbox": "I confirm that this attendance submission is true and accurate and reflects my actual work activity.",
         "cancel": "Cancel",
         "confirm": "Confirm"
+    },
+    "approval": {
+        "title": "Approval"
     },
     "workflow": {
         "title": "Workflow",

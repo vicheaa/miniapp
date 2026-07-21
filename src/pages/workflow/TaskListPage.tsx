@@ -62,7 +62,8 @@ export default function TaskListPage() {
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
   const filter = useWorkflowStore((s) => s.filter);
   const setFilter = useWorkflowStore((s) => s.setFilter);
-
+  const isFilterBtndisable = useWorkflowStore((s) => s.isFilterBtndisable);
+  const title = useWorkflowStore((s) => s.title);
   const {
     data,
     isLoading,
@@ -72,6 +73,22 @@ export default function TaskListPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useWorkflowTasksInfiniteQuery();
+
+  const [isDelayedLoading, setIsDelayedLoading] = useState(isLoading);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoading) {
+      setIsDelayedLoading(true);
+    } else {
+      timer = setTimeout(() => {
+        setIsDelayedLoading(false);
+      }, 500);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isLoading]);
 
   const [activeMenuTask, setActiveMenuTask] = useState<WorkflowTask | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -153,14 +170,14 @@ export default function TaskListPage() {
     observer.observe(el);
 
     return () => observer.disconnect();
-  }, [handleIntersect]);
+  }, [handleIntersect, isDelayedLoading]);
 
   return (
     <div className="font-sans max-w-[480px] mx-auto p-0 bg-gray-100 h-full overflow-hidden flex flex-col box-border">
       {/* Header */}
       {superApp && (
         <Header
-          title={t('workflow.title')}
+          title={title || t('approval.title')}
           onBack={() => superApp.close()}
           backTitle="Close Mini App"
         />
@@ -183,46 +200,49 @@ export default function TaskListPage() {
       {/* Task Count & Filter Row */}
       <div className="px-4 pt-3.5 pb-1 flex items-center justify-between shrink-0 select-none">
         <span className="text-[12.5px] text-gray-450 font-bold uppercase tracking-wider">
-          {!isLoading && !error && total > 0
-            ? `${filteredTasks.length} / ${total} ${t('home.my_tasks')}`
+          {!isDelayedLoading && !error && total > 0
+            ? `${filteredTasks.length} / ${total} ${t('home.tasks')}`
             : ''}
         </span>
         
         {/* Dropdown filter */}
-        <DropdownMenu open={isFilterOpen} onOpenChange={setFilterOpen}>
-          <DropdownMenuTrigger className="flex items-center gap-0.5 py-1 pl-1 pr-1 text-[13.5px] font-extrabold text-[#063E89] cursor-pointer select-none outline-none">
-            <span>
-              {filter === 'AVAILABLE' ? t('workflow.available_tasks')
-                : filter === 'ASSIGNED' ? t('workflow.my_tasks')
-                : t('workflow.completed_tasks')}
-            </span>
-            <ChevronDown size={14} className="stroke-[3]" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[160px]">
-            <DropdownMenuRadioGroup
-              value={filter}
-              onValueChange={(val) => {
-                setFilter(val as any);
-                setFilterOpen(false);
-              }}
-            >
-              <DropdownMenuRadioItem value="AVAILABLE">
-                {t('workflow.available_tasks')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="ASSIGNED">
-                {t('workflow.my_tasks')}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="COMPLETED">
-                {t('workflow.completed_tasks')}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isFilterBtndisable && (
+          <DropdownMenu open={isFilterOpen} onOpenChange={setFilterOpen}>
+            <DropdownMenuTrigger className="flex items-center gap-0.5 py-1 pl-1 pr-1 text-[13.5px] font-extrabold text-[#063E89] cursor-pointer select-none outline-none">
+              <span>
+                {
+                filter === 'ASSIGNED' ? t('workflow.my_tasks') : 
+                filter === 'AVAILABLE' ? t('workflow.available_tasks') : 
+                t('workflow.completed_tasks')}
+              </span>
+              <ChevronDown size={14} className="stroke-[3]" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[160px]">
+              <DropdownMenuRadioGroup
+                value={filter}
+                onValueChange={(val) => {
+                  setFilter(val as any);
+                  setFilterOpen(false);
+                }}
+              >
+                <DropdownMenuRadioItem value="ASSIGNED">
+                  {t('workflow.my_tasks')}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="AVAILABLE">
+                  {t('workflow.available_tasks')}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="COMPLETED">
+                  {t('workflow.completed_tasks')}
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Content */}
       <main className="flex-1 p-3 pt-1 overflow-y-auto">
-        {isLoading && !data ? (
+        {isDelayedLoading ? (
           <TaskListSkeleton />
         ) : error ? (
           <div className="fade-in">

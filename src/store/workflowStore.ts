@@ -14,11 +14,17 @@ interface WorkflowStore {
   filter: 'AVAILABLE' | 'ASSIGNED' | 'COMPLETED';
   setFilter: (filter: 'AVAILABLE' | 'ASSIGNED' | 'COMPLETED') => void;
 
+  title: string;
+  setTitle: (title: string) => void;
+
   latest: boolean;
   setLatest: (latest: boolean) => void;
 
   myRequest: boolean;
   setMyRequest: (myRequest: boolean) => void;
+
+  isFilterBtndisable: boolean;
+  setIsFilterBtndisable: (isFilterBtndisable: boolean) => void;
 }
 
 export const useWorkflowStore = create<WorkflowStore>((set) => ({
@@ -28,16 +34,22 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   searchQuery: '',
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 
-  filter: 'AVAILABLE',
+  filter: 'ASSIGNED',
   setFilter: (filter) => set({
     filter,
     latest: true,
-    myRequest: filter === 'COMPLETED' ? true : false,
+    myRequest: filter === 'ASSIGNED' ? false : true,
   }),
 
   latest: true,
   setLatest: (latest) => set({ latest }),
 
-  myRequest: false,
+  myRequest: true,
   setMyRequest: (myRequest) => set({ myRequest }),
+
+  isFilterBtndisable: false,
+  setIsFilterBtndisable: (isFilterBtndisable) => set({ isFilterBtndisable }),
+
+  title: '',
+  setTitle: (title: string) => set({ title }),
 }));
