@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { WorkflowTask } from '../types/workflow';
 
+export type WorkflowStatusFilter = 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+
 interface WorkflowStore {
   // Selection
   selectedTask: WorkflowTask | null;
@@ -13,6 +15,9 @@ interface WorkflowStore {
   // Filter
   filter: 'AVAILABLE' | 'ASSIGNED' | 'COMPLETED';
   setFilter: (filter: 'AVAILABLE' | 'ASSIGNED' | 'COMPLETED') => void;
+
+  statusFilter: WorkflowStatusFilter;
+  setStatusFilter: (statusFilter: WorkflowStatusFilter) => void;
 
   title: string;
   setTitle: (title: string) => void;
@@ -38,13 +43,17 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   setFilter: (filter) => set({
     filter,
     latest: true,
-    myRequest: filter === 'ASSIGNED' ? false : true,
+    myRequest: false,
+    statusFilter: 'ALL',
   }),
+
+  statusFilter: 'ALL',
+  setStatusFilter: (statusFilter) => set({ statusFilter }),
 
   latest: true,
   setLatest: (latest) => set({ latest }),
 
-  myRequest: true,
+  myRequest: false,
   setMyRequest: (myRequest) => set({ myRequest }),
 
   isFilterBtndisable: false,
@@ -53,3 +62,4 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
   title: '',
   setTitle: (title: string) => set({ title }),
 }));
+

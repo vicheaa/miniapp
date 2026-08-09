@@ -57,6 +57,17 @@ export interface InstanceInfo {
   workflowAttrs: WorkflowAttr[];
 }
 
+/** Workflow status object structure. */
+export interface WorkflowStatusInfo {
+  code?: string;
+  name?: string;
+  label?: string;
+  color?: string;
+  bgColor?: string;
+  textColor?: string;
+  [key: string]: any;
+}
+
 /** A single workflow task item. */
 export interface WorkflowTask {
   taskId: string;
@@ -82,6 +93,7 @@ export interface WorkflowTask {
   priority: number;
   subTasks: any[];
   subTaskName: string | null;
+  workflowStatus?: string | WorkflowStatusInfo;
 }
 
 /** Paginated response from the task list API. */

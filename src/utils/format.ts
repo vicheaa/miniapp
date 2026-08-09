@@ -49,3 +49,19 @@ export function formatCurrency(value: number | string | null | undefined): strin
     maximumFractionDigits: 2,
   }).format(num);
 }
+
+/**
+ * Format a string like "IN_PROGRESS" or "in_progress" into Title Case ("In Progress").
+ */
+export function formatStatusText(str?: string | null): string {
+  if (!str) return '';
+  return str
+    .replace(/_/g, ' ')
+    .replace(/-/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+

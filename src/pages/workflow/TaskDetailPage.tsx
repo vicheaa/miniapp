@@ -30,7 +30,9 @@ import {
 import { taskRegistry } from './task/registry';
 import DefaultActions from './task/DefaultActions';
 import Header from '@/components/ui/Header';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { TaskDetailSkeleton } from '@/components/ui/SkeletonLoader';
+import BpmnDiagramModal from '@/components/workflow/BpmnDiagramModal';
 import { 
   BasicContactInfo, 
   FileMetadata, 
@@ -152,6 +154,7 @@ export default function TaskDetailPage() {
 
   const [isRequestInfoExpanded, setIsRequestInfoExpanded] = useState(true);
   const [isCurrentStateExpanded, setIsCurrentStateExpanded] = useState(true);
+  const [isDiagramOpen, setIsDiagramOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
 
   const hasAttachments = !!(instanceData?.attachmentFiles && instanceData.attachmentFiles.length > 0);
@@ -303,9 +306,7 @@ export default function TaskDetailPage() {
                   >
                     <span className="text-[14px] font-bold text-gray-800">{t('workflow.request_info')}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        {detail?.processStatus || instanceData?.processInstance?.state || 'PENDING'}
-                      </span>
+                      <StatusBadge status={detail?.processStatus || instanceData?.processInstance?.state || 'PENDING'} />
                       <ChevronDown
                         size={16}
                         className={`text-gray-400 transition-transform duration-200 ${
@@ -426,6 +427,16 @@ export default function TaskDetailPage() {
                           </span>
                         </div>
                       </div>
+
+                      {/* View BPMN Diagram Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsDiagramOpen(true)}
+                        className="mt-1 flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg text-[13px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 active:bg-blue-200 transition-colors cursor-pointer border border-blue-100/80"
+                      >
+                        <Eye size={15} />
+                        <span>{t('workflow.view_diagram')}</span>
+                      </button>
                     </div>
                   )}
                 </div>      
@@ -574,6 +585,13 @@ export default function TaskDetailPage() {
           />
         );
       })()}
+
+      {/* BPMN Diagram Modal */}
+      <BpmnDiagramModal
+        open={isDiagramOpen}
+        onClose={() => setIsDiagramOpen(false)}
+        procInstId={instanceData?.processInstance?.procInstId || selectedTask?.instanceInfo?.processInstanceId || null}
+      />
     </div>
   );
 }

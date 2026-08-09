@@ -1,5 +1,5 @@
 import { WorkflowTask } from "@/types/workflow";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, CheckCircle2, Clock } from "lucide-react";
 import { formatDateCompact } from "@/utils/format";
 
 function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { label: string; value: string }[] {
@@ -43,34 +43,51 @@ export default function TaskCard({
 
   return (
     <div
-      className="bg-white rounded-[14px] px-[18px] py-4 cursor-pointer"
+      className="bg-white rounded-[14px] px-[18px] py-4 cursor-pointer hover:shadow-sm transition-all border border-gray-100/80"
       onClick={onClick}
     >
-      <div className="flex items-baseline gap-1.5 mb-3">
-        <span className="font-bold text-gray-900 shrink-0">
-          {task.instanceInfo.businessKey}
-        </span>
-        <span className="font-medium">·</span>
-        <span className="font-semibold truncate">
-          {task.instanceInfo.processName}
-        </span>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEllipsisClick();
-          }}
-          className="ml-auto self-center flex items-center justify-center p-1.5 -m-1.5 rounded-full hover:text-gray-600 hover:bg-[rgba(243,244,246,0.5)] active:bg-gray-100 transition-colors"
-        >
-          <Ellipsis size={18} className="shrink-0" />
-        </button>
+      {/* Header Row */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden pr-1">
+          {task.completed ? (
+            <span title="Completed" className="inline-flex">
+              <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+            </span>
+          ) : (
+            <span title="Pending" className="inline-flex">
+              <Clock size={18} className="text-amber-500 shrink-0" />
+            </span>
+          )}
+          <span className="font-bold text-gray-900 text-[14px] shrink-0">
+            {task.instanceInfo.businessKey}
+          </span>
+          <span className="font-medium text-gray-400">·</span>
+          <span className="font-semibold text-gray-700 text-[14px] truncate">
+            {task.instanceInfo.processName}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEllipsisClick();
+            }}
+            className="flex items-center justify-center p-1.5 -mr-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+          >
+            <Ellipsis size={18} className="shrink-0" />
+          </button>
+        </div>
       </div>
 
+      {/* Details List */}
       <div className="flex flex-col gap-[7px]">
         {rows.map((row, i) => (
           <div key={i} className="flex items-baseline justify-between gap-4">
             <span className="text-[13px] text-gray-400 font-medium shrink-0">{row.label}</span>
-            <span className="text-[13px] font-medium text-right truncate">{row.value}</span>
+            <span className="text-[13px] font-medium text-gray-800 text-right truncate">{row.value}</span>
           </div>
         ))}
       </div>

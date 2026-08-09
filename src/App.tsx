@@ -145,7 +145,7 @@ export default function App() {
 
           {isMock && (
             <>
-              <button
+              {/* <button
                 onClick={handleToggleLanguage}
                 style={{
                   position: 'fixed',
@@ -173,7 +173,7 @@ export default function App() {
               >
                 <span style={{ fontSize: '14px', marginBottom: '2px' }}>🌐</span>
                 <span>{language.toUpperCase()}</span>
-              </button>
+              </button> */}
 
               {/* <DevPanel
                 superApp={superApp}

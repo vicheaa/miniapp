@@ -20,6 +20,7 @@ export async function fetchWorkflowTasks(
   latest?: boolean,
   myRequest?: boolean,
   searchValue?: string,
+  statuses?: string[],
 ): Promise<WorkflowTaskPage> {
   const url = `/services/central/api/name/task-page/list-paging/page/${page}/size/${size}`;
 
@@ -30,6 +31,8 @@ export async function fetchWorkflowTasks(
       filter: filter ?? "AVAILABLE",
       latest: latest ?? true,
       myRequest: myRequest ?? false,
+      buKeys: ["PR"],
+      statuses: statuses ?? [],
       ...(searchValue && { searchValue }),
     })
   });
@@ -216,5 +219,56 @@ export async function fetchFmaNewStaffRequestDetail(processInstanceId: string): 
     body: JSON.stringify({ id: processInstanceId }),
   });
   if (!res.ok) throw new Error(`Failed to fetch FNS request detail: ${res.statusText}`);
+  return res.json();
+}
+
+export interface BpmnTaskItem {
+  taskId: string;
+  taskDefKey: string;
+  isActive: boolean;
+}
+
+export interface BpmnDiagramResponse {
+  id: string;
+  bpmn20Xml: string;
+  status: string;
+  processDef: any;
+  taskList: BpmnTaskItem[];
+}
+
+/**
+ * Fetch BPMN diagram XML and task status list for a process instance.
+ */
+export async function fetchBpmnDiagram(procInstId: string): Promise<BpmnDiagramResponse> {
+  const url = `/services/workflow/api/v1/workflow/name/fetchDiagram/find`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ id: procInstId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch BPMN diagram: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+export interface TaskUserDestination {
+  startedDate: string;
+  endedDate: string | null;
+  lastName: string;
+  firstName: string;
+  empNo: string;
+  userId: string;
+}
+
+/**
+ * Fetch list of destination users / assignees for a task in the process instance.
+ */
+export async function fetchTaskUserDestList(taskId: string): Promise<TaskUserDestination[]> {
+  const url = `/services/workflow/api/v1/workflow/name/userDestList/list`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ id: taskId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch user destination list: ${res.status} ${res.statusText}`);
   return res.json();
 }

@@ -13,7 +13,8 @@ import {
   SendHorizontal,
   UserCheck,
   Search,
-  ChevronDown
+  ChevronDown,
+  Workflow
 } from 'lucide-react';
 import ErrorState from '@/components/ui/ErrorState';
 import EmptyState from '@/components/ui/EmptyState';
@@ -32,7 +33,8 @@ import {
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import TaskCard from '@/components/workflow/TaskCard';
-import { useWorkflowStore } from '@/store/workflowStore';
+import BpmnDiagramModal from '@/components/workflow/BpmnDiagramModal';
+import { useWorkflowStore, type WorkflowStatusFilter } from '@/store/workflowStore';
 import { useMiniAppStore } from '@/store/miniAppStore';
 import { useWorkflowTasksInfiniteQuery } from '@/hooks/useWorkflowQuery';
 import { claimTask, unclaimTask } from '@/services/api/workflow-api';
@@ -51,6 +53,14 @@ function LoadingMore({ t }: { t: (k: string) => string }) {
   );
 }
 
+const STATUS_OPTIONS: { id: WorkflowStatusFilter; labelKey: string }[] = [
+  { id: 'ALL', labelKey: 'workflow.status_all' },
+  // { id: 'PENDING', labelKey: 'workflow.status_pending' },
+  // { id: 'IN_PROGRESS', labelKey: 'workflow.status_in_progress' },
+  { id: 'COMPLETED', labelKey: 'workflow.status_completed' },
+  { id: 'REJECTED', labelKey: 'workflow.status_rejected' },
+];
+
 
 export default function TaskListPage() {
   const { t } = useTranslation();
@@ -62,6 +72,8 @@ export default function TaskListPage() {
   const setSelectedTask = useWorkflowStore((s) => s.setSelectedTask);
   const filter = useWorkflowStore((s) => s.filter);
   const setFilter = useWorkflowStore((s) => s.setFilter);
+  const statusFilter = useWorkflowStore((s) => s.statusFilter);
+  const setStatusFilter = useWorkflowStore((s) => s.setStatusFilter);
   const isFilterBtndisable = useWorkflowStore((s) => s.isFilterBtndisable);
   const title = useWorkflowStore((s) => s.title);
   const {
@@ -94,6 +106,7 @@ export default function TaskListPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [diagramProcInstId, setDiagramProcInstId] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const allTasks = data?.pages.flatMap((p) => p.items) || [];
@@ -220,7 +233,7 @@ export default function TaskListPage() {
             <DropdownMenuContent align="end" className="min-w-[160px]">
               <DropdownMenuRadioGroup
                 value={filter}
-                onValueChange={(val) => {
+                onValueChange={(val: string) => {
                   setFilter(val as any);
                   setFilterOpen(false);
                 }}
@@ -239,6 +252,49 @@ export default function TaskListPage() {
           </DropdownMenu>
         )}
       </div>
+
+      {/* Status Filter Sub-bar (Only when filter === 'COMPLETED') */}
+      {filter === 'COMPLETED' && (
+        <div className="px-4 pb-2.5 pt-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
+          {STATUS_OPTIONS.map((opt) => {
+            const isActive = statusFilter === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setStatusFilter(opt.id)}
+                className={`px-3 py-1 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? opt.id === 'ALL'
+                      ? 'bg-[#063E89] text-white shadow-sm ring-1 ring-[#063E89]'
+                      // : opt.id === 'PENDING'
+                      // ? 'bg-amber-100 text-amber-800 border border-amber-300 ring-1 ring-amber-400/30'
+                      // : opt.id === 'IN_PROGRESS'
+                      // ? 'bg-blue-100 text-blue-800 border border-blue-300 ring-1 ring-blue-400/30'
+                      : opt.id === 'COMPLETED'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 ring-1 ring-emerald-400/30'
+                      : 'bg-rose-100 text-rose-800 border border-rose-300 ring-1 ring-rose-400/30'
+                    : 'bg-white text-gray-500 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-700'
+                }`}
+              >
+                {opt.id === 'PENDING' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-amber-500' : 'bg-amber-400'}`} />
+                )}
+                {opt.id === 'IN_PROGRESS' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-500' : 'bg-blue-400'}`} />
+                )}
+                {opt.id === 'COMPLETED' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-emerald-400'}`} />
+                )}
+                {opt.id === 'REJECTED' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-rose-500' : 'bg-rose-400'}`} />
+                )}
+                <span>{t(opt.labelKey)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Content */}
       <main className="flex-1 p-3 pt-1 overflow-y-auto">
@@ -303,6 +359,18 @@ export default function TaskListPage() {
               >
                 <Eye size={18} className='text-gray-600' />
                 <span className="text-[15px] font-medium">{t('workflow.detail')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDiagramProcInstId(activeMenuTask.instanceInfo.processInstanceId);
+                  closeMenu();
+                }}
+                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
+              >
+                <Workflow size={18} className='text-gray-600' />
+                <span className="text-[15px] font-medium">{t('workflow.view_diagram')}</span>
               </button>
 
               <button
@@ -376,6 +444,13 @@ export default function TaskListPage() {
           )}
         </DrawerContent>
       </Drawer>
+
+      {/* BPMN Diagram Modal */}
+      <BpmnDiagramModal
+        open={!!diagramProcInstId}
+        onClose={() => setDiagramProcInstId(null)}
+        procInstId={diagramProcInstId}
+      />
     </div>
   );
 }

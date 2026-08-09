@@ -11,12 +11,17 @@ export function useWorkflowTasksInfiniteQuery() {
   const superApp = useMiniAppStore((s) => s.superApp);
   const searchQuery = useWorkflowStore((s) => s.searchQuery);
   const filter = useWorkflowStore((s) => s.filter);
+  const statusFilter = useWorkflowStore((s) => s.statusFilter);
   const latest = useWorkflowStore((s) => s.latest);
   const myRequest = useWorkflowStore((s) => s.myRequest);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  const statuses = filter === 'COMPLETED'
+    ? (statusFilter === 'ALL' ? [] : [statusFilter])
+    : [];
+
   return useInfiniteQuery({
-    queryKey: ['workflowTasks', token, debouncedSearchQuery, filter, latest, myRequest],
+    queryKey: ['workflowTasks', token, debouncedSearchQuery, filter, statusFilter, latest, myRequest],
     queryFn: async ({ pageParam = 0 }) => {
       if (!token) return { items: [], page: 0, pageSize: PAGE_SIZE, total: 0 };
       try {
@@ -26,7 +31,8 @@ export function useWorkflowTasksInfiniteQuery() {
           filter,
           latest,
           myRequest,
-          debouncedSearchQuery || undefined
+          debouncedSearchQuery || undefined,
+          statuses
         );
       } catch (err: any) {
         if (superApp) {
