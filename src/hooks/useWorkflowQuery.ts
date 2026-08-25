@@ -17,23 +17,66 @@ export function useWorkflowTasksInfiniteQuery() {
   const buKeys = useWorkflowStore((s) => s.buKeys);
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const statuses = filter === 'COMPLETED'
-    ? (statusFilter === 'ALL' ? [] : [statusFilter])
-    : [];
+  let effectiveFilter: string = filter;
+  let taskStatuses: string[] = [];
+
+  if (myRequest) {
+    const activeStatus = (statusFilter === 'ALL' || !statusFilter) ? 'OPEN' : statusFilter;
+    switch (activeStatus) {
+      case 'OPEN':
+        effectiveFilter = 'AVAILABLE';
+        taskStatuses = ['PENDING', 'IN_PROGRESS'];
+        break;
+      case 'PENDING':
+        effectiveFilter = 'AVAILABLE';
+        taskStatuses = ['PENDING'];
+        break;
+      case 'IN_PROGRESS':
+        effectiveFilter = 'AVAILABLE';
+        taskStatuses = ['IN_PROGRESS'];
+        break;
+      case 'COMPLETED':
+        effectiveFilter = 'COMPLETED';
+        taskStatuses = ['COMPLETED'];
+        break;
+      case 'REJECTED':
+        effectiveFilter = 'COMPLETED';
+        taskStatuses = ['REJECTED'];
+        break;
+      default:
+        effectiveFilter = 'AVAILABLE';
+        taskStatuses = ['PENDING', 'IN_PROGRESS'];
+        break;
+    }
+  } else {
+    taskStatuses = filter === 'COMPLETED'
+      ? (statusFilter === 'ALL' ? [] : [statusFilter])
+      : [];
+  }
 
   return useInfiniteQuery({
-    queryKey: ['workflowTasks', token, debouncedSearchQuery, filter, statusFilter, latest, myRequest, buKeys],
+    queryKey: [
+      'workflowTasks',
+      token,
+      debouncedSearchQuery,
+      effectiveFilter,
+      taskStatuses,
+      statusFilter,
+      latest,
+      myRequest,
+      buKeys,
+    ],
     queryFn: async ({ pageParam = 0 }) => {
       if (!token) return { items: [], page: 0, pageSize: PAGE_SIZE, total: 0 };
       try {
         return await fetchWorkflowTasks(
           pageParam,
           PAGE_SIZE,
-          filter,
+          effectiveFilter,
           latest,
           myRequest,
           debouncedSearchQuery || undefined,
-          statuses,
+          taskStatuses,
           buKeys
         );
       } catch (err: any) {

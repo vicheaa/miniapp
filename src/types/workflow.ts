@@ -93,7 +93,7 @@ export interface WorkflowTask {
   priority: number;
   subTasks: any[];
   subTaskName: string | null;
-  workflowStatus?: string | WorkflowStatusInfo;
+  workflowStatus?: string;
   taskAction?: string;
 }
 

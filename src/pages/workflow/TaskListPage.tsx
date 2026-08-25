@@ -61,6 +61,14 @@ const STATUS_OPTIONS: { id: WorkflowStatusFilter; labelKey: string }[] = [
   { id: 'REJECTED', labelKey: 'workflow.status_rejected' },
 ];
 
+const MY_REQUEST_STATUS_OPTIONS: { id: WorkflowStatusFilter; labelKey: string }[] = [
+  { id: 'OPEN', labelKey: 'workflow.status_open' },
+  { id: 'PENDING', labelKey: 'workflow.status_pending' },
+  { id: 'IN_PROGRESS', labelKey: 'workflow.status_in_progress' },
+  { id: 'COMPLETED', labelKey: 'workflow.status_completed' },
+  { id: 'REJECTED', labelKey: 'workflow.status_rejected' },
+];
+
 
 export default function TaskListPage() {
   const { t } = useTranslation();
@@ -219,8 +227,8 @@ export default function TaskListPage() {
             : ''}
         </span>
         
-        {/* Dropdown filter */}
-        {!isFilterBtndisable && (
+        {/* Dropdown filter (Only for approvals / non-myRequest mode) */}
+        {!isFilterBtndisable && !myRequest && (
           <DropdownMenu open={isFilterOpen} onOpenChange={setFilterOpen}>
             <DropdownMenuTrigger className="flex items-center gap-0.5 py-1 pl-1 pr-1 text-[13.5px] font-extrabold text-[#063E89] cursor-pointer select-none outline-none">
               <span>
@@ -254,8 +262,55 @@ export default function TaskListPage() {
         )}
       </div>
 
-      {/* Status Filter Sub-bar (Only when filter === 'COMPLETED') */}
-      {filter === 'COMPLETED' && (
+      {/* Status Filter Chips for myRequest === true */}
+      {myRequest && (
+        <div className="px-4 pb-2.5 pt-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
+          {MY_REQUEST_STATUS_OPTIONS.map((opt) => {
+            const activeStatus = (statusFilter === 'ALL' || !statusFilter) ? 'OPEN' : statusFilter;
+            const isActive = activeStatus === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setStatusFilter(opt.id)}
+                className={`px-3 py-1 rounded-full text-[12px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isActive
+                    ? opt.id === 'OPEN'
+                      ? 'bg-sky-100 text-sky-800 border border-sky-300 ring-1 ring-sky-400/30'
+                      : opt.id === 'PENDING'
+                      ? 'bg-amber-100 text-amber-800 border border-amber-300 ring-1 ring-amber-400/30'
+                      : opt.id === 'IN_PROGRESS'
+                      ? 'bg-blue-100 text-blue-800 border border-blue-300 ring-1 ring-blue-400/30'
+                      : opt.id === 'COMPLETED'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 ring-1 ring-emerald-400/30'
+                      : 'bg-rose-100 text-rose-800 border border-rose-300 ring-1 ring-rose-400/30'
+                    : 'bg-white text-gray-500 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-700'
+                }`}
+              >
+                {opt.id === 'OPEN' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-sky-500' : 'bg-sky-400'}`} />
+                )}
+                {opt.id === 'PENDING' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-amber-500' : 'bg-amber-400'}`} />
+                )}
+                {opt.id === 'IN_PROGRESS' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-500' : 'bg-blue-400'}`} />
+                )}
+                {opt.id === 'COMPLETED' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-emerald-400'}`} />
+                )}
+                {opt.id === 'REJECTED' && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-rose-500' : 'bg-rose-400'}`} />
+                )}
+                <span>{t(opt.labelKey)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Status Filter Sub-bar for non-myRequest mode (Only when filter === 'COMPLETED') */}
+      {!myRequest && filter === 'COMPLETED' && (
         <div className="px-4 pb-2.5 pt-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 select-none">
           {STATUS_OPTIONS.map((opt) => {
             const isActive = statusFilter === opt.id;
@@ -268,22 +323,12 @@ export default function TaskListPage() {
                   isActive
                     ? opt.id === 'ALL'
                       ? 'bg-[#063E89] text-white shadow-sm ring-1 ring-[#063E89]'
-                      // : opt.id === 'PENDING'
-                      // ? 'bg-amber-100 text-amber-800 border border-amber-300 ring-1 ring-amber-400/30'
-                      // : opt.id === 'IN_PROGRESS'
-                      // ? 'bg-blue-100 text-blue-800 border border-blue-300 ring-1 ring-blue-400/30'
                       : opt.id === 'COMPLETED'
                       ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 ring-1 ring-emerald-400/30'
                       : 'bg-rose-100 text-rose-800 border border-rose-300 ring-1 ring-rose-400/30'
                     : 'bg-white text-gray-500 border border-gray-200/80 hover:bg-gray-50 hover:text-gray-700'
                 }`}
               >
-                {opt.id === 'PENDING' && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-amber-500' : 'bg-amber-400'}`} />
-                )}
-                {opt.id === 'IN_PROGRESS' && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-blue-500' : 'bg-blue-400'}`} />
-                )}
                 {opt.id === 'COMPLETED' && (
                   <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-emerald-400'}`} />
                 )}

@@ -20,7 +20,7 @@ export async function fetchWorkflowTasks(
   latest?: boolean,
   myRequest?: boolean,
   searchValue?: string,
-  statuses?: string[],
+  taskStatus?: string[],
   buKeys?: string[],
 ): Promise<WorkflowTaskPage> {
   const url = `/services/central/api/name/task-page/list-paging/page/${page}/size/${size}`;
@@ -33,7 +33,7 @@ export async function fetchWorkflowTasks(
       latest: latest ?? true,
       myRequest: myRequest ?? false,
       buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR"],
-      status: statuses ?? [],
+      ...(taskStatus && taskStatus.length > 0 && { taskStatus }),
       ...(searchValue && { searchValue }),
     })
   });

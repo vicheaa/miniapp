@@ -27,8 +27,8 @@ function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { labe
   });
 
   rows.push({
-    label: t('workflow.task_status'),
-    value: task.taskAction || '—',
+    label: t('workflow.status'),
+    value: task.workflowStatus ?? '',
   })
 
   return rows;
@@ -77,7 +77,9 @@ export default function TaskCard({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-          {task.workflowStatus && <StatusBadge status={task.workflowStatus} />}
+          {/* {task.workflowStatus && <StatusBadge status={task.workflowStatus} />} */}
+          {/* {task.taskAction && <StatusBadge status={task.taskAction?? 'Pending'} />} */}
+          <StatusBadge status={task.taskAction?? 'Pending'} />
           <button
             type="button"
             onClick={(e) => {

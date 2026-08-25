@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { WorkflowTask } from '../types/workflow';
 
-export type WorkflowStatusFilter = 'ALL' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
+export type WorkflowStatusFilter = 'ALL' | 'OPEN' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
 
 interface WorkflowStore {
   // Selection
@@ -59,7 +59,15 @@ export const useWorkflowStore = create<WorkflowStore>()(
       setLatest: (latest) => set({ latest }),
 
       myRequest: false,
-      setMyRequest: (myRequest) => set({ myRequest }),
+      setMyRequest: (myRequest) =>
+        set((state) => ({
+          myRequest,
+          statusFilter: myRequest
+            ? (['OPEN', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'].includes(state.statusFilter) && state.statusFilter !== 'ALL'
+                ? state.statusFilter
+                : 'OPEN')
+            : (state.statusFilter === 'OPEN' ? 'ALL' : state.statusFilter),
+        })),
 
       buKeys: ['PR'],
       setBuKeys: (buKeys) => set({ buKeys }),

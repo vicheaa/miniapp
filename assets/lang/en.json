@@ -102,10 +102,11 @@
         "my_tasks": "My Tasks",
         "completed_tasks": "Completed Tasks",
         "status_all": "All",
+        "status_open": "Open",
         "status_pending": "Pending",
-        "status_in_progress": "In Progress",
-        "status_completed": "Completed",
-        "status_rejected": "Rejected",
+        "status_in_progress": "In-Progress",
+        "status_completed": "Complete",
+        "status_rejected": "Reject",
         "no_tasks": "No pending tasks found.",
         "loading_more": "Loading more...",
         "no_more_tasks": "No more tasks",
@@ -169,7 +170,8 @@
             "color": "Color",
             "year": "Year",
             "plate_number": "Plate Number"
-        }
+        },
+        "status": "Status"
     },
     "version": "0.0.7"
 }

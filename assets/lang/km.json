@@ -98,6 +98,7 @@
         "my_tasks": "ភារកិច្ចរបស់ខ្ញុំ",
         "completed_tasks": "ភារកិច្ចបានបញ្ចប់",
         "status_all": "ទាំងអស់",
+        "status_open": "បើក",
         "status_pending": "រង់ចាំ",
         "status_in_progress": "កំពុងដំណើរការ",
         "status_completed": "បានបញ្ចប់",
@@ -166,7 +167,8 @@
             "color": "ពណ៌",
             "year": "ឆ្នាំ",
             "plate_number": "ផ្លាកលេខ"
-        }
+        },
+        "status": "ស្ថានភាព"
     },
     "version": "0.0.7"
 }
