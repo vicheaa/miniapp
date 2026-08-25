@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { SuperAppBridge } from '../../types/bridge';
 import { useMiniAppStore } from '../../store/miniAppStore';
+import { useWorkflowStore } from '../../store/workflowStore';
 
 interface DevPanelProps {
   superApp: SuperAppBridge;
@@ -13,6 +14,8 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
   const [tokenInput, setTokenInput] = useState(authToken);
 
   const language = useMiniAppStore((s) => s.language);
+  const myRequest = useWorkflowStore((s) => s.myRequest);
+  const setMyRequest = useWorkflowStore((s) => s.setMyRequest);
 
   // Keep input in sync when external token changes
   React.useEffect(() => {
@@ -47,11 +50,27 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
     }
   };
 
+  const handleToggleMyRequest = () => {
+    setMyRequest(!myRequest);
+  };
+
   if (!showPanel) {
     return (
       <div style={styles.wrapper}>
         <button onClick={() => setShowPanel(true)} style={styles.pillBtn}>
-          🛠️ Dev Mode Active
+          <span>🛠️ Dev Mode</span>
+          <span
+            style={{
+              padding: '2px 8px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              backgroundColor: myRequest ? '#10b981' : '#374151',
+              color: '#fff',
+              fontWeight: 600,
+            }}
+          >
+            myRequest: {myRequest ? 'TRUE' : 'FALSE'}
+          </span>
         </button>
       </div>
     );
@@ -69,9 +88,43 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
 
         <div style={styles.panelBody}>
           <p style={styles.descText}>
-            Running standalone. Using static fallback token and mock bridge
-            actions.
+            Running standalone. Using static fallback token and mock bridge actions.
           </p>
+
+          {/* Workflow Store Controls */}
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Workflow Filters:</label>
+            <button
+              onClick={handleToggleMyRequest}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: myRequest ? '1px solid #10b981' : '1px solid #374151',
+                backgroundColor: myRequest ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                color: myRequest ? '#34d399' : '#cbd5e0',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 600,
+                transition: 'all 0.2s',
+              }}
+            >
+              <span>📋 myRequest (Task List Filter)</span>
+              <span
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  backgroundColor: myRequest ? '#10b981' : '#4b5563',
+                  color: '#ffffff',
+                }}
+              >
+                {myRequest ? '✓ TRUE (My Requests)' : '✗ FALSE (Approvals)'}
+              </span>
+            </button>
+          </div>
 
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Auth Token Fallback:</label>
@@ -137,15 +190,15 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     gap: '8px',
     margin: '0 auto',
-    padding: '10px 18px',
+    padding: '8px 14px',
     background: 'rgba(26, 26, 46, 0.95)',
     border: '1px solid rgba(67, 97, 238, 0.4)',
     borderRadius: '30px',
-    color: '#4361ee',
-    fontSize: '13px',
+    color: '#93c5fd',
+    fontSize: '12.5px',
     fontWeight: 600,
     cursor: 'pointer',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
     transition: 'all 0.2s',
   },
   panel: {
@@ -249,3 +302,4 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
   },
 };
+

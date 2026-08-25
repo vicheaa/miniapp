@@ -1,6 +1,7 @@
 import { WorkflowTask } from "@/types/workflow";
 import { Ellipsis, CheckCircle2, Clock } from "lucide-react";
 import { formatDateCompact } from "@/utils/format";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
@@ -25,6 +26,11 @@ function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { labe
     value: formatDateCompact(task.created),
   });
 
+  rows.push({
+    label: t('workflow.task_status'),
+    value: task.taskAction || '—',
+  })
+
   return rows;
 }
 
@@ -47,28 +53,31 @@ export default function TaskCard({
       onClick={onClick}
     >
       {/* Header Row */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden pr-1">
-          {task.completed ? (
-            <span title="Completed" className="inline-flex">
-              <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start gap-2 min-w-0 flex-1">
+          <div className="pt-0.5 shrink-0">
+            {task.completed ? (
+              <span title="Completed" className="inline-flex">
+                <CheckCircle2 size={18} className="text-emerald-500" />
+              </span>
+            ) : (
+              <span title="Pending" className="inline-flex">
+                <Clock size={18} className="text-amber-500" />
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-bold text-gray-900 text-[14px] truncate leading-tight">
+              {task.instanceInfo.businessKey}
             </span>
-          ) : (
-            <span title="Pending" className="inline-flex">
-              <Clock size={18} className="text-amber-500 shrink-0" />
+            <span className="text-[12.5px] font-medium text-gray-500 truncate mt-0.5">
+              {task.instanceInfo.processName}
             </span>
-          )}
-          <span className="font-bold text-gray-900 text-[14px] shrink-0">
-            {task.instanceInfo.businessKey}
-          </span>
-          <span className="font-medium text-gray-400">·</span>
-          <span className="font-semibold text-gray-700 text-[14px] truncate">
-            {task.instanceInfo.processName}
-          </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          
+        <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+          {task.workflowStatus && <StatusBadge status={task.workflowStatus} />}
           <button
             type="button"
             onClick={(e) => {

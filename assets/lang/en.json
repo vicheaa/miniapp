@@ -118,6 +118,7 @@
         "total_amount": "Total Amount",
         "requestor": "Requestor",
         "task_name": "Task Name",
+        "task_status": "Task Status",
         "assignee": "Assignee",
         "created_at": "Created At",
         "request_info": "Request Info",
@@ -145,9 +146,9 @@
         "subtotal": "Subtotal",
         "description": "Description",
         "remarks": "Remarks",
-        "total_requisition_amount": "Total Requisition Amount",
         "workflow_timeline": "Workflow Timeline",
         "no_attachments": "No attachments uploaded for this task.",
+        "bu_name": "BU Name",
         "fns": {
             "no_items": "No items requested in this category.",
             "personal_details_title": "1. Personal Details (Completed by HR)",

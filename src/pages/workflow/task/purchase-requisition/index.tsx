@@ -28,10 +28,15 @@ export default function PurchaseRequisitionForm({ detail: processDetail }: Purch
         </div>
 
         {/* Requester & Dept Info */}
-        <div className="text-gray-650 font-bold flex items-center gap-1.5">
-          <span>{processDetail.createdBy}</span>
-          <span className="text-gray-300 font-normal">|</span>
-          <span>{processDetail.buName}</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-gray-400 block text-[11px] font-medium">{t('workflow.created_by')}</span>
+            <span className="text-gray-700 font-semibold">{processDetail.createdBy}</span>
+          </div>
+          <div>
+            <span className="text-gray-400 block text-[11px] font-medium">{t('workflow.bu_name')}</span>
+            <span className="text-gray-700 font-semibold">{processDetail.buName}</span>
+          </div>
         </div>
 
         {/* Timeline (Requested & Expected Date) */}

@@ -58,14 +58,40 @@ export default function App() {
 
           // 2. Fetch init params
           try {
-            const params = await superApp.getInitParams();
-            if (params) {
-              const { filter, latest, myRequest, isFilterBtndisable, title, setTitle } = params;
+            let params = await superApp.getInitParams();
+            if (typeof params === 'string') {
+              try {
+                params = JSON.parse(params);
+              } catch (e) {
+                console.error('[App] Failed to parse init params string:', e);
+              }
+            }
+            if (params && typeof params === 'object') {
+              const { filter, latest, myRequest, buKeys, isFilterBtndisable, title, setTitle } = params;
               const store = useWorkflowStore.getState();
               if (filter) store.setFilter(filter);
-              if (latest !== undefined) store.setLatest(latest);
-              if (myRequest !== undefined) store.setMyRequest(myRequest);
-              if (isFilterBtndisable !== undefined) {
+              if (latest !== undefined && latest !== null) {
+                store.setLatest(typeof latest === 'string' ? latest !== 'false' : Boolean(latest));
+              }
+              if (myRequest !== undefined && myRequest !== null) {
+                store.setMyRequest(typeof myRequest === 'string' ? myRequest === 'true' : Boolean(myRequest));
+              }
+              if (buKeys !== undefined && buKeys !== null) {
+                let parsedBuKeys: string[] = [];
+                if (Array.isArray(buKeys)) {
+                  parsedBuKeys = buKeys;
+                } else if (typeof buKeys === 'string') {
+                  try {
+                    parsedBuKeys = buKeys.startsWith('[') ? JSON.parse(buKeys) : buKeys.split(',');
+                  } catch {
+                    parsedBuKeys = [buKeys];
+                  }
+                }
+                if (parsedBuKeys.length > 0) {
+                  store.setBuKeys(parsedBuKeys);
+                }
+              }
+              if (isFilterBtndisable !== undefined && isFilterBtndisable !== null) {
                 const isDisabled = isFilterBtndisable === true || isFilterBtndisable === 'true';
                 store.setIsFilterBtndisable(isDisabled);
               }
@@ -143,44 +169,12 @@ export default function App() {
             </PageTransition>
           </div>
 
-          {isMock && (
-            <>
-              {/* <button
-                onClick={handleToggleLanguage}
-                style={{
-                  position: 'fixed',
-                  bottom: '100px',
-                  right: '20px',
-                  zIndex: 9999,
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '50%',
-                  backgroundColor: '#063E89',
-                  color: '#ffffff',
-                  border: '2px solid rgba(255, 255, 255, 0.8)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'column',
-                  fontWeight: 'bold',
-                  fontSize: '11px',
-                  fontFamily: 'inherit',
-                  transition: 'transform 0.1s active',
-                }}
-                title="Switch Language"
-              >
-                <span style={{ fontSize: '14px', marginBottom: '2px' }}>🌐</span>
-                <span>{language.toUpperCase()}</span>
-              </button> */}
-
-              {/* <DevPanel
-                superApp={superApp}
-                authToken={authToken}
-                onSaveToken={handleSaveToken}
-              /> */}
-            </>
+          {isMock && superApp && (
+            <DevPanel
+              superApp={superApp}
+              authToken={authToken}
+              onSaveToken={handleSaveToken}
+            />
           )}
         </div>
       </HashRouter>

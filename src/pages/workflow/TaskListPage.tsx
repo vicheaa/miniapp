@@ -76,6 +76,7 @@ export default function TaskListPage() {
   const setStatusFilter = useWorkflowStore((s) => s.setStatusFilter);
   const isFilterBtndisable = useWorkflowStore((s) => s.isFilterBtndisable);
   const title = useWorkflowStore((s) => s.title);
+  const myRequest = useWorkflowStore((s) => s.myRequest);
   const {
     data,
     isLoading,
@@ -190,7 +191,7 @@ export default function TaskListPage() {
       {/* Header */}
       {superApp && (
         <Header
-          title={title || t('approval.title')}
+          title={title || (myRequest ? t('home.my_requests') : t('approval.title'))}
           onBack={() => superApp.close()}
           backTitle="Close Mini App"
         />
@@ -382,64 +383,68 @@ export default function TaskListPage() {
                 <span className="text-[15px] font-medium">{t('workflow.approvers')}</span>
               </button>
 
-              <button
-                type="button"
-                disabled={isClaiming}
-                onClick={() => handleClaimToggle(activeMenuTask)}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {activeMenuTask.claimed ? (
-                  <>
-                    <Ban size={18} className='text-gray-600' />
-                    <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
-                  </>
-                ) : (
-                  <>
-                    <UserCheck size={18} className='text-gray-600' />
-                    <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  superApp?.showToast('Assign');
-                  closeMenu();
-                }}
-                className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
-              >
-                <User size={18} className='text-gray-600' />
-                <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
-              </button>
-
-              {/* Separator */}
-              {activeMenuTask.claimed && (
-                <div className="h-[1px] bg-gray-100 my-1.5 mx-6" />
-              )}
-
-              {/* Dynamic Actions */}
-              {activeMenuTask.claimed && (() => {
-                const actions =
-                  activeMenuTask.actions && activeMenuTask.actions.length > 0
-                    ? activeMenuTask.actions
-                    : [{ name: 'Complete', value: 'Completed' }];
-
-                return actions.map((act, idx) => (
+              {!myRequest && (
+                <>
                   <button
-                    key={idx}
+                    type="button"
+                    disabled={isClaiming}
+                    onClick={() => handleClaimToggle(activeMenuTask)}
+                    className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {activeMenuTask.claimed ? (
+                      <>
+                        <Ban size={18} className='text-gray-600' />
+                        <span className="text-[15px] font-medium">{t('workflow.unclaim')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck size={18} className='text-gray-600' />
+                        <span className="text-[15px] font-medium">{t('workflow.claim')}</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
                     type="button"
                     onClick={() => {
-                      superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
+                      superApp?.showToast('Assign');
                       closeMenu();
                     }}
                     className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
                   >
-                    <SendHorizontal size={18} className='text-gray-600' />
-                    <span className="text-[15px] font-medium">{act.name}</span>
+                    <User size={18} className='text-gray-600' />
+                    <span className="text-[15px] font-medium">{t('workflow.assign')}</span>
                   </button>
-                ));
-              })()}
+
+                  {/* Separator */}
+                  {activeMenuTask.claimed && (
+                    <div className="h-[1px] bg-gray-100 my-1.5 mx-6" />
+                  )}
+
+                  {/* Dynamic Actions */}
+                  {activeMenuTask.claimed && (() => {
+                    const actions =
+                      activeMenuTask.actions && activeMenuTask.actions.length > 0
+                        ? activeMenuTask.actions
+                        : [{ name: 'Complete', value: 'Completed' }];
+
+                    return actions.map((act, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          superApp?.showToast(`Completed task: ${activeMenuTask.instanceInfo.businessKey}`);
+                          closeMenu();
+                        }}
+                        className="flex items-center gap-3.5 w-full px-6 py-[13px] cursor-pointer"
+                      >
+                        <SendHorizontal size={18} className='text-gray-600' />
+                        <span className="text-[15px] font-medium">{act.name}</span>
+                      </button>
+                    ));
+                  })()}
+                </>
+              )}
             </div>
           )}
         </DrawerContent>

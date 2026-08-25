@@ -12,13 +12,27 @@ export function createMockBridge(token: string): SuperAppBridge {
 
     getInitParams: async () => {
       console.log('[Mock SuperApp] getInitParams called');
-      const urlParams = new URLSearchParams(window.location.search);
-      const filter = urlParams.get('filter') || 'ASSIGNED';
-      const latest = urlParams.get('latest') !== 'false';
-      const myRequest = urlParams.get('myRequest') === 'true';
-      const isFilterBtndisable = urlParams.get('isFilterBtndisable') === 'true';
+      const search =
+        window.location.search ||
+        (window.location.hash.includes('?')
+          ? '?' + window.location.hash.split('?')[1]
+          : '');
+      const urlParams = new URLSearchParams(search);
+      const filter = urlParams.has('filter') ? urlParams.get('filter') : undefined;
+      const latest = urlParams.has('latest') ? urlParams.get('latest') !== 'false' : undefined;
+      const myRequest = urlParams.has('myRequest') ? urlParams.get('myRequest') === 'true' : undefined;
+      const isFilterBtndisable = urlParams.has('isFilterBtndisable') ? urlParams.get('isFilterBtndisable') === 'true' : undefined;
       const setTitle = urlParams.get('setTitle') || urlParams.get('title');
-      return { filter, latest, myRequest, isFilterBtndisable, setTitle };
+      const buKeysParam = urlParams.get('buKeys');
+      let buKeys: string[] | undefined = undefined;
+      if (buKeysParam) {
+        try {
+          buKeys = buKeysParam.startsWith('[') ? JSON.parse(buKeysParam) : buKeysParam.split(',');
+        } catch {
+          buKeys = [buKeysParam];
+        }
+      }
+      return { filter, latest, myRequest, isFilterBtndisable, setTitle, buKeys };
     },
 
     scanQR: async () => {

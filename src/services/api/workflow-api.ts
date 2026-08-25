@@ -21,6 +21,7 @@ export async function fetchWorkflowTasks(
   myRequest?: boolean,
   searchValue?: string,
   statuses?: string[],
+  buKeys?: string[],
 ): Promise<WorkflowTaskPage> {
   const url = `/services/central/api/name/task-page/list-paging/page/${page}/size/${size}`;
 
@@ -31,8 +32,8 @@ export async function fetchWorkflowTasks(
       filter: filter ?? "AVAILABLE",
       latest: latest ?? true,
       myRequest: myRequest ?? false,
-      buKeys: ["PR"],
-      statuses: statuses ?? [],
+      buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR"],
+      status: statuses ?? [],
       ...(searchValue && { searchValue }),
     })
   });
@@ -131,6 +132,77 @@ export async function fetchFilesMetadata(fileIds: string[]): Promise<FileMetadat
   });
   if (!res.ok) throw new Error(`Failed to fetch files metadata: ${res.statusText}`);
   return res.json();
+}
+
+/**
+ * Fetch binary blob content for a file by its ID or metadata.
+ */
+export async function fetchFileBlob(fileId: string, fileMeta?: FileMetadata): Promise<Blob> {
+  // If fileMeta has a direct web URL (http:// or https:// or data: or blob:)
+  if (
+    fileMeta?.uri &&
+    (fileMeta.uri.startsWith('http://') ||
+      fileMeta.uri.startsWith('https://') ||
+      fileMeta.uri.startsWith('data:') ||
+      fileMeta.uri.startsWith('blob:'))
+  ) {
+    const res = await fetch(fileMeta.uri);
+    if (res.ok) return await res.blob();
+  }
+
+  // Primary endpoint: GET /services/files/api/file/${fileId}
+  const primaryUrl = `/services/files/api/file/${fileId}`;
+  try {
+    const res = await fetch(primaryUrl, {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json') || contentType.includes('image/') || contentType.includes('pdf')) {
+        const blob = await res.blob();
+        if (blob && blob.size > 0) {
+          return blob;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`Primary fetch failed for ${primaryUrl}:`, err);
+  }
+
+  // Fallbacks
+  const attempts: { url: string; method: 'GET' | 'POST'; body: any }[] = [
+    { url: `/services/files/api/name/get-file-by-id/find`, method: 'POST', body: { id: fileId } },
+    { url: `/services/files/api/name/download-file-by-id/find`, method: 'POST', body: { id: fileId } },
+    { url: `/services/files/api/name/download-file/find`, method: 'POST', body: { id: fileId } },
+    { url: `/services/central/api/upload/file/${fileId}`, method: 'GET', body: null },
+  ];
+
+  for (const ep of attempts) {
+    try {
+      const options: RequestInit = {
+        method: ep.method,
+        headers: getHeaders(),
+      };
+      if (ep.body) {
+        options.body = JSON.stringify(ep.body);
+      }
+      const res = await fetch(ep.url, options);
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json') || contentType.includes('image/') || contentType.includes('pdf')) {
+          const blob = await res.blob();
+          if (blob && blob.size > 0) {
+            return blob;
+          }
+        }
+      }
+    } catch (err) {
+      // Continue
+    }
+  }
+
+  throw new Error(`Unable to fetch file binary content for ID: ${fileId}`);
 }
 
 
@@ -270,5 +342,29 @@ export async function fetchTaskUserDestList(taskId: string): Promise<TaskUserDes
     body: JSON.stringify({ id: taskId }),
   });
   if (!res.ok) throw new Error(`Failed to fetch user destination list: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+export interface AvailableUser {
+  id: string;
+  name: string;
+  type: string;
+  code: string;
+  integratedId: string | null;
+  description: string;
+  email: string;
+}
+
+/**
+ * Fetch list of available users for a task process instance.
+ */
+export async function fetchAvailableUsers(procInstId: string): Promise<AvailableUser[]> {
+  const url = `/services/workflow/api/v1/workflow/name/list-available-users-task/list`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ procInstId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch available users: ${res.status} ${res.statusText}`);
   return res.json();
 }

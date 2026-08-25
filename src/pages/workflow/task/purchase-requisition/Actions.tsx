@@ -1,4 +1,5 @@
-import { ChevronDown, X, Upload, Trash2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, X, Upload, Trash2, Loader2, Check } from 'lucide-react';
 import { formatCurrency, formatDateTimeCompact } from '@/utils/format';
 import { ProcessFlowDetail } from '@/types/workflow-detail';
 import {
@@ -7,6 +8,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { usePurchaseRequisition } from './usePurchaseRequisition';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 interface PurchaseRequisitionActionsProps {
   selectedTask: any;
@@ -25,6 +27,8 @@ export default function PurchaseRequisitionActions({
   handleClaimToggle,
   onActionSuccess,
 }: PurchaseRequisitionActionsProps) {
+  const myRequest = useWorkflowStore((s) => s.myRequest);
+  const [isAssigneePickerOpen, setIsAssigneePickerOpen] = useState(false);
   const {
     t,
     actions,
@@ -34,6 +38,12 @@ export default function PurchaseRequisitionActions({
     setApprovalOpen,
     isBudgetReviewOpen,
     setBudgetReviewOpen,
+    isCommentOpen,
+    setCommentOpen,
+    availableUsers,
+    loadingAvailableUsers,
+    assignToUser,
+    setAssignToUser,
     budgetCodes,
     loadingBudgetCodes,
     reviewItems,
@@ -47,8 +57,10 @@ export default function PurchaseRequisitionActions({
     handleCloseReview,
     handleResetReview,
     handleResetApproval,
+    handleResetComment,
     handleSubmitReview,
     handleSubmitApproval,
+    handleSubmitComment,
     handleAction,
     updateReviewItemBudgetCode,
   } = usePurchaseRequisition({
@@ -60,6 +72,10 @@ export default function PurchaseRequisitionActions({
     onActionSuccess,
   });
 
+  if (myRequest && detail?.totalAmount == null) {
+    return null;
+  }
+
   return (
     <>
       <div className="shrink-0 bg-white p-3 flex flex-col gap-3 z-50 shadow-md">
@@ -67,7 +83,7 @@ export default function PurchaseRequisitionActions({
         {detail?.totalAmount != null && (
           <div className="px-1 flex items-center justify-between">
             <span className="text-[14px] font-semibold">
-              {t('workflow.total_requisition_amount')}
+              {t('workflow.total_amount')}
             </span>
             <span className="text-[18px] font-bold text-[#063E89]">
               ${formatCurrency(detail.totalAmount)}
@@ -75,33 +91,35 @@ export default function PurchaseRequisitionActions({
           </div>
         )}
 
-        <div className="flex gap-2">
-          <button
-            disabled={isClaiming}
-            onClick={handleClaimToggle}
-            className="flex-1 py-2 px-2 rounded-md border border-gray-400 text-gray-700 text-[12px] font-semibold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
-          >
-            {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
-          </button>
+        {!myRequest && (
+          <div className="flex gap-2">
+            <button
+              disabled={isClaiming}
+              onClick={handleClaimToggle}
+              className="flex-1 py-2 px-2 rounded-md border border-gray-400 text-gray-700 text-[12px] font-semibold cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed truncate"
+            >
+              {selectedTask.claimed ? t('workflow.unclaim') : t('workflow.claim')}
+            </button>
 
-          {selectedTask.claimed &&
-            actions.map((act: { name: string; value: string }, idx: number) => {
-              const isReject = act.name.toLowerCase() === 'reject';
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleAction(act.name)}
-                  className={
-                    isReject
-                      ? 'flex-1 py-2 px-2 rounded-md border border-red-500 bg-white text-red-500 text-[12px] font-semibold cursor-pointer text-center truncate'
-                      : 'flex-1 py-2 px-2 rounded-md bg-[#063E89] text-white text-[12px] font-semibold cursor-pointer text-center truncate'
-                  }
-                >
-                  {act.name}
-                </button>
-              );
-            })}
-        </div>
+            {selectedTask.claimed &&
+              actions.map((act: { name: string; value: string }, idx: number) => {
+                const isReject = act.name.toLowerCase() === 'reject';
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleAction(act.name)}
+                    className={
+                      isReject
+                        ? 'flex-1 py-2 px-2 rounded-md border border-red-500 bg-white text-red-500 text-[12px] font-semibold cursor-pointer text-center truncate'
+                        : 'flex-1 py-2 px-2 rounded-md bg-[#063E89] text-white text-[12px] font-semibold cursor-pointer text-center truncate'
+                    }
+                  >
+                    {act.name}
+                  </button>
+                );
+              })}
+          </div>
+        )}
       </div>
 
       {/* Approval Modal */}
@@ -140,7 +158,7 @@ export default function PurchaseRequisitionActions({
                     }`}
                   />
                   <span className="text-[13px] font-semibold text-gray-700">
-                    Workflow Timeline
+                    Activities
                   </span>
                 </div>
               </button>
@@ -491,6 +509,218 @@ export default function PurchaseRequisitionActions({
                 </>
               ) : (
                 'Submit'
+              )}
+            </button>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Comment Modal */}
+      <Drawer
+        open={isCommentOpen}
+        onOpenChange={(open) => {
+          setCommentOpen(open);
+          if (!open) setIsAssigneePickerOpen(false);
+        }}
+      >
+        <DrawerContent
+          className="max-w-[480px] mx-auto bg-white rounded-t-[20px] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+          style={visualViewportHeight ? { maxHeight: `${visualViewportHeight * 0.92}px` } : undefined}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+            <DrawerTitle className="text-[16px] font-bold text-gray-800">
+              Comment
+            </DrawerTitle>
+            <button
+              onClick={() => {
+                setCommentOpen(false);
+                setIsAssigneePickerOpen(false);
+              }}
+              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-655 active:bg-gray-50 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Scrollable Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {/* Assign To Custom Dropdown */}
+            {(() => {
+              const selectedUser = availableUsers.find((u) => u.id === assignToUser);
+              return (
+                <div className="flex flex-col gap-1.5 relative">
+                  <label className="text-[13px] font-bold text-gray-800 flex items-center gap-0.5">
+                    <span className="text-red-500">*</span> Assign To
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAssigneePickerOpen(!isAssigneePickerOpen)}
+                    disabled={loadingAvailableUsers}
+                    className={`w-full bg-white border ${
+                      isAssigneePickerOpen
+                        ? 'border-blue-500 ring-2 ring-blue-100'
+                        : 'border-gray-200 hover:border-gray-300'
+                    } rounded-lg py-2.5 pl-3.5 pr-4 flex items-center justify-between text-[13px] text-left transition-all cursor-pointer disabled:opacity-50 select-none`}
+                  >
+                    <span className={selectedUser ? 'text-gray-800 font-medium truncate' : 'text-gray-400'}>
+                      {loadingAvailableUsers
+                        ? 'Loading users...'
+                        : selectedUser
+                        ? `${selectedUser.name} (${selectedUser.description})`
+                        : 'Please select'}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-gray-400 shrink-0 ml-2 transition-transform duration-200 ${
+                        isAssigneePickerOpen ? 'rotate-180 text-blue-500' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {/* Custom Dropdown Menu */}
+                  {isAssigneePickerOpen && (
+                    <>
+                      {/* Backdrop to close picker on tap outside */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsAssigneePickerOpen(false)}
+                      />
+
+                      <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[220px] overflow-y-auto py-1 animate-in fade-in-50 zoom-in-95 duration-100 divide-y divide-gray-50">
+                        {availableUsers.length > 0 ? (
+                          availableUsers.map((user, uIdx) => {
+                            const isSelected = assignToUser === user.id;
+                            return (
+                              <button
+                                key={`${user.id}-${uIdx}`}
+                                type="button"
+                                onClick={() => {
+                                  setAssignToUser(user.id);
+                                  setIsAssigneePickerOpen(false);
+                                }}
+                                className={`w-full px-3.5 py-2.5 text-left text-[13px] flex items-center justify-between hover:bg-blue-50/60 active:bg-blue-100/60 transition-colors cursor-pointer ${
+                                  isSelected ? 'bg-blue-50/80 text-blue-700 font-semibold' : 'text-gray-700'
+                                }`}
+                              >
+                                <div className="flex flex-col min-w-0 pr-2">
+                                  <span className="truncate text-[13px] font-semibold text-gray-800">
+                                    {user.name}
+                                  </span>
+                                  <span className="text-[11.5px] text-gray-500 font-medium mt-0.5">
+                                    {user.description} {user.code ? `• ${user.code}` : ''}
+                                  </span>
+                                </div>
+                                {isSelected && (
+                                  <Check size={16} className="text-blue-600 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })
+                        ) : (
+                          <div className="p-4 text-center text-[12.5px] text-gray-400">
+                            No users available.
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Remarks textarea */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[13px] font-bold text-gray-800 flex items-center gap-0.5">
+                <span className="text-red-500">*</span> Remarks
+              </label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Please enter"
+                className="w-full min-h-[100px] border border-gray-200 rounded-lg p-3 text-[13px] leading-relaxed text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            {/* Files Attachment Section */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-bold text-gray-800">
+                  Attachments
+                </span>
+                <span className="text-[11px] text-gray-450 font-medium">
+                  {reviewFiles.length} file(s) chosen
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-gray-200 text-gray-700 text-[12px] font-semibold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer select-none">
+                  <Upload className="w-4 h-4 text-gray-500" />
+                  Add Files
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {reviewFiles.length > 0 && (
+                <div className="grid grid-cols-1 gap-2 mt-1">
+                  {reviewFiles.map((file, fIdx) => (
+                    <div
+                      key={fIdx}
+                      className="flex items-center justify-between p-2 rounded-lg border border-gray-100 bg-gray-50 text-[12px] text-gray-655"
+                    >
+                      <span className="truncate font-medium pr-4">
+                        {file.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(fIdx)}
+                        className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-2 px-4 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+            <button
+              type="button"
+              disabled={isSubmittingReview}
+              onClick={() => setCommentOpen(false)}
+              className="flex-1 px-2 py-2.5 rounded-md border border-gray-200 bg-white text-gray-700 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isSubmittingReview}
+              onClick={handleResetComment}
+              className="flex-1 px-2 py-2.5 rounded-md border border-red-500 bg-white text-red-500 text-[12.5px] font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50 text-center"
+            >
+              Reset
+            </button>
+            <button
+              type="button"
+              disabled={isSubmittingReview || loadingAvailableUsers}
+              onClick={handleSubmitComment}
+              className="flex-[1.5] px-2 py-2.5 rounded-md bg-[#063E89] text-white text-[12.5px] font-bold shadow-sm hover:opacity-95 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1 text-center"
+            >
+              {isSubmittingReview ? (
+                <>
+                  <Loader2 className="animate-spin h-3.5 w-3.5 text-white" />
+                  Sending
+                </>
+              ) : (
+                'Send'
               )}
             </button>
           </div>

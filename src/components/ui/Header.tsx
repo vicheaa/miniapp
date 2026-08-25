@@ -7,7 +7,7 @@ interface HeaderProps {
   backTitle?: string;
 }
 
-/** Back arrow SVG icon */
+let lastBackClickTime = 0;
 
 export default function Header({
   title,
@@ -15,10 +15,20 @@ export default function Header({
   onBack,
   backTitle = 'Back',
 }: HeaderProps) {
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastBackClickTime < 500) {
+      return;
+    }
+    lastBackClickTime = now;
+    onBack();
+  };
+
   return (
     <header className="flex items-center justify-between px-2 pt-3 pb-2 bg-white w-full sticky top-0 z-40">
       <button
-        onClick={onBack}
+        type="button"
+        onClick={handleClick}
         title={backTitle}
         className="p-0 shrink-0 border-none cursor-pointer flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 active:bg-gray-100"
       >

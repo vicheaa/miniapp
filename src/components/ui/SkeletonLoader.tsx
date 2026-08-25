@@ -121,6 +121,10 @@ export function AppBootstrapSkeleton() {
   const isDetailPage = window.location.hash.startsWith('#/task/');
 
   const handleBack = () => {
+    if (isDetailPage) {
+      window.location.hash = '#/';
+      return;
+    }
     const bridge = superApp || (window as any).superApp;
     if (bridge) {
       bridge.close();

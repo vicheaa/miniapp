@@ -38,8 +38,8 @@ export function getStatusBadgeInfo(status?: string | WorkflowStatusInfo) {
   if (codeKey.includes('COMPLET') || codeKey.includes('APPROV')) {
     // COMPLETED -> Emerald / Green
     badgeClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
-  } else if (codeKey.includes('IN_PROGRESS') || codeKey.includes('PROGRESS')) {
-    // IN_PROGRESS -> Blue
+  } else if (codeKey.includes('IN_PROGRESS') || codeKey.includes('PROGRESS') || codeKey.includes('ACTIVE')) {
+    // IN_PROGRESS / ACTIVE -> Blue
     badgeClasses = 'bg-blue-50 text-blue-700 border-blue-200/80';
   } else if (codeKey.includes('PENDING') || codeKey.includes('WAIT')) {
     // PENDING -> Amber / Orange

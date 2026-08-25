@@ -94,6 +94,7 @@ export interface WorkflowTask {
   subTasks: any[];
   subTaskName: string | null;
   workflowStatus?: string | WorkflowStatusInfo;
+  taskAction?: string;
 }
 
 /** Paginated response from the task list API. */

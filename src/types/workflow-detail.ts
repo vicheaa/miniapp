@@ -51,6 +51,7 @@ export interface TaskInstanceData {
     claimed: boolean;
     completed: boolean;
     subTask: boolean;
+    workflowStatus?: any;
     assigneeInfo: {
       id: string;
       email: string;

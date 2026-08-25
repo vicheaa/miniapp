@@ -1,6 +1,7 @@
 import { Ban, SendHorizontal } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMiniAppStore } from '@/store/miniAppStore';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 interface ItRequestActionsProps {
   selectedTask: any;
@@ -18,6 +19,9 @@ export default function ItRequestActions({
 }: ItRequestActionsProps) {
   const { t } = useTranslation();
   const superApp = useMiniAppStore((s) => s.superApp);
+  const myRequest = useWorkflowStore((s) => s.myRequest);
+
+  if (myRequest) return null;
 
   const handleAction = (actionName: string) => {
     if (superApp) {
@@ -27,10 +31,7 @@ export default function ItRequestActions({
     }
   };
 
-  const actions =
-    selectedTask.actions && selectedTask.actions.length > 0
-      ? selectedTask.actions
-      : [{ name: 'Complete', value: 'Completed' }];
+  const actions = selectedTask?.actions || [];
 
   return (
     <div className="shrink-0 bg-white p-3 flex flex-col gap-3 z-50 shadow-md">

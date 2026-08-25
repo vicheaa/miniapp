@@ -6,6 +6,7 @@ import { useMiniAppStore } from '@/store/miniAppStore';
 import { useBudgetReviewStore } from '@/store/budgetReviewStore';
 import { workflowRepository } from '@/repositories/workflow.repository';
 import { ProcessFlowDetail } from '@/types/workflow-detail';
+import { AvailableUser } from '@/services/api/workflow-api';
 
 interface UsePurchaseRequisitionProps {
   selectedTask: any;
@@ -18,6 +19,7 @@ interface UsePurchaseRequisitionProps {
 
 export function usePurchaseRequisition({
   selectedTask,
+  instanceData,
   detail,
   onActionSuccess,
 }: UsePurchaseRequisitionProps) {
@@ -29,6 +31,12 @@ export function usePurchaseRequisition({
   const [isActivitiesExpanded, setIsActivitiesExpanded] = useState(false);
   const [currentAction, setCurrentAction] = useState('Completed');
   const [visualViewportHeight, setVisualViewportHeight] = useState<number | null>(null);
+
+  // Comment action state
+  const [isCommentOpen, setCommentOpen] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<AvailableUser[]>([]);
+  const [loadingAvailableUsers, setLoadingAvailableUsers] = useState(false);
+  const [assignToUser, setAssignToUser] = useState('');
 
   const {
     isBudgetReviewOpen,
@@ -54,7 +62,7 @@ export function usePurchaseRequisition({
 
   // Disable pull-to-refresh in the superApp when any drawer is open
   useEffect(() => {
-    const isAnyDrawerOpen = isApprovalOpen || isBudgetReviewOpen;
+    const isAnyDrawerOpen = isApprovalOpen || isBudgetReviewOpen || isCommentOpen;
     if (superApp && typeof (superApp as any).setPullToRefreshEnabled === 'function') {
       (superApp as any).setPullToRefreshEnabled(!isAnyDrawerOpen);
     }
@@ -63,11 +71,11 @@ export function usePurchaseRequisition({
         (superApp as any).setPullToRefreshEnabled(true);
       }
     };
-  }, [isApprovalOpen, isBudgetReviewOpen, superApp]);
+  }, [isApprovalOpen, isBudgetReviewOpen, isCommentOpen, superApp]);
 
   // Reset window scroll when drawers are open to prevent keyboard from panning/scrolling the layout viewport
   useEffect(() => {
-    const isAnyDrawerOpen = isApprovalOpen || isBudgetReviewOpen;
+    const isAnyDrawerOpen = isApprovalOpen || isBudgetReviewOpen || isCommentOpen;
     if (!isAnyDrawerOpen) return;
 
     const handleScroll = () => {
@@ -82,16 +90,17 @@ export function usePurchaseRequisition({
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [isApprovalOpen, isBudgetReviewOpen]);
+  }, [isApprovalOpen, isBudgetReviewOpen, isCommentOpen]);
 
   // Visual viewport height adjustments and input focus handling
   useEffect(() => {
     if (!window.visualViewport) return;
+    const vv = window.visualViewport;
     const handleResize = () => {
-      setVisualViewportHeight(window.visualViewport ? window.visualViewport.height : null);
+      setVisualViewportHeight(vv ? vv.height : null);
     };
-    window.visualViewport.addEventListener('resize', handleResize);
-    window.visualViewport.addEventListener('scroll', handleResize);
+    vv.addEventListener('resize', handleResize);
+    vv.addEventListener('scroll', handleResize);
     handleResize();
 
     const handleFocusIn = (e: FocusEvent) => {
@@ -108,8 +117,8 @@ export function usePurchaseRequisition({
     window.addEventListener('focusin', handleFocusIn);
 
     return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.visualViewport?.removeEventListener('scroll', handleResize);
+      vv.removeEventListener('resize', handleResize);
+      vv.removeEventListener('scroll', handleResize);
       window.removeEventListener('focusin', handleFocusIn);
     };
   }, []);
@@ -119,6 +128,7 @@ export function usePurchaseRequisition({
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       addReviewFiles(filesArray);
+      e.target.value = '';
     }
   };
 
@@ -177,7 +187,11 @@ export function usePurchaseRequisition({
 
   const openApprovalReview = (actionName: string) => {
     resetReviewStore();
-    const act = selectedTask.actions?.find((a: any) => a.name === actionName);
+    const act = selectedTask?.actions?.find(
+      (a: any) =>
+        a.name?.toLowerCase() === actionName.toLowerCase() ||
+        a.value?.toLowerCase() === actionName.toLowerCase()
+    );
     setCurrentAction(act?.value || actionName);
     setApprovalOpen(true);
   };
@@ -218,7 +232,7 @@ export function usePurchaseRequisition({
   };
 
   const handleSubmitReview = async () => {
-    if (!selectedTask || !detail) return;
+    if (!selectedTask || !detail || isSubmittingReview) return;
 
     if (detail.budgetCodeRequired) {
       const missingBudget = reviewItems.some((item) => !item.budgetCode);
@@ -295,7 +309,7 @@ export function usePurchaseRequisition({
   };
 
   const handleSubmitApproval = async () => {
-    if (!selectedTask || !detail) return;
+    if (!selectedTask || isSubmittingReview) return;
 
     if (!reviewComment.trim()) {
       if (superApp) {
@@ -314,29 +328,44 @@ export function usePurchaseRequisition({
         fileIds = uploadRes.map((f) => f.fileId);
       }
 
+      const actionLower = currentAction.toLowerCase();
+      const isConsented = actionLower === 'consented';
+      const isReject = actionLower === 'reject' || actionLower === 'rejected';
+      const isSimpleAction = isConsented || isReject;
+
+      const payloadType =
+        selectedTask.payloadType ||
+        (isSimpleAction ? 'requisition_omm_dmbo_1' : 'requisition_fin');
+
+      const payloadData =
+        isSimpleAction || !detail
+          ? selectedTask.payloadData || {}
+          : {
+              id: detail.id,
+              items:
+                detail.items?.map((item) => ({
+                  id: item.id,
+                  key: String(item.id),
+                  seqNo: item.seqNo,
+                  itemId: item.id,
+                  itemCode: item.itemCode,
+                  itemName: item.itemName,
+                  description: item.description || '',
+                  qty: item.qty,
+                  unitPrice: item.unitPrice,
+                  uom: item.uom,
+                  amount: item.amount,
+                  budgetCode: item.budgetCode,
+                  remarks: item.remarks || '',
+                })) || [],
+              services: detail.services || [],
+            };
+
       const payload = {
         action: currentAction,
-        payloadType: 'requisition_fin',
+        payloadType,
         taskId: selectedTask.taskId,
-        payloadData: {
-          id: detail.id,
-          items: detail.items?.map((item) => ({
-            id: item.id,
-            key: String(item.id),
-            seqNo: item.seqNo,
-            itemId: item.id,
-            itemCode: item.itemCode,
-            itemName: item.itemName,
-            description: item.description || '',
-            qty: item.qty,
-            unitPrice: item.unitPrice,
-            uom: item.uom,
-            amount: item.amount,
-            budgetCode: item.budgetCode,
-            remarks: item.remarks || '',
-          })) || [],
-          services: detail.services || [],
-        },
+        payloadData,
         comment: reviewComment,
         uploadedFiles: fileIds,
         fetchCurrentTask: false,
@@ -368,28 +397,126 @@ export function usePurchaseRequisition({
     }
   };
 
+  const openCommentReview = async (actionName: string) => {
+    resetReviewStore();
+    setAssignToUser('');
+    const act = selectedTask?.actions?.find(
+      (a: any) =>
+        a.name?.toLowerCase() === actionName.toLowerCase() ||
+        a.value?.toLowerCase() === actionName.toLowerCase()
+    );
+    setCurrentAction(act?.value || actionName);
+    setCommentOpen(true);
+
+    const procInstId =
+      selectedTask?.instanceInfo?.processInstanceId ||
+      instanceData?.processInstance?.procInstId;
+
+    if (procInstId) {
+      setLoadingAvailableUsers(true);
+      try {
+        const users = await workflowRepository.fetchAvailableUsers(procInstId);
+        setAvailableUsers(users || []);
+      } catch (err: any) {
+        console.error('Failed to load available users:', err);
+        if (superApp) {
+          superApp.showToast(`Failed to load available users: ${err.message || err}`);
+        }
+      } finally {
+        setLoadingAvailableUsers(false);
+      }
+    }
+  };
+
+  const handleResetComment = () => {
+    resetReviewStore();
+    setAssignToUser('');
+  };
+
+  const handleSubmitComment = async () => {
+    if (!selectedTask || isSubmittingReview) return;
+
+    if (!assignToUser) {
+      if (superApp) {
+        superApp.showToast('Please select a user to assign to.');
+      } else {
+        alert('Please select a user to assign to.');
+      }
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      if (superApp) {
+        superApp.showToast('Please enter remarks.');
+      } else {
+        alert('Please enter remarks.');
+      }
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      let fileIds: string[] = [];
+      if (reviewFiles.length > 0) {
+        const uploadRes = await workflowRepository.uploadFiles(reviewFiles);
+        fileIds = uploadRes.map((f) => f.fileId);
+      }
+
+      const payload = {
+        action: currentAction || 'Comment',
+        payloadType: selectedTask.payloadType || 'requisition_omm_dmbo_1',
+        taskId: selectedTask.taskId,
+        payloadData: {
+          assignTo: assignToUser,
+        },
+        comment: reviewComment,
+        uploadedFiles: fileIds,
+        fetchCurrentTask: false,
+      };
+
+      await workflowRepository.completeTask(payload);
+
+      if (superApp) {
+        superApp.showToast('Comment submitted successfully');
+      } else {
+        alert('Comment submitted successfully');
+      }
+
+      resetReviewStore();
+      setAssignToUser('');
+      setCommentOpen(false);
+      onActionSuccess();
+      queryClient.invalidateQueries({ queryKey: ['workflowTasks'] });
+      navigate('/');
+    } catch (err: any) {
+      console.error('Failed to submit comment:', err);
+      if (superApp) {
+        superApp.showToast(
+          `Failed to submit comment: ${err.message || err}`
+        );
+      } else {
+        alert(`Failed to submit comment: ${err.message || err}`);
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const handleAction = (actionName: string) => {
     if (actionName === 'Complete') {
       openBudgetReview();
       return;
     }
 
-    if (actionName === 'Approve') {
-      openApprovalReview(actionName);
+    if (actionName.toLowerCase() === 'comment') {
+      openCommentReview(actionName);
       return;
     }
 
-    if (superApp) {
-      superApp.showToast(`Action executed: ${actionName}`);
-    } else {
-      alert(`[Dev Mode] Action: ${actionName}`);
-    }
+    openApprovalReview(actionName);
   };
 
-  const actions =
-    selectedTask.actions && selectedTask.actions.length > 0
-      ? selectedTask.actions
-      : [{ name: 'Complete', value: 'Completed' }];
+  const actions = selectedTask?.actions || [];
 
   return {
     t,
@@ -400,6 +527,12 @@ export function usePurchaseRequisition({
     setApprovalOpen,
     isBudgetReviewOpen,
     setBudgetReviewOpen,
+    isCommentOpen,
+    setCommentOpen,
+    availableUsers,
+    loadingAvailableUsers,
+    assignToUser,
+    setAssignToUser,
     budgetCodes,
     loadingBudgetCodes,
     reviewItems,
@@ -413,8 +546,10 @@ export function usePurchaseRequisition({
     handleCloseReview,
     handleResetReview,
     handleResetApproval,
+    handleResetComment,
     handleSubmitReview,
     handleSubmitApproval,
+    handleSubmitComment,
     handleAction,
     updateReviewItemBudgetCode,
   };
