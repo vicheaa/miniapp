@@ -1,6 +1,6 @@
 import { WorkflowTask } from "@/types/workflow";
 import { Ellipsis, CheckCircle2, Clock } from "lucide-react";
-import { formatDateCompact } from "@/utils/format";
+import { format12H, formatDateCompact, formatDateTimeCompact, formatStatusText } from "@/utils/format";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { label: string; value: string }[] {
@@ -23,13 +23,13 @@ function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { labe
 
   rows.push({
     label: t('workflow.created_at'),
-    value: formatDateCompact(task.created),
+    value: format12H(task.created),
   });
 
   rows.push({
     label: t('workflow.status'),
-    value: task.workflowStatus ?? '',
-  })
+    value: formatStatusText(task.workflowStatus),
+  });
 
   return rows;
 }
@@ -77,8 +77,6 @@ export default function TaskCard({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-          {/* {task.workflowStatus && <StatusBadge status={task.workflowStatus} />} */}
-          {/* {task.taskAction && <StatusBadge status={task.taskAction?? 'Pending'} />} */}
           <StatusBadge status={task.taskAction?? 'Pending'} />
           <button
             type="button"

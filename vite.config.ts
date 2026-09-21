@@ -5,7 +5,10 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiTarget = env.VITE_DEV_API_BASE_URL || 'http://10.0.12.247:85';
+  const apiTarget =
+    env.VITE_API_BASE_URL ||
+    env.VITE_DEV_API_BASE_URL ||
+    'http://oneiis.vital.com.kh';
 
   return {
     plugins: [react(), tailwindcss()],

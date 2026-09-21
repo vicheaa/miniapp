@@ -9,12 +9,12 @@ export function formatDateTimeCompact(dateStr?: string | null): string {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
 
-    const day = date.getDate();
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const day = date.getUTCDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
 
     return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
   } catch {
@@ -27,15 +27,43 @@ export function formatDateCompact(dateStr?: string | null): string {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
 
-    const day = date.getDate();
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
-    const year = date.getFullYear();
+    const day = date.getUTCDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const year = date.getUTCFullYear();
 
     return `${day} ${month} ${year}`;
   } catch {
     return dateStr;
   }
 }
+
+/**
+ * Format an ISO date string into a 12-hour date-time representation.
+ *
+ * @example format12H('2026-05-28T09:24:11Z') // "28 May 2026 09:24:11 AM"
+ */
+export function format12H(dateStr?: string | null): string {
+  if (!dateStr) return 'N/A';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+
+    const day = date.getUTCDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const year = date.getUTCFullYear();
+    const rawHours = date.getUTCHours();
+    const hours12 = rawHours % 12 || 12;
+    const hours = String(hours12).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+    const ampm = rawHours >= 12 ? 'PM' : 'AM';
+
+    return `${day} ${month} ${year}, ${hours}:${minutes}${ampm}`;
+  } catch {
+    return dateStr;
+  }
+}
+
 
 /**
  * Format a number into currency format (xxx,xxx,xxx.xx)
