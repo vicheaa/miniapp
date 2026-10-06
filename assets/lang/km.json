@@ -41,11 +41,16 @@
         "profile": "គណនី",
         "my_tasks": "ភារកិច្ចរបស់ខ្ញុំ",
         "approvals": "ការអនុម័ត",
+        "approval": "ការអនុម័ត",
         "my_requests": "សំណើរបស់ខ្ញុំ",
         "asset_counting": "ការរាប់ទ្រព្យសម្បត្តិ",
         "mobile_attendance": "វត្តមានតាមទូរស័ព្ទ",
         "services": "សេវាកម្ម",
-        "workflow": "លំហូរការងារ"
+        "workflow": "លំហូរការងារ",
+        "tasks": "ភារកិច្ច"
+    },
+    "HOME":{
+        "TASKS":"ភារកិច្ច"
     },
     "localization": {
         "title": "ភាសា",

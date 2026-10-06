@@ -10,6 +10,26 @@ import type {
 } from '../../types/workflow-detail';
 export type { BudgetCode };
 
+/** Export a workflow form as binary PDF data. */
+export async function fetchTaskReportPdf(
+  processInstId: string,
+  processDefKey: string,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const res = await fetch('/services/reports/api/export/report/export-form/type/PDF', {
+    method: 'POST',
+    headers: { ...getHeaders(), Accept: 'application/pdf' },
+    body: JSON.stringify({ processInstId, processDefKey }),
+    signal,
+  });
+  if (!res.ok) throw new Error(`Failed to export PDF: ${res.status} ${res.statusText}`);
+  const blob = await res.blob();
+  if (blob.size === 0 || !(await blob.slice(0, 1024).text()).includes('%PDF-')) {
+    throw new Error('The server did not return a valid PDF.');
+  }
+  return new Blob([blob], { type: 'application/pdf' });
+}
+
 /**
  * Fetch a paginated list of workflow tasks.
  */

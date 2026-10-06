@@ -70,6 +70,7 @@ export interface WorkflowStatusInfo {
 
 /** A single workflow task item. */
 export interface WorkflowTask {
+  instanceId?: string;
   taskId: string;
   taskDefKey: string;
   taskName: string;

@@ -26,10 +26,10 @@ function getTaskDetailRows(task: WorkflowTask, t: (k: string) => string): { labe
     value: format12H(task.created),
   });
 
-  rows.push({
-    label: t('workflow.status'),
-    value: formatStatusText(task.workflowStatus),
-  });
+  // rows.push({
+  //   label: t('workflow.status'),
+  //   value: formatStatusText(task.workflowStatus),
+  // });
 
   return rows;
 }

@@ -41,12 +41,16 @@
         "profile": "Profile",
         "my_tasks": "My Tasks",
         "approvals": "Approvals",
+        "approval": "Approval",
         "my_requests": "My Requests",
         "asset_counting": "Asset Counting",
         "mobile_attendance": "Mobile Attendance",
         "services": "Services",
         "workflow": "Workflow",
         "tasks": "Tasks"
+    },
+    "HOME":{
+        "TASKS":"TASKS"
     },
     "localization": {
         "title": "Language",

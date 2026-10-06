@@ -30,6 +30,7 @@ import {
   fetchBasicContactInfo,
   fetchFilesMetadata,
   fetchFileBlob,
+  fetchTaskReportPdf,
   claimTask,
   unclaimTask,
 } from '@/services/api/workflow-api';
@@ -39,6 +40,7 @@ import Header from '@/components/ui/Header';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { TaskDetailSkeleton } from '@/components/ui/SkeletonLoader';
 import BpmnDiagramModal from '@/components/workflow/BpmnDiagramModal';
+import PdfPreview from '@/components/workflow/PdfPreview';
 import {
   Drawer,
   DrawerContent,
@@ -163,6 +165,23 @@ export default function TaskDetailPage() {
   }, [superApp]);
 
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  useEffect(() => {
+    if (!isReportOpen) return;
+    superApp?.setPullToRefreshEnabled?.(false);
+    const root = document.documentElement;
+    const previousOverscroll = root.style.overscrollBehavior;
+    root.style.overscrollBehavior = 'none';
+    return () => {
+      root.style.overscrollBehavior = previousOverscroll;
+      // The task detail page also keeps native pull-to-refresh disabled.
+      superApp?.setPullToRefreshEnabled?.(false);
+    };
+  }, [isReportOpen, superApp]);
 
   const handleClaimToggle = async () => {
     if (!selectedTask) return;
@@ -220,6 +239,45 @@ export default function TaskDetailPage() {
   const [isCurrentStateExpanded, setIsCurrentStateExpanded] = useState(true);
   const [isDiagramOpen, setIsDiagramOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'data-form' | 'activities' | 'attachments'>('data-form');
+
+  const reportInstanceId = instanceData?.task?.instanceId || selectedTask?.instanceId
+    || selectedTask?.instanceInfo.processInstanceId || instanceData?.processInstance?.procInstId;
+  const reportProcessDefKey = selectedTask?.instanceInfo.processDefKey
+    || instanceData?.processInstance?.procDefKey || 'requisition_request_process';
+  const reportFileName = `${selectedTask?.instanceInfo.businessKey || 'request-form'}.pdf`;
+
+  useEffect(() => {
+    setIsReportOpen(false);
+  }, [taskId]);
+
+  useEffect(() => {
+    if (!isReportOpen) return;
+    const controller = new AbortController();
+    let objectUrl: string | undefined;
+    setReportUrl(null);
+    setReportError(null);
+    setLoadingReport(true);
+    const loadReport = async () => {
+      try {
+        if (!reportInstanceId) throw new Error('The task has no process instance ID.');
+        const blob = await fetchTaskReportPdf(reportInstanceId, reportProcessDefKey, controller.signal);
+        if (controller.signal.aborted) return;
+        objectUrl = URL.createObjectURL(blob);
+        setReportUrl(objectUrl);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setReportError(err instanceof Error ? err.message : 'Failed to load PDF.');
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoadingReport(false);
+      }
+    };
+    void loadReport();
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [isReportOpen, reportInstanceId, reportProcessDefKey]);
 
   const hasAttachments = !!(instanceData?.attachmentFiles && instanceData.attachmentFiles.length > 0);
 
@@ -638,7 +696,19 @@ export default function TaskDetailPage() {
             </div>
             
             {/* Data render */}
-            {activeTab === 'data-form' && renderDataFormContent()}
+            {activeTab === 'data-form' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsReportOpen(true)}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-[13px] font-semibold text-blue-600 bg-white hover:bg-blue-50 transition-colors cursor-pointer border border-blue-100"
+                >
+                  <FileText size={16} />
+                  View PDF
+                </button>
+                {renderDataFormContent()}
+              </>
+            )}
             
             {/* Activities render */}
             {activeTab === 'activities' && instanceData && (
@@ -800,6 +870,45 @@ export default function TaskDetailPage() {
         onClose={() => setIsDiagramOpen(false)}
         procInstId={instanceData?.processInstance?.procInstId || selectedTask?.instanceInfo?.processInstanceId || null}
       />
+
+      <Drawer open={isReportOpen} onOpenChange={setIsReportOpen} dismissible={false}>
+        <DrawerContent
+          className="bg-white flex flex-col overflow-hidden [&>div:first-child]:hidden"
+          style={{ top: 0, height: '100dvh', maxHeight: '100dvh', marginTop: 0, borderRadius: 0, border: 0, overscrollBehavior: 'none', touchAction: 'none' }}
+        >
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 gap-3 shrink-0 pt-[max(0.875rem,env(safe-area-inset-top))]">
+            <DrawerTitle className="text-[15px] font-bold text-gray-800 truncate">
+              {reportFileName}
+            </DrawerTitle>
+            <div className="flex items-center gap-2 shrink-0">
+              {reportUrl && !loadingReport && !reportError && (
+                <a href={reportUrl} download={reportFileName} className="flex items-center gap-1 text-blue-600 text-[12px] font-bold">
+                  <Download size={15} /> Download
+                </a>
+              )}
+              <button type="button" aria-label="Close PDF preview" onClick={() => setIsReportOpen(false)} className="p-2 text-gray-500">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col flex-1 min-h-0 bg-gray-50 pb-[env(safe-area-inset-bottom)]">
+            {loadingReport ? (
+              <div role="status" className="flex flex-col items-center gap-2 py-12 text-gray-500 text-[13px]">
+                <Loader2 className="animate-spin text-blue-600" /> Loading PDF...
+              </div>
+            ) : reportError ? (
+              <p role="alert" className="py-12 text-center text-red-600 text-[13px]">{reportError}</p>
+            ) : reportUrl ? (
+              <>
+                <PdfPreview url={reportUrl} />
+                <a href={reportUrl} target="_blank" rel="noopener noreferrer" className="block py-2 text-center text-blue-600 text-[13px] shrink-0">
+                  Open PDF in a new tab
+                </a>
+              </>
+            ) : null}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* File Preview Drawer */}
       {previewFile && (

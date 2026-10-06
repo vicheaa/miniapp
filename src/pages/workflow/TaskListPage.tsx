@@ -199,7 +199,7 @@ export default function TaskListPage() {
       {/* Header */}
       {superApp && (
         <Header
-          title={title || (myRequest ? t('home.my_requests') : t('approval.title'))}
+          title={t(title || (myRequest ? 'home.my_requests' : 'home.approval'))}
           onBack={() => superApp.close()}
           backTitle="Close Mini App"
         />

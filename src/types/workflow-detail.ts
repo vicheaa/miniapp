@@ -35,6 +35,7 @@ export interface TaskInstanceData {
     completed: boolean;
   };
   task: {
+    instanceId?: string;
     taskId: string;
     taskDefKey: string;
     taskName: string;
