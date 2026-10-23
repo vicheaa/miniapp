@@ -15,6 +15,9 @@ interface MiniAppStore {
   setSuperApp: (bridge: SuperAppBridge) => void;
   setAuthToken: (token: string) => void;
 
+  initParams: Record<string, unknown>;
+  setInitParams: (params: Record<string, unknown>) => void;
+
   // Localization
   language: string;
   translations: any;
@@ -26,6 +29,9 @@ export const useMiniAppStore = create<MiniAppStore>((set) => ({
   authToken: '',
   setSuperApp: (bridge) => set({ superApp: bridge }),
   setAuthToken: (token) => set({ authToken: token }),
+
+  initParams: {},
+  setInitParams: (params) => set({ initParams: params }),
 
   language: 'en',
   translations: enTranslations,

@@ -1,0 +1,158 @@
+{
+    "data": [
+        {
+            "id": 1,
+            "telegram_id": null,
+            "is_guest": false,
+            "guest_id": null,
+            "name": "Walk-in Customer",
+            "email": "walkin@chamkarcoffee.com",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T16:39:20.000000Z",
+            "updated_at": "2026-09-24T16:39:20.000000Z"
+        },
+        {
+            "id": 2,
+            "telegram_id": null,
+            "is_guest": false,
+            "guest_id": null,
+            "name": "VIP Member",
+            "email": "vip@chamkarcoffee.com",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T16:39:20.000000Z",
+            "updated_at": "2026-09-24T16:39:20.000000Z"
+        },
+        {
+            "id": 3,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_55ed72e1-1981-42ed-9bb7-f03d2522c8ed",
+            "name": "Guest SOQXPO",
+            "email": "guest_KjFX52POvNq5@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T16:53:11.000000Z",
+            "updated_at": "2026-09-24T16:53:11.000000Z"
+        },
+        {
+            "id": 4,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_766fa037-4e4f-432c-877a-7b876bc2b6b9",
+            "name": "Guest 1GBTA0",
+            "email": "guest_XVvACcnAE103@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T17:13:33.000000Z",
+            "updated_at": "2026-09-24T17:13:33.000000Z"
+        },
+        {
+            "id": 5,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_0b090be2-543f-4cde-988a-ac872e5a20cd",
+            "name": "Guest MGNDQA",
+            "email": "guest_hEFuylqNMQEb@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T17:17:16.000000Z",
+            "updated_at": "2026-09-24T17:17:16.000000Z"
+        },
+        {
+            "id": 6,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_d08cbb80-13a3-4910-8ada-8affaa93e3ac",
+            "name": "Guest YOAMYN",
+            "email": "guest_TlUbrEMvrc9o@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T18:39:02.000000Z",
+            "updated_at": "2026-09-24T18:39:02.000000Z"
+        },
+        {
+            "id": 7,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_b9be9949-ce58-472d-a669-a2d32a265877",
+            "name": "Guest EML8BT",
+            "email": "guest_n5T1fUFnq9sr@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T18:39:12.000000Z",
+            "updated_at": "2026-09-24T18:39:12.000000Z"
+        },
+        {
+            "id": 8,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_bf87f29e-3bcb-4834-a55e-2c10bdca83b1",
+            "name": "Guest 7PIQJN",
+            "email": "guest_948uyFASLwub@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-24T18:52:36.000000Z",
+            "updated_at": "2026-09-24T18:52:36.000000Z"
+        },
+        {
+            "id": 9,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_9ec67364-8d61-4f34-bd96-b719ed5ee00f",
+            "name": "Guest XROONV",
+            "email": "guest_rGCNj91Z9e9h@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-25T22:16:32.000000Z",
+            "updated_at": "2026-09-25T22:16:32.000000Z"
+        },
+        {
+            "id": 10,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_12189867-ebf5-41f1-b597-9b51283b5d92",
+            "name": "Guest 7DTNFJ",
+            "email": "guest_8xsgl5DZKWqU@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-26T03:25:42.000000Z",
+            "updated_at": "2026-09-26T03:25:42.000000Z"
+        },
+        {
+            "id": 11,
+            "telegram_id": "2140216903",
+            "is_guest": false,
+            "guest_id": null,
+            "name": "Vid VieTips",
+            "email": "tg_2140216903@telegram.com",
+            "email_verified_at": null,
+            "created_at": "2026-09-26T03:33:14.000000Z",
+            "updated_at": "2026-09-26T03:33:14.000000Z"
+        },
+        {
+            "id": 12,
+            "telegram_id": "694845357",
+            "is_guest": false,
+            "guest_id": null,
+            "name": "Kol Sokhchamroeun (ECC)",
+            "email": "tg_694845357@telegram.com",
+            "email_verified_at": null,
+            "created_at": "2026-09-26T04:45:54.000000Z",
+            "updated_at": "2026-09-26T04:45:54.000000Z"
+        },
+        {
+            "id": 13,
+            "telegram_id": null,
+            "is_guest": true,
+            "guest_id": "guest_15db7cb7-547c-43d6-ae42-accbb4375a80",
+            "name": "Guest RD10Q8",
+            "email": "guest_lamQcTZvzTtO@guest.local",
+            "email_verified_at": null,
+            "created_at": "2026-09-26T22:24:27.000000Z",
+            "updated_at": "2026-09-26T22:24:27.000000Z"
+        },
+        {
+            "id": 14,
+            "telegram_id": "512687418",
+            "is_guest": false,
+            "guest_id": null,
+            "name": "Seyha KE",
+            "email": "tg_512687418@telegram.com",
+            "email_verified_at": null,
+            "created_at": "2026-10-01T08:28:43.000000Z",
+            "updated_at": "2026-10-01T08:28:43.000000Z"
+        }
+    ]
+}

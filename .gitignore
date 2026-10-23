@@ -7,3 +7,8 @@ example-miniapp.zip
 .env.dev
 .env.staging
 .env.prod
+
+.DS_Store
+.env.*
+!.env.example
+miniapp.zip

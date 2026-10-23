@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { SuperAppBridge } from '../../types/bridge';
 import { useMiniAppStore } from '../../store/miniAppStore';
-import { useWorkflowStore } from '../../store/workflowStore';
 
 interface DevPanelProps {
   superApp: SuperAppBridge;
@@ -14,8 +13,6 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
   const [tokenInput, setTokenInput] = useState(authToken);
 
   const language = useMiniAppStore((s) => s.language);
-  const myRequest = useWorkflowStore((s) => s.myRequest);
-  const setMyRequest = useWorkflowStore((s) => s.setMyRequest);
 
   // Keep input in sync when external token changes
   React.useEffect(() => {
@@ -50,27 +47,12 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
     }
   };
 
-  const handleToggleMyRequest = () => {
-    setMyRequest(!myRequest);
-  };
-
   if (!showPanel) {
     return (
       <div style={styles.wrapper}>
         <button onClick={() => setShowPanel(true)} style={styles.pillBtn}>
           <span>🛠️ Dev Mode</span>
-          <span
-            style={{
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontSize: '11px',
-              backgroundColor: myRequest ? '#10b981' : '#374151',
-              color: '#fff',
-              fontWeight: 600,
-            }}
-          >
-            myRequest: {myRequest ? 'TRUE' : 'FALSE'}
-          </span>
+
         </button>
       </div>
     );
@@ -91,46 +73,11 @@ export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelP
             Running standalone. Using static fallback token and mock bridge actions.
           </p>
 
-          {/* Workflow Store Controls */}
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Workflow Filters:</label>
-            <button
-              onClick={handleToggleMyRequest}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '9px 12px',
-                borderRadius: '8px',
-                border: myRequest ? '1px solid #10b981' : '1px solid #374151',
-                backgroundColor: myRequest ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                color: myRequest ? '#34d399' : '#cbd5e0',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 600,
-                transition: 'all 0.2s',
-              }}
-            >
-              <span>📋 myRequest (Task List Filter)</span>
-              <span
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  backgroundColor: myRequest ? '#10b981' : '#4b5563',
-                  color: '#ffffff',
-                }}
-              >
-                {myRequest ? '✓ TRUE (My Requests)' : '✗ FALSE (Approvals)'}
-              </span>
-            </button>
-          </div>
-
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Auth Token Fallback:</label>
             <div style={styles.inputRow}>
               <input
-                type="text"
+                type="password"
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
                 style={styles.input}

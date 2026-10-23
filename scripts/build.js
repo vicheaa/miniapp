@@ -32,7 +32,7 @@ try {
   // Execute typescript check and vite build with the resolved mode
   execSync(`npx tsc && npx vite build --mode ${mode}`, { stdio: 'inherit' });
   // Automatically update production deployment zip package
-  execSync(`cd dist && tar -a -c -f ../example-miniapp.zip *`, { stdio: 'inherit' });
+  execSync(`cd dist && tar -a -c -f ../miniapp.zip *`, { stdio: 'inherit' });
   console.log(`\n✓ Build & zip package for flavor "${mode}" completed successfully!\n`);
 } catch (error) {
   console.error(`\n✗ Build for flavor "${mode}" failed.\n`);

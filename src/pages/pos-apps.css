@@ -1,0 +1,71 @@
+.pos-page { height: 100dvh; overflow-y: auto; background: #f7f9fb; color: #142138; font-size: 14px; }
+.pos-header { min-height: 62px; display: flex; align-items: center; gap: 22px; padding: 10px 34px; background: white; border-bottom: 1px solid #dde5ef; }
+.pos-panel-icon { color: #526782; flex-shrink: 0; }
+.pos-page-heading h1 { font-size: 19px; font-weight: 650; line-height: 24px; margin: 0; color: #101b2e; }
+.pos-page-heading p { font-size: 12px; line-height: 18px; margin: 0; color: #637b9e; }
+.pos-account { margin-left: auto; display: flex; align-items: center; gap: 10px; color: #344765; white-space: nowrap; }
+.pos-account > svg { color: #8da2bd; }
+.pos-notification { position: relative; color: #637c9f; margin-right: 20px; display: flex; }
+.pos-avatar { height: 32px; width: 32px; background: #003820; border-radius: 9px; display: grid; place-items: center; color: white; font-weight: 600; }
+.pos-content { padding: 24px 26px 100px; }
+.pos-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.pos-search { display: flex; align-items: center; gap: 12px; border: 1px solid #dce5f1; border-radius: 13px; background: white; width: 384px; max-width: 100%; padding: 10px 12px; color: #8aa1c2; }
+.pos-search:focus-within { outline: 2px solid #a7bdce; outline-offset: 2px; }
+.pos-search input { width: 100%; min-width: 0; outline: none; border: 0; background: transparent; color: #142138; font: inherit; line-height: 20px; }
+.pos-search input::placeholder { color: #909090; }
+.pos-add { border: 0; background: #003820; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 13px; padding: 11px 17px; font-weight: 600; white-space: nowrap; }
+.pos-table-wrap { width: 100%; overflow-x: auto; background: white; border: 1px solid #edf2f8; border-radius: 17px; }
+.pos-table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+.pos-table th { text-transform: uppercase; letter-spacing: .045em; color: #5f789b; font-size: 12px; font-weight: 600; height: 44px; padding: 0 20px; }
+.pos-table td { padding: 12px 20px; border-top: 1px solid #edf2f8; height: 57px; }
+.pos-table th:first-child { width: 28%; }
+.pos-table th:nth-child(2) { width: 18%; }
+.pos-table th:nth-child(3) { width: 14.5%; }
+.pos-table th:nth-child(4) { width: 13%; }
+.pos-table th:nth-child(5) { width: 14.5%; }
+.pos-app-name { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.pos-device { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: #f1f5f9; color: #405976; flex-shrink: 0; }
+.pos-app-key { background: #f1f5f9; color: #4c607e; padding: 4px 8px; border-radius: 8px; font-size: 11px; user-select: text; }
+.pos-merchant { color: #4c607e; }
+.pos-currencies { display: flex; gap: 4px; }
+.pos-currency { font-size: 12px; border-radius: 5px; padding: 2px 8px; border: 1px solid; line-height: 16px; }
+.pos-primary-currency { background: #eff6ff; color: #1448ff; border-color: #bdd4ff; }
+.pos-secondary-currency { background: #fffbeb; color: #b65d00; border-color: #ffd96b; }
+.pos-status { display: inline-block; font-size: 12px; border-radius: 7px; padding: 3px 10px; border: 1px solid; line-height: 18px; }
+.pos-status.is-active { background: #f0fdf4; border-color: #a6f4bf; color: #008c2e; }
+.pos-status.is-inactive { background: #f8fafc; border-color: #dce3ed; color: #64748b; }
+.pos-actions-heading { text-align: right; }
+.pos-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.pos-icon-button { display: inline-flex; align-items: center; justify-content: center; color: #607b9e; background: transparent; padding: 5px; border: 0; border-radius: 6px; cursor: pointer; }
+.pos-icon-button:not(:disabled):hover { background: #edf3f8; color: #003820; }
+.pos-orders { color: #00a65c; }
+.pos-page button:disabled { cursor: not-allowed; }
+.pos-page button:focus-visible { outline: 2px solid #4a8974; outline-offset: 3px; }
+.pos-state { min-height: 170px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; white-space: normal; text-align: center; color: #637b9e; }
+.pos-state h2 { font-size: 15px; font-weight: 600; color: #142138; }
+.pos-state button, .pos-pagination button { border: 1px solid #dce5f1; border-radius: 7px; background: white; padding: 6px 12px; cursor: pointer; color: #003820; }
+.pos-skeleton { display: block; width: 75%; min-width: 60px; height: 18px; border-radius: 5px; }
+.pos-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.pos-search-note { color: #637b9e; font-size: 12px; margin: -12px 0 12px; }
+.pos-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; color: #637b9e; font-size: 12px; }
+.pos-pagination > div { display: flex; gap: 12px; align-items: center; }
+.pos-pagination button:disabled { opacity: .4; }
+.pos-dialog { margin: auto; padding: 0; max-width: min(540px, calc(100vw - 32px)); width: 100%; max-height: 85dvh; border: 1px solid #dce5f1; border-radius: 16px; color: #142138; background: white; box-shadow: 0 20px 80px #14213826; }
+.pos-dialog::backdrop { background: #14213860; }
+.pos-dialog-body { padding: 24px; }
+.pos-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.pos-dialog-heading h2 { font-size: 18px; font-weight: 600; }
+.pos-dialog dl > div { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; padding: 10px 0; border-top: 1px solid #edf2f8; font-size: 13px; }
+.pos-dialog dt { color: #637b9e; }
+.pos-dialog dd { overflow-wrap: anywhere; user-select: text; }
+@media (max-width: 640px) {
+  .pos-header { padding: 12px 16px; gap: 12px; }
+  .pos-content { padding: 20px 16px 100px; }
+  .pos-page-heading p { max-width: 220px; }
+  .pos-notification, .pos-user-name, .pos-account > svg { display: none; }
+  .pos-toolbar { align-items: stretch; flex-wrap: wrap; gap: 12px; }
+  .pos-search { flex: 1 1 240px; }
+  .pos-add { padding: 10px 12px; font-size: 12px; }
+  .pos-table { min-width: 1000px; }
+  .pos-pagination { flex-wrap: wrap; }
+}

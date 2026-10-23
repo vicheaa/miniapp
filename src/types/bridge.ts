@@ -51,8 +51,14 @@ export interface SuperAppBridge {
   /** Open a URL in the browser or native webview. */
   openUrl(url: string): void;
 
+  /** Open the native printer connection/settings screen. */
+  openPrinterSettings(): Promise<unknown>;
+
+  /** Print plain text; cut the paper when cut is true. */
+  printText(text: string, cut?: boolean): Promise<unknown>;
+
   /** Subscribe to events from the SuperApp. */
-  on(event: string, cb: (data: any) => void): void;
+  on(event: string, cb: (data: any) => void): void | (() => void);
 }
 
 /* ── Global augmentation ───────────────────────────────────────────────── */

@@ -1,0 +1,1585 @@
+{
+  "products": [
+    {
+      "id": "coconut-coffee",
+      "name": "Coconut Coffee",
+      "description": "Signature espresso combined with fragrant creamy coconut milk.",
+      "price": "6000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/coconut-coffee.jpg",
+      "category_id": "coffee",
+      "tags": [
+        "Coffee",
+        "Coconut Coffee",
+        "Specialty"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "coffee",
+        "name": "Coffee",
+        "description": "Cold and iced specialty coffee beverages",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "coconut-coffee_sweetness",
+          "product_id": "coconut-coffee",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "coconut-coffee_sweetness_0",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coconut-coffee_sweetness_1",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coconut-coffee_sweetness_2",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coconut-coffee_sweetness_3",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coconut-coffee_sweetness_4",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coconut-coffee_sweetness_5",
+              "product_attribute_id": "coconut-coffee_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "coconut-coffee-sweetness-0",
+          "sku": "COCONUT-COFFEE-SW-0",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coconut-coffee-sweetness-100",
+          "sku": "COCONUT-COFFEE-SW-100",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coconut-coffee-sweetness-120",
+          "sku": "COCONUT-COFFEE-SW-120",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coconut-coffee-sweetness-25",
+          "sku": "COCONUT-COFFEE-SW-25",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coconut-coffee-sweetness-50",
+          "sku": "COCONUT-COFFEE-SW-50",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coconut-coffee-sweetness-75",
+          "sku": "COCONUT-COFFEE-SW-75",
+          "product_id": "coconut-coffee",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coconut-coffee.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "coffee-with-milk",
+      "name": "Coffee with Milk",
+      "description": "Traditional rich coffee blended with sweet condensed milk.",
+      "price": "6000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+      "category_id": "coffee",
+      "tags": [
+        "Coffee",
+        "Milk Coffee",
+        "Iced"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "coffee",
+        "name": "Coffee",
+        "description": "Cold and iced specialty coffee beverages",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "coffee-with-milk_sweetness",
+          "product_id": "coffee-with-milk",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "coffee-with-milk_sweetness_0",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coffee-with-milk_sweetness_1",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coffee-with-milk_sweetness_2",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coffee-with-milk_sweetness_3",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coffee-with-milk_sweetness_4",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "coffee-with-milk_sweetness_5",
+              "product_attribute_id": "coffee-with-milk_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "coffee-with-milk-sweetness-0",
+          "sku": "COFFEE-WITH-MILK-SW-0",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coffee-with-milk-sweetness-100",
+          "sku": "COFFEE-WITH-MILK-SW-100",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coffee-with-milk-sweetness-120",
+          "sku": "COFFEE-WITH-MILK-SW-120",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coffee-with-milk-sweetness-25",
+          "sku": "COFFEE-WITH-MILK-SW-25",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coffee-with-milk-sweetness-50",
+          "sku": "COFFEE-WITH-MILK-SW-50",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "coffee-with-milk-sweetness-75",
+          "sku": "COFFEE-WITH-MILK-SW-75",
+          "product_id": "coffee-with-milk",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/coffee-with-milk.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "green-tea",
+      "name": "Green Tea",
+      "description": "Fragrant green tea brewed to perfection, refreshing and crisp.",
+      "price": "4000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/green-tea.jpg",
+      "category_id": "tea",
+      "tags": [
+        "Tea",
+        "Green Tea",
+        "Iced"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "tea",
+        "name": "Tea",
+        "description": "Refreshing teas, milk teas, and matcha drinks",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "green-tea_sweetness",
+          "product_id": "green-tea",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "green-tea_sweetness_0",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "green-tea_sweetness_1",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "green-tea_sweetness_2",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "green-tea_sweetness_3",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "green-tea_sweetness_4",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "green-tea_sweetness_5",
+              "product_attribute_id": "green-tea_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "green-tea-sweetness-0",
+          "sku": "GREEN-TEA-SW-0",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "green-tea-sweetness-100",
+          "sku": "GREEN-TEA-SW-100",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "green-tea-sweetness-120",
+          "sku": "GREEN-TEA-SW-120",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "green-tea-sweetness-25",
+          "sku": "GREEN-TEA-SW-25",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "green-tea-sweetness-50",
+          "sku": "GREEN-TEA-SW-50",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "green-tea-sweetness-75",
+          "sku": "GREEN-TEA-SW-75",
+          "product_id": "green-tea",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "4000.00",
+          "image": "products/chamkar-coffee/green-tea.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "hot-americano",
+      "name": "Hot Americano",
+      "description": "Steaming hot water topped with freshly brewed bold espresso.",
+      "price": "5000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/hot-americano.jpg",
+      "category_id": "hot-coffee",
+      "tags": [
+        "Hot Coffee",
+        "Americano",
+        "Hot"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "hot-coffee",
+        "name": "Hot Coffee",
+        "description": "Warm handcrafted hot coffee drinks",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "hot-americano_sweetness",
+          "product_id": "hot-americano",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "hot-americano_sweetness_0",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-americano_sweetness_1",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-americano_sweetness_2",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-americano_sweetness_3",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-americano_sweetness_4",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-americano_sweetness_5",
+              "product_attribute_id": "hot-americano_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "hot-americano-sweetness-0",
+          "sku": "HOT-AMERICANO-SW-0",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-americano-sweetness-100",
+          "sku": "HOT-AMERICANO-SW-100",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-americano-sweetness-120",
+          "sku": "HOT-AMERICANO-SW-120",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-americano-sweetness-25",
+          "sku": "HOT-AMERICANO-SW-25",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-americano-sweetness-50",
+          "sku": "HOT-AMERICANO-SW-50",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-americano-sweetness-75",
+          "sku": "HOT-AMERICANO-SW-75",
+          "product_id": "hot-americano",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "hot-cappuccino",
+      "name": "Hot Cappuccino",
+      "description": "Equal parts espresso, steamed milk, and thick airy foam.",
+      "price": "5000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+      "category_id": "hot-coffee",
+      "tags": [
+        "Hot Coffee",
+        "Cappuccino",
+        "Hot"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "hot-coffee",
+        "name": "Hot Coffee",
+        "description": "Warm handcrafted hot coffee drinks",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "hot-cappuccino_sweetness",
+          "product_id": "hot-cappuccino",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "hot-cappuccino_sweetness_0",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-cappuccino_sweetness_1",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-cappuccino_sweetness_2",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-cappuccino_sweetness_3",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-cappuccino_sweetness_4",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-cappuccino_sweetness_5",
+              "product_attribute_id": "hot-cappuccino_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "hot-cappuccino-sweetness-0",
+          "sku": "HOT-CAPPUCCINO-SW-0",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-cappuccino-sweetness-100",
+          "sku": "HOT-CAPPUCCINO-SW-100",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-cappuccino-sweetness-120",
+          "sku": "HOT-CAPPUCCINO-SW-120",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-cappuccino-sweetness-25",
+          "sku": "HOT-CAPPUCCINO-SW-25",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-cappuccino-sweetness-50",
+          "sku": "HOT-CAPPUCCINO-SW-50",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-cappuccino-sweetness-75",
+          "sku": "HOT-CAPPUCCINO-SW-75",
+          "product_id": "hot-cappuccino",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-cappuccino.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "hot-latte",
+      "name": "Hot Latte",
+      "description": "Freshly pulled espresso with steamed silky milk and light foam.",
+      "price": "5000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/hot-latte.jpg",
+      "category_id": "hot-coffee",
+      "tags": [
+        "Hot Coffee",
+        "Latte",
+        "Hot"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "hot-coffee",
+        "name": "Hot Coffee",
+        "description": "Warm handcrafted hot coffee drinks",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "hot-latte_sweetness",
+          "product_id": "hot-latte",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "hot-latte_sweetness_0",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-latte_sweetness_1",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-latte_sweetness_2",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-latte_sweetness_3",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-latte_sweetness_4",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "hot-latte_sweetness_5",
+              "product_attribute_id": "hot-latte_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "hot-latte-sweetness-0",
+          "sku": "HOT-LATTE-SW-0",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-latte-sweetness-100",
+          "sku": "HOT-LATTE-SW-100",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-latte-sweetness-120",
+          "sku": "HOT-LATTE-SW-120",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-latte-sweetness-25",
+          "sku": "HOT-LATTE-SW-25",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-latte-sweetness-50",
+          "sku": "HOT-LATTE-SW-50",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "hot-latte-sweetness-75",
+          "sku": "HOT-LATTE-SW-75",
+          "product_id": "hot-latte",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/hot-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "ice-americano",
+      "name": "Ice Americano",
+      "description": "Rich espresso poured over chilled water and ice.",
+      "price": "5000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/ice-americano.jpg",
+      "category_id": "coffee",
+      "tags": [
+        "Coffee",
+        "Iced",
+        "Americano"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "coffee",
+        "name": "Coffee",
+        "description": "Cold and iced specialty coffee beverages",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "ice-americano_sweetness",
+          "product_id": "ice-americano",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "ice-americano_sweetness_0",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-americano_sweetness_1",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-americano_sweetness_2",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-americano_sweetness_3",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-americano_sweetness_4",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-americano_sweetness_5",
+              "product_attribute_id": "ice-americano_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "ice-americano-sweetness-0",
+          "sku": "ICE-AMERICANO-SW-0",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-americano-sweetness-100",
+          "sku": "ICE-AMERICANO-SW-100",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-americano-sweetness-120",
+          "sku": "ICE-AMERICANO-SW-120",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-americano-sweetness-25",
+          "sku": "ICE-AMERICANO-SW-25",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-americano-sweetness-50",
+          "sku": "ICE-AMERICANO-SW-50",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-americano-sweetness-75",
+          "sku": "ICE-AMERICANO-SW-75",
+          "product_id": "ice-americano",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "5000.00",
+          "image": "products/chamkar-coffee/ice-americano.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    },
+    {
+      "id": "ice-latte",
+      "name": "Ice Latte",
+      "description": "Smooth espresso mixed with fresh chilled milk over ice.",
+      "price": "6000.00",
+      "currency": "KHR",
+      "image": "products/chamkar-coffee/ice-latte.jpg",
+      "category_id": "coffee",
+      "tags": [
+        "Coffee",
+        "Latte",
+        "Iced"
+      ],
+      "gallery": null,
+      "colors": null,
+      "sizes": null,
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z",
+      "category": {
+        "id": "coffee",
+        "name": "Coffee",
+        "description": "Cold and iced specialty coffee beverages",
+        "is_active": true,
+        "image": null,
+        "created_at": "2026-09-24T16:39:19.000000Z",
+        "updated_at": "2026-09-24T16:39:19.000000Z"
+      },
+      "attributes": [
+        {
+          "id": "ice-latte_sweetness",
+          "product_id": "ice-latte",
+          "name": "Sweetness",
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z",
+          "items": [
+            {
+              "id": "ice-latte_sweetness_0",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "0%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-latte_sweetness_1",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "25%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-latte_sweetness_2",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "50%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-latte_sweetness_3",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "75%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-latte_sweetness_4",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "100%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            },
+            {
+              "id": "ice-latte_sweetness_5",
+              "product_attribute_id": "ice-latte_sweetness",
+              "value": "120%",
+              "image": null,
+              "created_at": "2026-09-24T16:39:19.000000Z",
+              "updated_at": "2026-09-24T16:39:19.000000Z"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "id": "ice-latte-sweetness-0",
+          "sku": "ICE-LATTE-SW-0",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "0%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-latte-sweetness-100",
+          "sku": "ICE-LATTE-SW-100",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "100%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-latte-sweetness-120",
+          "sku": "ICE-LATTE-SW-120",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "120%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-latte-sweetness-25",
+          "sku": "ICE-LATTE-SW-25",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "25%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-latte-sweetness-50",
+          "sku": "ICE-LATTE-SW-50",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "50%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        },
+        {
+          "id": "ice-latte-sweetness-75",
+          "sku": "ICE-LATTE-SW-75",
+          "product_id": "ice-latte",
+          "values": {
+            "Sweetness": "75%"
+          },
+          "price": "6000.00",
+          "image": "products/chamkar-coffee/ice-latte.jpg",
+          "is_available": true,
+          "created_at": "2026-09-24T16:39:19.000000Z",
+          "updated_at": "2026-09-24T16:39:19.000000Z"
+        }
+      ]
+    }
+  ],
+  "app": {
+    "id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+    "name": "Chamkar Coffee Main Register",
+    "app_key": "CHAMKAR-POS-APP-01",
+    "merchant_id": 1,
+    "ccy": "usd",
+    "second_ccy": "khr",
+    "is_active": true,
+    "created_at": "2026-09-24T16:39:19.000000Z",
+    "updated_at": "2026-10-15T08:17:28.000000Z",
+    "order_sources_count": 12,
+    "merchant": {
+      "id": 1,
+      "name": "Chamkar Coffee",
+      "code": "CHAMKAR-COFFEE",
+      "is_active": true,
+      "created_at": "2026-09-24T16:39:18.000000Z",
+      "updated_at": "2026-09-24T16:39:18.000000Z"
+    },
+    "order_sources": [
+      {
+        "id": "01a09b50-7660-7001-a0f1-000000000001",
+        "name": "Foodpanda",
+        "code": "foodpanda",
+        "source_type": "Delivery Partner",
+        "description": "Orders received from Foodpanda delivery platform",
+        "icon": "delivery_dining",
+        "color": "#D70F64",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7001-a0f1-000000000002",
+        "name": "Grab",
+        "code": "grab",
+        "source_type": "Delivery Partner",
+        "description": "Orders received from Grab / GrabFood platform",
+        "icon": "two_wheeler",
+        "color": "#00B14F",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000001",
+        "name": "Table 01",
+        "code": "table_01",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 01",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000002",
+        "name": "Table 02",
+        "code": "table_02",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 02",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000003",
+        "name": "Table 03",
+        "code": "table_03",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 03",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000004",
+        "name": "Table 04",
+        "code": "table_04",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 04",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000005",
+        "name": "Table 05",
+        "code": "table_05",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 05",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000006",
+        "name": "Table 06",
+        "code": "table_06",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 06",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000007",
+        "name": "Table 07",
+        "code": "table_07",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 07",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000008",
+        "name": "Table 08",
+        "code": "table_08",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 08",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000009",
+        "name": "Table 09",
+        "code": "table_09",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 09",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      },
+      {
+        "id": "01a09b50-7660-7002-a0f1-000000000010",
+        "name": "Table 10",
+        "code": "table_10",
+        "source_type": "Dine-In",
+        "description": "Orders received from Table 10",
+        "icon": "table_restaurant",
+        "color": "#0EA5E9",
+        "is_active": true,
+        "merchant_id": 1,
+        "pos_app_id": "01a09b49-7657-7303-a0f9-28f1edf44b7e",
+        "created_at": "2026-09-24T16:39:20.000000Z",
+        "updated_at": "2026-09-24T16:39:20.000000Z"
+      }
+    ]
+  },
+  "categories": [
+    {
+      "id": "coffee",
+      "name": "Coffee",
+      "description": "Cold and iced specialty coffee beverages",
+      "is_active": true,
+      "image": null,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z"
+    },
+    {
+      "id": "tea",
+      "name": "Tea",
+      "description": "Refreshing teas, milk teas, and matcha drinks",
+      "is_active": true,
+      "image": null,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z"
+    },
+    {
+      "id": "hot-coffee",
+      "name": "Hot Coffee",
+      "description": "Warm handcrafted hot coffee drinks",
+      "is_active": true,
+      "image": null,
+      "created_at": "2026-09-24T16:39:19.000000Z",
+      "updated_at": "2026-09-24T16:39:19.000000Z"
+    }
+  ],
+  "rates": [
+    {
+      "id": 2,
+      "from_currency": "KHR",
+      "to_currency": "USD",
+      "rate": 4100,
+      "operation": "divide",
+      "is_active": true
+    },
+    {
+      "id": 1,
+      "from_currency": "USD",
+      "to_currency": "KHR",
+      "rate": 4100,
+      "operation": "multiply",
+      "is_active": true
+    }
+  ]
+}

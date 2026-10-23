@@ -18,21 +18,7 @@ export function createMockBridge(token: string): SuperAppBridge {
           ? '?' + window.location.hash.split('?')[1]
           : '');
       const urlParams = new URLSearchParams(search);
-      const filter = urlParams.has('filter') ? urlParams.get('filter') : undefined;
-      const latest = urlParams.has('latest') ? urlParams.get('latest') !== 'false' : undefined;
-      const myRequest = urlParams.has('myRequest') ? urlParams.get('myRequest') === 'true' : undefined;
-      const isFilterBtndisable = urlParams.has('isFilterBtndisable') ? urlParams.get('isFilterBtndisable') === 'true' : undefined;
-      const setTitle = urlParams.get('setTitle') || urlParams.get('title');
-      const buKeysParam = urlParams.get('buKeys');
-      let buKeys: string[] | undefined = undefined;
-      if (buKeysParam) {
-        try {
-          buKeys = buKeysParam.startsWith('[') ? JSON.parse(buKeysParam) : buKeysParam.split(',');
-        } catch {
-          buKeys = [buKeysParam];
-        }
-      }
-      return { filter, latest, myRequest, isFilterBtndisable, setTitle, buKeys };
+      return Object.fromEntries(urlParams.entries());
     },
 
     scanQR: async () => {
@@ -95,6 +81,16 @@ export function createMockBridge(token: string): SuperAppBridge {
       window.open(url, '_blank');
     },
 
+    openPrinterSettings: async () => {
+      console.log('[Mock SuperApp] openPrinterSettings called (no native printer)');
+      return { success: true };
+    },
+
+    printText: async (text: string, cut?: boolean) => {
+      console.log('[Mock SuperApp] printText (preview only):', { text, cut: cut === true });
+      return { success: false, message: 'Browser preview only. View the receipt below; connect a printer in the mobile app to print.' };
+    },
+
     on: (event: string, cb: (data: any) => void) => {
       console.log('[Mock SuperApp] registered listener for:', event);
       if (!(window as any).__mockEventListeners) {
@@ -103,7 +99,12 @@ export function createMockBridge(token: string): SuperAppBridge {
       if (!(window as any).__mockEventListeners[event]) {
         (window as any).__mockEventListeners[event] = [];
       }
-      (window as any).__mockEventListeners[event].push(cb);
+      const listeners = (window as any).__mockEventListeners[event] as Array<(data: any) => void>;
+      listeners.push(cb);
+      return () => {
+        const index = listeners.indexOf(cb);
+        if (index !== -1) listeners.splice(index, 1);
+      };
     },
   };
 }

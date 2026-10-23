@@ -1,0 +1,674 @@
+{
+  "current_page": 1,
+  "last_page": 2,
+  "per_page": 20,
+  "total": 27,
+  "from": 1,
+  "to": 20,
+  "data": [
+    {
+      "id": "01a14de9-6e24-72f1-93bc-72269df10569",
+      "order_number": "ORD-20261018-EFF4F6",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "2.4390",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "10000.0000",
+      "created_at": "2026-10-18T07:28:26.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14de9-6e27-72b7-9d0b-cfc568e43b07",
+          "product_name": "Green Tea",
+          "quantity": 1,
+          "price": "0.9756",
+          "total": "0.9756",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        },
+        {
+          "id": "01a14de9-6e28-71ba-9155-33441698ad67",
+          "product_name": "Coffee with Milk",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14db3-6457-73b0-9564-2a8992327ebe",
+      "order_number": "ORD-20261018-SK2LT0",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "4.3902",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "18000.0000",
+      "created_at": "2026-10-18T06:29:24.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14db3-645a-73df-ad2b-ced4995da7b8",
+          "product_name": "Passion Cream",
+          "quantity": 2,
+          "price": "1.4634",
+          "total": "2.9268",
+          "variant_values": {
+            "Sweetness": "25%"
+          },
+          "notes": null
+        },
+        {
+          "id": "01a14db3-645b-70c3-8aff-894caa192f13",
+          "product_name": "Iced Cappuccino",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14daf-21c6-70b6-9179-0cfffa699af0",
+      "order_number": "ORD-20261018-2DLHBR",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "5000.0000",
+      "currency": "KHR",
+      "second_currency": "USD",
+      "second_grand_total": "1.2200",
+      "created_at": "2026-10-18T06:24:45.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Bar Register"
+      },
+      "items": [
+        {
+          "id": "01a14daf-21c9-7150-ba05-499c89972930",
+          "product_name": "Hot Americano",
+          "quantity": 1,
+          "price": "5000.0000",
+          "total": "5000.0000",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14d81-81be-72fb-b82a-0aa265ee7182",
+      "order_number": "ORD-20261018-0YX7IP",
+      "customer_name": "Vid VieTips",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "6000.0000",
+      "currency": "KHR",
+      "second_currency": "USD",
+      "second_grand_total": "1.4600",
+      "created_at": "2026-10-18T05:34:55.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Bar Register"
+      },
+      "items": [
+        {
+          "id": "01a14d81-81c1-712f-959a-d9b3c3b1eeaa",
+          "product_name": "Coconut Coffee",
+          "quantity": 1,
+          "price": "6000.0000",
+          "total": "6000.0000",
+          "variant_values": {
+            "Sweetness": "100%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14d09-6137-739b-a09f-b1403fcae395",
+      "order_number": "ORD-20261018-SXU8YH",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.4634",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "6000.0000",
+      "created_at": "2026-10-18T03:23:42.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14d09-6139-7201-aeba-60338ac5e4d6",
+          "product_name": "Coffee with Milk",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14ce1-2e7a-7037-960b-82b8a453ce72",
+      "order_number": "ORD-20261018-MVPR6G",
+      "customer_name": "Walk-in Customer",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "0.9756",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "4000.0000",
+      "created_at": "2026-10-18T02:39:48.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14ce1-2e7e-7323-b714-1d2c30390e9a",
+          "product_name": "Green Tea",
+          "quantity": 1,
+          "price": "0.9756",
+          "total": "0.9756",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14ce0-9feb-704d-8a7d-59e292a6ab86",
+      "order_number": "ORD-20261018-UDIFDR",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.2195",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "5000.0000",
+      "created_at": "2026-10-18T02:39:11.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14ce0-9fee-73ad-be52-6ecb4f274ce7",
+          "product_name": "Hot Latte",
+          "quantity": 1,
+          "price": "1.2195",
+          "total": "1.2195",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14cde-017b-7366-a8e4-601f3deca392",
+      "order_number": "ORD-20261018-NI6HTN",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "4.8780",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "20000.0000",
+      "created_at": "2026-10-18T02:36:20.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cde-017d-7207-9ca9-f29c48f9da3b",
+          "product_name": "Green Tea",
+          "quantity": 5,
+          "price": "0.9756",
+          "total": "4.8780",
+          "variant_values": {
+            "Sweetness": "75%"
+          },
+          "notes": "no sweet"
+        }
+      ]
+    },
+    {
+      "id": "01a14cdd-a740-708a-b391-951805aa4ac8",
+      "order_number": "ORD-20261018-NZXKOS",
+      "customer_name": "Walk-in Customer",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.4634",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "6000.0000",
+      "created_at": "2026-10-18T02:35:57.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cdd-a745-739a-9a37-414a69b02db6",
+          "product_name": "Ice Latte",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14cc6-868a-7151-b27a-10bed0e74b18",
+      "order_number": "ORD-20261018-A2NOZZ",
+      "customer_name": "Walk-in Customer",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.2195",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "5000.0000",
+      "created_at": "2026-10-18T02:10:41.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cc6-868d-71b7-9bd4-772423da1b5d",
+          "product_name": "Hot Latte",
+          "quantity": 1,
+          "price": "1.2195",
+          "total": "1.2195",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14cc6-36d6-712c-a39e-70b82e3539f3",
+      "order_number": "ORD-20261018-ZJ6TLK",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.9512",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "8000.0000",
+      "created_at": "2026-10-18T02:10:21.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cc6-36d9-71bb-b73d-1588fc8bdaa6",
+          "product_name": "Red Milk Tea",
+          "quantity": 1,
+          "price": "0.9756",
+          "total": "0.9756",
+          "variant_values": {
+            "Sweetness": "100%"
+          },
+          "notes": null
+        },
+        {
+          "id": "01a14cc6-36db-71a4-b465-195aecdc37a0",
+          "product_name": "Red Lemon Tea",
+          "quantity": 1,
+          "price": "0.9756",
+          "total": "0.9756",
+          "variant_values": {
+            "Sweetness": "100%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14cc5-dff4-719b-a70c-a3b7be93d82e",
+      "order_number": "ORD-20261018-70R5JI",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.4634",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "6000.0000",
+      "created_at": "2026-10-18T02:09:58.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cc5-dff8-7299-a9e5-f97ac66f2df7",
+          "product_name": "Macha Latte",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14cc5-91ef-7185-baae-38d98171db00",
+      "order_number": "ORD-20261018-FR0KHW",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.4634",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "6000.0000",
+      "created_at": "2026-10-18T02:09:38.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14cc5-91f4-71be-ab39-2387826256db",
+          "product_name": "Coffee with Milk",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14bd3-2587-7148-945b-05922961739a",
+      "order_number": "ORD-20261018-SDMNAK",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "5000.0000",
+      "currency": "KHR",
+      "second_currency": "USD",
+      "second_grand_total": "1.2200",
+      "created_at": "2026-10-17T21:44:51.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Bar Register"
+      },
+      "items": [
+        {
+          "id": "01a14bd3-258a-737c-9d18-bcbbbbb649c8",
+          "product_name": "Hot Cappuccino",
+          "quantity": 1,
+          "price": "5000.0000",
+          "total": "5000.0000",
+          "variant_values": {
+            "Sweetness": "100%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14bcd-e787-709c-afd4-164fee618152",
+      "order_number": "ORD-20261018-SA5Z9B",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "6000.0000",
+      "currency": "KHR",
+      "second_currency": "USD",
+      "second_grand_total": "1.4600",
+      "created_at": "2026-10-17T21:39:07.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Bar Register"
+      },
+      "items": [
+        {
+          "id": "01a14bcd-e789-715b-b527-f05a134a11a2",
+          "product_name": "Coffee with Milk",
+          "quantity": 1,
+          "price": "6000.0000",
+          "total": "6000.0000",
+          "variant_values": {
+            "Sweetness": "100%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14bcc-1212-7198-8b7e-9eeec7e0ee43",
+      "order_number": "ORD-20261018-DND1NP",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.2195",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "5000.0000",
+      "created_at": "2026-10-17T21:37:07.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14bcc-1215-7120-8789-ddadab29bd9e",
+          "product_name": "Hot Americano",
+          "quantity": 1,
+          "price": "1.2195",
+          "total": "1.2195",
+          "variant_values": {
+            "Sweetness": "75%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14bc6-087a-739c-9bd3-917de9933304",
+      "order_number": "ORD-20261018-REFHHV",
+      "customer_name": "Walk-in Customer",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "1.4634",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "6000.0000",
+      "created_at": "2026-10-17T21:30:31.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14bc6-087d-72eb-ba0c-73f0e2bf0bb2",
+          "product_name": "Macha Latte",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a14bc5-c45c-722e-aef9-1889ca960924",
+      "order_number": "ORD-20261018-MGKR7Z",
+      "customer_name": "Walk-in",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "0.9756",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "4000.0000",
+      "created_at": "2026-10-17T21:30:14.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a14bc5-c46a-70ac-8c1d-e6f364bce4ea",
+          "product_name": "Green Tea",
+          "quantity": 1,
+          "price": "0.9756",
+          "total": "0.9756",
+          "variant_values": {
+            "Sweetness": "75%"
+          },
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "01a13fdf-f7b6-7364-9d79-11988522b4f3",
+      "order_number": "ORD-20261015-SAJFTC",
+      "customer_name": "VIP Member",
+      "status": "completed",
+      "payment_status": "paid",
+      "payment_method": "cash",
+      "total_amount": "2.4390",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "10000.0000",
+      "created_at": "2026-10-15T14:03:24.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a13fdf-f7c4-72fb-ad5f-15a056b76b6a",
+          "product_name": "Hot Latte",
+          "quantity": 2,
+          "price": "1.2195",
+          "total": "2.4390",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": "123"
+        }
+      ]
+    },
+    {
+      "id": "01a13eae-b9f2-72a0-b3c7-9300723fcb8d",
+      "order_number": "ORD-20261015-4MGQPT",
+      "customer_name": "Walk-in Customer",
+      "status": "completed",
+      "payment_status": "unpaid",
+      "payment_method": "cash",
+      "total_amount": "2.9268",
+      "currency": "USD",
+      "second_currency": "KHR",
+      "second_grand_total": "12000.0000",
+      "created_at": "2026-10-15T08:30:00.000000Z",
+      "notes": null,
+      "source_name": null,
+      "pos_app": {
+        "name": "Chamkar Coffee Main Register"
+      },
+      "items": [
+        {
+          "id": "01a13eae-ba02-70c6-9823-acf543d5fa9a",
+          "product_name": "Macha Strawberry",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        },
+        {
+          "id": "01a13eae-ba05-7219-a6dd-03d125d77e61",
+          "product_name": "Macha Coffee Cream",
+          "quantity": 1,
+          "price": "1.4634",
+          "total": "1.4634",
+          "variant_values": {
+            "Sweetness": "0%"
+          },
+          "notes": null
+        }
+      ]
+    }
+  ]
+}

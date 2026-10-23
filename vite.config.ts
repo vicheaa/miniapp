@@ -5,10 +5,7 @@ import path from 'path';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiTarget =
-    env.VITE_API_BASE_URL ||
-    env.VITE_DEV_API_BASE_URL ||
-    'http://oneiis.vital.com.kh';
+  const apiTarget = env.VITE_API_BASE_URL || env.VITE_DEV_API_BASE_URL;
 
   return {
     plugins: [react(), tailwindcss()],
@@ -19,23 +16,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      proxy: {
-        '/services': {
-          target: apiTarget,
-          changeOrigin: true,
-          secure: false,
-        },
-        '/api': {
-          target: apiTarget,
-          changeOrigin: true,
-          secure: false,
-        },
-        '/files': {
-          target: apiTarget,
-          changeOrigin: true,
-          secure: false,
-        },
-      },
+      proxy: apiTarget
+        ? Object.fromEntries(['/api', '/services', '/files', '/storage'].map((prefix) => [
+            prefix,
+            { target: apiTarget, changeOrigin: true },
+          ]))
+        : undefined,
     },
     build: {
       outDir: 'dist',
