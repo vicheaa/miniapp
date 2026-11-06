@@ -1,5 +1,0 @@
-simulation: pos-apps-local
-routing: path
-mocks:
-  - routeKey: pos
-    path: ../mocks/pos-api/default.js

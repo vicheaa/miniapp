@@ -1,0 +1,5 @@
+simulation: miniapp-auth-refresh
+routing: path
+mocks:
+  - routeKey: central
+    path: postman/mocks/auth-refresh/config.yaml

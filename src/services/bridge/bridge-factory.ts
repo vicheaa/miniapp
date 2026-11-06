@@ -1,42 +1,41 @@
+import { appConfig } from '../../config';
 import type { SuperAppBridge } from '../../types/bridge';
-import { createMockBridge } from './mock-bridge';
 
-export interface BridgeResult {
-  bridge: SuperAppBridge;
-  isMock: boolean;
+interface ResolveOptions {
+  signal: AbortSignal;
+  timeoutMs?: number;
 }
 
-/**
- * Attempt to resolve the SuperApp bridge.
- *
- * Polls `window.superApp` every 100 ms for up to `timeoutMs` milliseconds.
- * If the real bridge is not injected in time, falls back to a mock.
- *
- * @returns A promise that resolves with the bridge and whether it is mocked.
- */
-export function resolveBridge(
-  mockToken: string,
-  timeoutMs: number = 500,
-): Promise<BridgeResult> {
-  // Fast path — already available
-  if (window.superApp) {
-    return Promise.resolve({ bridge: window.superApp, isMock: false });
-  }
-
-  return new Promise((resolve) => {
-    let elapsed = 0;
-    const interval = setInterval(() => {
-      if (window.superApp) {
-        clearInterval(interval);
-        resolve({ bridge: window.superApp, isMock: false });
-        return;
+/** Resolve only the native bridge. Development fallback is owned by useSuperApp. */
+export function resolveBridge({ signal, timeoutMs = appConfig.bridgeTimeoutMs }: ResolveOptions): Promise<SuperAppBridge> {
+  return new Promise((resolve, reject) => {
+    let poll: ReturnType<typeof setInterval> | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const cleanup = () => {
+      clearInterval(poll);
+      clearTimeout(timeout);
+      signal.removeEventListener('abort', onAbort);
+    };
+    const onAbort = () => {
+      cleanup();
+      reject(signal.reason ?? new DOMException('Cancelled', 'AbortError'));
+    };
+    const check = () => {
+      const bridge = typeof window !== 'undefined' ? window.superApp : undefined;
+      if (bridge) {
+        cleanup();
+        resolve(bridge);
+        return true;
       }
-
-      elapsed += 100;
-      if (elapsed >= timeoutMs) {
-        clearInterval(interval);
-        resolve({ bridge: createMockBridge(mockToken), isMock: true });
-      }
-    }, 100);
+      return false;
+    };
+    if (signal.aborted) { onAbort(); return; }
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (check()) return;
+    poll = setInterval(check, Math.min(100, timeoutMs));
+    timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('Unable to connect to the SuperApp. Open this mini-app inside the SuperApp, then retry.'));
+    }, timeoutMs);
   });
 }

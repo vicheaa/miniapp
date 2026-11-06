@@ -1,210 +1,287 @@
-# POS Apps Mini App
+# SuperApp mini-app starter
 
-A React + TypeScript + Vite mini app that lists POS Apps from `/api/admin/pos-apps`.
-Includes the native bridge, standalone mock bridge, authentication state, English/Khmer
-localization, hash routing, React Query, Zustand, and shared Tailwind/shadcn UI components.
+React, TypeScript, and Vite starter for mini-apps hosted by the SuperApp. Includes
+the native bridge, browser development tools, authenticated HTTP requests, English/Khmer
+localization, hash routing, Zustand, React Query, and Tailwind. No backend is required
+to start, and the starter page makes no API calls.
 
-## Start a project
+New to this project? Follow the short [getting-started guide](GETTING_STARTED.md)
+to set up your first mini-app and add a feature.
 
-Create a new branch from this boilerplate branch, then:
+## Start a new mini-app
+
+Create a branch or copy this starter, then:
 
 ```bash
+nvm install
 nvm use
 npm ci
 cp .env.example .env.dev
 npm run dev
 ```
 
-Use Node 24 as specified in `.nvmrc`. Update the package name, the title in
-`index.html` and `src/App.tsx`, and the starter translations for each new project.
+Use Node 26 LTS and npm. The system `zip` utility is required for packaging
+(preinstalled on macOS; install it on Linux if necessary).
 
-## Project structure
+Customize `src/config.ts` for the app title, startup timeout, request timeout,
+default language, and native pull-to-refresh setting. Rename the package in
+`package.json` and update the lockfile with `npm install --package-lock-only`.
+Add your screens under `src/pages/` and register them in `src/router/index.tsx`.
+Hash routes work in static hosting and native WebViews.
 
-- `src/pages/HomePage.tsx`: POS Apps table, current-page search, pagination, and record details.
-- `src/services/api/pos-apps.ts`: authenticated, cancellable API client with a 20-second timeout.
-- `src/router/index.tsx`: hash routes, suitable for native WebViews and static hosting.
-- `src/services/bridge/`: native bridge detection and browser mock implementation.
-- `src/types/bridge.ts`: the contract for the injected `window.superApp` SDK.
-- `src/store/miniAppStore.ts`: bridge, auth token, generic launch parameters, and language.
-- `src/services/api-header.ts`: JSON and bearer-token headers for future API calls.
-- `src/hooks/`: bridge resolution, translation lookup, and debounce helpers.
-- `src/components/ui/`: shared components and a local development bridge console.
-- `assets/lang/`: English and Khmer translations; use `useTranslation().t('home.title')`.
-- `src/styles/index.css`: shared theme, typography, and animation styles.
+## SuperApp bridge
 
-## Bridge behavior
+The host injects `window.superApp`; its contract is defined in `src/types/bridge.ts`.
+Keep native method names aligned with the container. Startup resolves the bridge,
+sets its title and pull-to-refresh behavior, reads auth, launch parameters, and
+language, subscribes to `onLanguageChanged`, and calls `ready()`.
 
-The app uses `window.superApp` when injected by the native container. If no bridge
-appears within 500 ms, it uses a browser mock. Startup loads the auth token, launch
-parameters, and language, then signals `ready()`. Language events update the store.
-The starter page can render without an auth token; add authentication requirements
-where your future app needs them.
+Production bridge discovery and each startup call have a five-second timeout,
+configurable in `src/config.ts`. Development bridge discovery waits only 300 ms
+before starting the browser mock (`developmentBridgeTimeoutMs`).
+Discovery or authentication failures show a retry screen.
+Launch parameters and localization are optional: failed/unsupported calls fall back
+to an empty map and the default language. Launch parameters may be an object or a
+JSON object string. Empty auth tokens are allowed for public features; no token
+is invented. Applications decide which features require authentication.
 
-The browser mock returns URL query parameters as generic launch parameters.
-For example, `/?example=value#/` makes `initParams.example` available in the store.
+Use the initialized bridge and shared state in a screen:
 
-During `npm run dev`, the **Dev Mode** console lets you save a local fallback token,
-toggle English/Khmer, and try QR scanning, dialogs, toasts, and closing the app.
-The console and local token overrides are disabled in production builds. Mock actions
-use browser dialogs or console output; native actions require the SuperApp container.
+```tsx
+const bridge = useMiniAppStore((state) => state.superApp);
+const params = useMiniAppStore((state) => state.initParams);
+const token = useMiniAppStore((state) => state.authToken);
+
+const result = await bridge?.scanQR();
+bridge?.showToast('Saved');
+```
+
+Import `useMiniAppStore` from `src/store/miniAppStore`. Profile, launch parameter,
+device, and event payloads use `unknown`; narrow them before reading app-specific
+properties. Printer methods remain available in the bridge contract; feature code
+should check method availability and native results on older containers.
+
+Only mount `useSuperApp()` once, at the application root. Its session is cancelled
+on unmount/retry, timers are cleared, and language listeners are detached where
+the host supports unsubscribe. Callbacks from hosts without unsubscribe become
+inactive after cleanup. Hosts that implement `refreshAuthToken(rejectedToken)`
+also support automatic recovery from an expired access token (see below).
+
+## Browser development
+
+When no native bridge appears within 300 ms, the Vite development
+server loads a browser mock and shows **Dev tools**. It can set a development auth
+token, switch English/Khmer, inspect launch parameters and user/device information,
+and exercise QR, dialogs, toasts, haptics, close, and printer actions.
+
+Development tokens are held in memory and session storage for the current tab.
+An optional `VITE_DEV_AUTH_TOKEN` is used only as the initial development value.
+Storage access failures do not prevent local development. Mock printing reports
+that no printer is connected. Mock launch parameters combine query parameters
+from the hash and the page URL, with page query parameters taking precedence:
+`/?example=value#/`.
+
+Production builds require the native bridge. They show a connection error with
+retry outside the SuperApp, and exclude the browser mock and development console.
+All `vite build` modes, including `build:dev`, produce this production behavior.
+
+## HTTP requests
+
+Import `api`, `ApiError`, and optional types from `src/services/api/request`.
+The client uses fetch and reads the current token for every request.
+
+```ts
+import { api, ApiError } from './services/api/request';
+
+type Item = { id: number; name: string };
+
+const items = await api.get<Item[]>('/api/items', {
+  query: { page: 1, active: true, tags: ['new', 'featured'] },
+});
+const created = await api.post<Item>('/api/items', { name: 'Example' });
+await api.put<Item>('/api/items/1', { name: 'Replaced' });
+await api.patch<Item>('/api/items/1', { name: 'Updated' });
+await api.delete('/api/items/1');
+
+// Pass React Query's signal through to fetch.
+const query = {
+  queryKey: ['items'],
+  queryFn: ({ signal }: { signal: AbortSignal }) =>
+    api.get<Item[]>('/api/items', { signal }),
+};
+
+// Public requests omit the automatic bearer header.
+await api.get('/api/public', { auth: false });
+
+try {
+  await api.post('/api/items', { name: '' });
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error(error.kind, error.status, error.data);
+  }
+}
+```
+
+Requests accept endpoint paths relative to the configured API origin; absolute
+URLs are rejected. Query arrays become repeated parameters; null/undefined values
+are omitted. JSON bodies receive a content type, GET requests do not, and supplied
+headers can override defaults. An explicit Authorization header takes precedence.
+Bodies on DELETE are supported through `api.delete(path, { body: ... })`.
+
+Successful JSON/text responses with no body, and 204/205/HEAD responses, return
+`undefined`. JSON generics describe the expected shape without runtime validation.
+Errors expose `kind` (`http`, `network`, `timeout`, `aborted`, or `parse`),
+`status`, `data`, `url`, `method`, and the underlying `cause`.
+Server response bodies remain available for validation errors. The default timeout
+is 20 seconds; override it with `timeoutMs` per request. Timers include response
+body reading. AbortController handles cancellation without relying on newer
+WebView `AbortSignal.any()` or `AbortSignal.timeout()` methods.
+
+The HTTP client retries an authenticated 401 once after native token refresh.
+Network failures and other HTTP errors are not retried. React Query also defaults
+to no retries for queries and mutations. Manual token changes and session resets
+cancel and clear cached queries; token rotation preserves in-flight queries.
+
+### Expired access tokens
+
+When an API request returns 401, the shared client calls
+`bridge.refreshAuthToken(rejectedToken)`. Concurrent requests share the refresh.
+The SuperApp sends the following form-encoded POST to its configured
+`AUTH_URL` + `/mobile/auth/refresh`:
+
+```text
+grant_type=refresh_token
+client_id=central_app
+refresh_token=<value from native secure storage>
+```
+
+The SuperApp saves `access_token` and any rotated `refresh_token` from the response.
+It uses the same configured OAuth client as native login (`central_app` by default).
+Only the new access token is returned to JavaScript. The mini-app updates its
+in-memory token and replays the original request once with the same body and options.
+It does not store or request refresh credentials in JavaScript.
+
+If the bridge method is missing, refresh fails/times out, or the replay also returns
+401, the caller receives a 401. A refresh failure preserves the original API error
+body. There is no refresh loop or mini-app login redirect. Public requests using
+`auth: false` and requests with their own Authorization header skip this recovery.
+Cancellation still cancels that caller without cancelling a refresh shared by others.
+
+This needs the updated SuperApp SDK and native `refreshAuthToken` action. Rebuild
+the SuperApp as well as the mini-app; existing installed containers without this
+method retain their previous 401 behavior. The native implementation is in the
+adjacent `oml-central` repository. `AUTH_URL` and refresh credentials remain native
+configuration; no new mini-app environment variables are needed.
+
+`authRefreshTimeoutMs` in `src/config.ts` bounds the bridge refresh to 10 seconds.
+For a separate custom client, provide a `refreshAuthToken` callback to
+`createApiClient` if that client should use this recovery too.
+
+### Uploads and downloads
+
+```ts
+const form = new FormData();
+form.append('file', file);
+await api.post('/api/uploads', form); // Browser sets the multipart boundary.
+
+const text = await api.get('/api/export.txt', { responseType: 'text' });
+const blob = await api.get('/api/export.pdf', { responseType: 'blob' });
+if (blob) {
+  const url = URL.createObjectURL(blob);
+  // Use the URL, then call URL.revokeObjectURL(url) when finished.
+}
+```
+
+For a separate backend, use `createApiClient({ baseUrl, getToken, timeoutMs })`.
+It returns the same helpers without changing the shared client.
 
 ## Backend configuration
 
-Set `VITE_API_BASE_URL=https://demo-pos.vietips.com` in `.env.dev` to proxy
-`/api`, `/services`, and `/files` during development. Existing environment files
-must be updated separately; restart Vite after changing them. Authentication comes
-from the native bridge or the local **Dev Mode** token field.
+Both settings are optional and empty by default:
 
-In the native container, configure backend routing in the host application.
-For standalone deployments without a host proxy, set `VITE_POS_API_BASE_URL` to
-the backend origin at build time; that backend must allow browser CORS requests.
-The API client appends `/api/admin/pos-apps?page=…` to this origin.
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_ORIGIN` | Direct API origin or base path, used in built apps; requires backend CORS for cross-origin requests. |
+| `VITE_DEV_PROXY_TARGET` | Development server proxy target for `/api`, `/services`, `/files`, and `/storage`. |
+| `VITE_DEV_AUTH_TOKEN` | Initial development-only token; prefer entering temporary tokens in Dev tools. |
 
-Search filters names and app keys on the current page because only the paginated
-GET contract is supplied. The eye button opens details from that response.
-Add, edit, and delete actions are disabled until their contracts are available.
-The cart icon opens the POS terminal at `#/pos-apps/<id>/pos`.
+For a local proxy, leave `VITE_API_ORIGIN` empty and set
+`VITE_DEV_PROXY_TARGET=https://api.example.com`. Restart Vite after changing env
+files. In the native container, relative requests rely on the host's backend routing.
 
-`VITE_*` values are embedded in client bundles. Use `VITE_DEV_AUTH_TOKEN` only for
-local testing; keep real tokens and environment files out of Git.
+Copy the new `.env.example` rather than reusing environment files from the previous
+application. The old API configuration keys are no longer used.
+All `VITE_*` values are public build-time configuration. Never commit real tokens
+or environment files. Production credentials come from the SuperApp bridge.
 
-## Check and build
+## Localization
+
+Translations live in `assets/lang/en.json` and `assets/lang/km.json`.
+Use `useTranslation().t('home.title')`; missing keys return the key itself.
+Khmer locale variants normalize to `km`; other locales fall back to English.
+The document language follows the shared language state and switches the app font:
+English uses Inter, and Khmer uses Kantumruy Pro. Both fonts are bundled locally
+and work offline, including in the SuperApp. Inter's license is included in
+`public/licenses/Inter-OFL.txt` and copied into build archives.
+
+Use `font-sans` (or inherit the body font) for automatic language-based fonts.
+Use `font-inter` when an element should explicitly use Inter, with Kantumruy Pro
+as the fallback for Khmer characters.
+
+## Mobile WebView behavior
+
+The starter locks page zoom, hides scrollbars, and keeps normal touch scrolling.
+The layout uses dynamic viewport height and safe-area padding. Inputs remain at
+least 16 px to avoid focus zoom, and editable fields keep text selection and their
+native editing menus. Use the `selectable` class for other text users should copy.
+Read-only labels suppress accidental text selection and long-press link/image
+callouts; buttons retain keyboard focus outlines and provide pressed feedback.
+
+The SuperApp's `SuperAppWebView` also disables native zoom controls, scroll
+indicators, and overscroll effects. Rebuild the SuperApp to apply those container
+settings; CSS alone cannot control the native scroll indicators. When adding a
+scrollable panel, give it a constrained height and `overflow-auto`; avoid locking
+all page scrolling with `overflow-hidden`.
+
+## Check, build, and package
 
 ```bash
 npm run typecheck
+npm test
 npm run build
-```
-
-The build checks TypeScript, emits static files to `dist/`, and creates `miniapp.zip`.
-Both outputs are ignored by Git. Build modes are also available:
-
-```bash
-npm run build:dev
-npm run build:staging
-npm run build:prod
 npm run preview
 ```
 
-Set mode-specific configuration in `.env.dev`, `.env.staging`, or `.env.prod`.
-`npm run zip` repackages an existing `dist/` using the system `tar` command.
-Upload `miniapp.zip` to your mini app registry, or copy `dist/` into the native
-container's mini app assets for sideload testing.
+Tests use Node's test runner, Vite's TypeScript loader, fake native bridge sessions,
+and a temporary local HTTP server. No external backend or credentials are needed.
 
-## Local API verification
-
-The Postman fixture uses the supplied sample response. It is separate from the
-application; the page never substitutes fixture data when the real API fails.
-No owner-workspace mock lookup was performed; this local fixture follows the
-response supplied in the task and assumes only GET with a `page` query parameter.
-
-With Postman CLI 1.70+ installed, run these in separate terminals:
+The optional Postman fixture in `postman/simulations/auth-refresh.sim.yaml` checks
+the refresh contract using dummy tokens. Start it with:
 
 ```bash
-postman simulation run postman/simulations/pos-apps.sim.yaml --port 4900 --output ndjson
-npm run check:pos
+postman simulation run postman/simulations/auth-refresh.sim.yaml --port 4900 --no-history
 ```
 
-The check runs the actual API client over HTTP for successful, empty, unauthorized,
-forbidden, server-error, and malformed responses, then renders the page with the
-sample records using React's server renderer. It also verifies request cancellation.
-It does not verify live credentials, browser interactions, or the native container.
-To preview the page with fixture data locally:
+In `../oml-central`, the native auth tests can use this stand-in over real HTTP:
 
 ```bash
-VITE_API_BASE_URL=http://127.0.0.1:4900/pos npm run dev
+flutter test --no-pub --dart-define=AUTH_SIMULATION_ORIGIN=http://127.0.0.1:4900/central test/data/network/interceptors/auth_interceptor_test.dart test/features/webview/auth_refresh_bridge_test.dart
 ```
 
-## POS terminal
+The fixture is development tooling and is never included in the mini-app build.
 
-The terminal requests the selected app from `GET /api/admin/pos-apps/{id}`
-(the detail endpoint inferred from the supplied app response), alongside:
+`npm run build` checks types, builds to `dist/`, and creates a real `miniapp.zip`
+with `index.html` at its root. Relative asset paths allow loading from the SuperApp
+container. The archive is recreated each time, so stale assets are not retained.
 
-- `GET /api/admin/products?paginate=false`
-- `GET /api/admin/categories?paginate=false&is_active=true`
-- `GET /api/admin/exchange-rates`
+Environment modes remain available:
 
-It displays active products, category counts, and available variants. Product
-prices use their own currency and the selected app's primary/secondary currencies;
-active exchange rates apply their declared multiply/divide operation. Order totals
-are converted before rounding. Missing rates prevent adding/reviewing affected items.
+| Development server | Production build | Optional env file |
+| --- | --- | --- |
+| `npm run dev` | `npm run build:dev` | `.env.dev` |
+| `npm run staging` | `npm run build:staging` | `.env.staging` |
+| `npm run prod` | `npm run build:prod` | `.env.prod` |
 
-Product images use their absolute URL or `/storage/<image>` for relative paths.
-The Vite proxy includes `/storage`; set `VITE_POS_ASSET_BASE_URL` if your asset origin
-differs. Missing images show a coffee placeholder.
-
-Draft tabs, variant choices, quantities, notes, and order-source selection work
-locally in memory. Drafts reset on refresh, leaving the terminal, or changing registers.
-Review opens the checkout form; **Complete cash sale** submits to
-`POST /api/admin/orders`. Discounts and order history still need their API contracts.
-
-The local Postman catalog fixture contains the eight complete products recovered
-from the supplied truncated attachment, its three categories, the supplied rates,
-and the app's twelve order sources. The second register detail fixture is an
-explicit test assumption based on its list record, with no sources.
-It is never used as fallback production data. With the simulation running:
-
-```bash
-npm run check:terminal
-```
-
-This checks terminal HTTP calls, currency conversion, missing rates, order totals,
-product image paths, and rendering from the fixture. For a preview with live product
-images and fixture catalog data:
-
-```bash
-VITE_API_BASE_URL=http://127.0.0.1:4900/pos VITE_POS_ASSET_BASE_URL=https://demo-pos.vietips.com npm run dev
-```
-
-## Create an order
-
-Add products, open **Review Order**, enter customer details and optional item notes,
-then select **Complete cash sale**. The request uses the selected register's merchant
-and app IDs, uppercase currencies, the active exchange rate, the secondary total,
-and selected product/variant IDs. Unit prices retain full conversion precision;
-display rounding is not sent as the item price. It sends `completed`, `paid`, and
-`cash`, matching the supplied contract.
-
-Customer ID is entered manually until a customer lookup API is supplied. Blank
-optional customer fields and notes are sent as `null`. The order note is retained;
-a selected order source is included as `Order source: <name>` in `notes` because
-no order-source field was supplied in the create-order contract.
-
-Submission disables repeat clicks and modal dismissal. Errors preserve the cart
-and checkout fields. Requests are not automatically retried; a timeout or server
-failure asks the cashier to check their orders before trying again, since the
-server may already have saved the sale. After a successful HTTP response, the
-submitted draft is removed and a fresh empty order opens; other drafts remain.
-The response body is optional, with an order ID shown if returned at `data.id`
-or `id`. Live order creation has not been exercised by the local verification.
-
-With the local simulation running:
-
-```bash
-npm run check:orders
-```
-
-This compares the payload to the supplied example and tests successful POSTs and
-401/422/500 responses. The mock's success body (`201` with `data.id`) is a local
-assumption because no create-order response was provided. No real sales are made.
-
-## Receipt printing
-
-After a successful order POST, the terminal sends a plain-text receipt through
-`superApp.printText(text, true)`; `true` requests a paper cut. It includes the
-merchant/register, saved order ID when available, customer, quantities, variants,
-item/order notes, cash/paid status, and totals in both configured currencies.
-Receipt text uses a 48-column layout for Rongta 80 mm paper (72 mm printable width), formats riel amounts as KHR before aligning totals, and removes printer control characters from
-user-entered text. Native printer encoding/font support determines Khmer output.
-
-The printer button in the terminal header and **Printer settings** in the saved
-order dialog call `superApp.openPrinterSettings()`. A failed print leaves the sale
-saved and offers **Retry printing**; it never sends another order POST. The receipt
-can be viewed in the dialog. **Done** dismisses this receipt; receipt history and
-cross-session reprinting are not implemented. An older host without these methods
-shows an unavailable message rather than treating the sale as failed.
-
-The browser mock logs the receipt and explicitly reports preview-only printing.
-`npm run check:receipts` checks receipt formatting and bridge calls without native
-hardware. Local browser checks also cover print-after-success, no printing for API
-failures, one automatic job under React StrictMode, and retrying printing without
-reposting the order. Physical printer output still requires testing in the mobile app.
+`npm run zip` repackages an existing `dist/`. Build outputs, archives, and local
+environment files are ignored by Git. Native QR, printing, authentication, and
+container lifecycle behavior still require verification inside the real SuperApp.

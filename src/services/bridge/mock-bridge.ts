@@ -1,127 +1,66 @@
 import type { SuperAppBridge } from '../../types/bridge';
+import type { Language } from '../../store/miniAppStore';
 
-export function createMockBridge(token: string): SuperAppBridge {
-  return {
+export interface MockBridgeController {
+  bridge: SuperAppBridge;
+  setToken: (token: string) => void;
+  setLanguage: (language: Language) => void;
+  emit: (event: string, data: unknown) => void;
+}
+
+/** Browser-only implementation, imported behind import.meta.env.DEV. */
+export function createMockBridge(initialToken = ''): MockBridgeController {
+  let token = initialToken;
+  let language: Language = 'en';
+  const listeners = new Map<string, Set<(data: unknown) => void>>();
+  const emit = (event: string, data: unknown) => {
+    listeners.get(event)?.forEach((callback) => callback(data));
+  };
+  const bridge: SuperAppBridge = {
     getAuthToken: async () => token,
-
-    getUserInfo: async () => ({
-      name: 'Dev User',
-      username: 'dev_user',
-      email: 'dev@example.com',
-    }),
-
+    getUserInfo: async () => ({ name: 'Dev User', username: 'dev_user', email: 'dev@example.com' }),
     getInitParams: async () => {
-      console.log('[Mock SuperApp] getInitParams called');
-      const search =
-        window.location.search ||
-        (window.location.hash.includes('?')
-          ? '?' + window.location.hash.split('?')[1]
-          : '');
-      const urlParams = new URLSearchParams(search);
-      return Object.fromEntries(urlParams.entries());
+      const hashQuery = window.location.hash.split('?')[1] || '';
+      return Object.fromEntries([
+        ...new URLSearchParams(hashQuery),
+        ...new URLSearchParams(window.location.search),
+      ]);
     },
-
-    scanQR: async () => {
-      console.log('[Mock SuperApp] scanQR called');
-      return { success: true, code: 'MOCK-QR-CODE-12345' };
-    },
-
-    showDialog: async (opts) => {
-      console.log('[Mock SuperApp] showDialog called:', opts);
-      const confirmed = window.confirm(
-        `${opts.title || 'Dialog'}\n\n${opts.message || ''}`,
-      );
-      return { confirmed };
-    },
-
-    showToast: (message: string) => {
-      console.log('[Mock SuperApp] showToast called:', message);
-      alert(`[Toast] ${message}`);
-    },
-
-    close: () => {
-      console.log('[Mock SuperApp] close called');
-      alert('[Mock SuperApp] App close requested');
-    },
-
-    setTitle: (title: string) => {
-      console.log('[Mock SuperApp] setTitle called:', title);
-      document.title = title;
-    },
-
-    setPullToRefreshEnabled: (enabled: boolean) => {
-      console.log('[Mock SuperApp] setPullToRefreshEnabled called:', enabled);
-    },
-
-    hapticFeedback: (type?: string) => {
-      console.log('[Mock SuperApp] hapticFeedback called:', type);
-    },
-
-    getDeviceInfo: async () => ({
-      platform: 'Browser (Mock)',
-      osVersion: 'DevMode',
+    scanQR: async () => ({ success: true, code: 'MOCK-QR-CODE-12345' }),
+    showDialog: async ({ title = 'Dialog', message = '' }) => ({
+      confirmed: window.confirm(`${title}\n\n${message}`),
     }),
-
-    getLocalization: async () => {
-      const currentLanguage = (window as any).__mockLanguage || 'en';
-      return {
-        localization: currentLanguage,
-        language: currentLanguage,
-      };
-    },
-
-    ready: () => {
-      console.log('[Mock SuperApp] ready called');
-    },
-
+    showToast: (message) => window.alert(`[Mock SuperApp] ${message}`),
+    close: () => window.alert('[Mock SuperApp] App close requested'),
+    setTitle: (title) => { document.title = title; },
+    setPullToRefreshEnabled: (enabled) => console.info('[Mock SuperApp] pull-to-refresh:', enabled),
+    hapticFeedback: (type) => console.info('[Mock SuperApp] haptic feedback:', type),
+    getDeviceInfo: async () => ({ platform: 'Browser (Mock)', osVersion: 'Development' }),
+    getLocalization: async () => ({ language, localization: language }),
+    ready: () => console.info('[Mock SuperApp] ready'),
     isAvailable: () => true,
-
-    openUrl: (url: string) => {
-      console.log('[Mock SuperApp] openUrl called:', url);
-      window.open(url, '_blank');
+    openUrl: (url) => { window.open(url, '_blank', 'noopener,noreferrer'); },
+    openPrinterSettings: async () => ({ success: false, message: 'Native printer settings are unavailable in the browser.' }),
+    printText: async (text) => {
+      console.info('[Mock SuperApp] print preview:', text);
+      return { success: false, message: 'Browser preview only; no printer is connected.' };
     },
-
-    openPrinterSettings: async () => {
-      console.log('[Mock SuperApp] openPrinterSettings called (no native printer)');
-      return { success: true };
-    },
-
-    printText: async (text: string, cut?: boolean) => {
-      console.log('[Mock SuperApp] printText (preview only):', { text, cut: cut === true });
-      return { success: false, message: 'Browser preview only. View the receipt below; connect a printer in the mobile app to print.' };
-    },
-
-    on: (event: string, cb: (data: any) => void) => {
-      console.log('[Mock SuperApp] registered listener for:', event);
-      if (!(window as any).__mockEventListeners) {
-        (window as any).__mockEventListeners = {};
-      }
-      if (!(window as any).__mockEventListeners[event]) {
-        (window as any).__mockEventListeners[event] = [];
-      }
-      const listeners = (window as any).__mockEventListeners[event] as Array<(data: any) => void>;
-      listeners.push(cb);
+    on: (event, callback) => {
+      let callbacks = listeners.get(event);
+      if (!callbacks) { callbacks = new Set(); listeners.set(event, callbacks); }
+      callbacks.add(callback);
       return () => {
-        const index = listeners.indexOf(cb);
-        if (index !== -1) listeners.splice(index, 1);
+        callbacks.delete(callback);
+        if (!callbacks.size) listeners.delete(event);
       };
     },
   };
-}
-
-// Global helper for DevPanel to trigger bridge listeners in standalone mock mode
-if (typeof window !== 'undefined') {
-  (window as any).triggerMockEvent = (event: string, data: any) => {
-    console.log(`[Mock SuperApp] Simulating event trigger: ${event}`, data);
-    const listeners = (window as any).__mockEventListeners?.[event];
-    if (listeners) {
-      listeners.forEach((cb: (d: any) => void) => {
-        try {
-          cb(data);
-        } catch (e) {
-          console.error(`[Mock SuperApp] Error in listener for event ${event}:`, e);
-        }
-      });
-    }
+  return {
+    bridge, emit,
+    setToken: (value) => { token = value; },
+    setLanguage: (value) => {
+      language = value;
+      emit('onLanguageChanged', { language });
+    },
   };
 }

@@ -1,40 +1,27 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { createArchive } from './zip.js';
 
-const majorNodeVersion = parseInt(process.versions.node.split('.')[0], 10);
-if (majorNodeVersion < 20) {
-  console.error(`\n⚠️  Current Node version is v${process.versions.node}. Vite 6/8 requires Node 20+ or 24+.\nPlease run:\n  nvm use 24\nor\n  nvm use\nbefore building.\n`);
+const nodeMajor = Number(process.versions.node.split('.')[0]);
+if (nodeMajor !== 26) {
+  console.error('This project uses Node 26 LTS. Run nvm use before building.');
+  process.exit(1);
 }
 
 const args = process.argv.slice(2);
-let mode = 'prod'; // Default to prod
-
-
-// 1. Check process arguments (e.g. from npm run build -- --staging or npm run build:staging)
-if (args.includes('--staging')) {
-  mode = 'staging';
-} else if (args.includes('--prod')) {
-  mode = 'prod';
-} else if (args.includes('--dev')) {
-  mode = 'dev';
+const modes = ['dev', 'staging', 'prod'];
+if (args.length > 1 || (args[0] && !modes.includes(args[0].replace(/^--/, '')))) {
+  console.error('Usage: npm run build -- [--dev|--staging|--prod]');
+  process.exit(1);
 }
-// 2. Check npm-specific configuration environment variables as fallback
-else if (process.env.npm_config_staging) {
-  mode = 'staging';
-} else if (process.env.npm_config_prod || process.env.npm_config_production) {
-  mode = 'prod';
-} else if (process.env.npm_config_dev) {
-  mode = 'dev';
-}
-
-console.log(`\nBuilding for flavor: ${mode}...\n`);
+const mode = args[0]?.replace(/^--/, '') || 'prod';
 
 try {
-  // Execute typescript check and vite build with the resolved mode
-  execSync(`npx tsc && npx vite build --mode ${mode}`, { stdio: 'inherit' });
-  // Automatically update production deployment zip package
-  execSync(`cd dist && tar -a -c -f ../miniapp.zip *`, { stdio: 'inherit' });
-  console.log(`\n✓ Build & zip package for flavor "${mode}" completed successfully!\n`);
+  execFileSync('npm', ['run', 'typecheck'], { stdio: 'inherit' });
+  execFileSync(process.execPath, [resolve('node_modules/vite/bin/vite.js'), 'build', '--mode', mode], { stdio: 'inherit' });
+  createArchive();
+  console.log(`Built ${mode}: dist/ and miniapp.zip`);
 } catch (error) {
-  console.error(`\n✗ Build for flavor "${mode}" failed.\n`);
+  console.error(error instanceof Error ? error.message : 'Build failed.');
   process.exit(1);
 }

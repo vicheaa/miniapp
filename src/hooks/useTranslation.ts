@@ -1,24 +1,19 @@
 import { useMiniAppStore } from '../store/miniAppStore';
+import en from '../../assets/lang/en.json';
+import km from '../../assets/lang/km.json';
+
+const dictionaries = { en, km };
 
 export function useTranslation() {
-  const translations = useMiniAppStore((s) => s.translations);
-  const language = useMiniAppStore((s) => s.language);
+  const language = useMiniAppStore((state) => state.language);
 
   const t = (key: string): string => {
-    if (!translations) return key;
-
-    const parts = key.split('.');
-    let current = translations;
-
-    for (const part of parts) {
-      if (current && typeof current === 'object' && part in current) {
-        current = current[part];
-      } else {
-        return key;
-      }
+    let value: unknown = dictionaries[language];
+    for (const part of key.split('.')) {
+      if (!value || typeof value !== 'object' || !Object.hasOwn(value, part)) return key;
+      value = (value as Record<string, unknown>)[part];
     }
-
-    return typeof current === 'string' ? current : key;
+    return typeof value === 'string' ? value : key;
   };
 
   return { t, language };

@@ -1,45 +1,39 @@
 import { create } from 'zustand';
 import type { SuperAppBridge } from '../types/bridge';
-import enTranslations from '../../assets/lang/en.json';
-import kmTranslations from '../../assets/lang/km.json';
+import { appConfig } from '../config';
 
-const translationsMap: Record<string, any> = {
-  en: enTranslations,
-  km: kmTranslations,
-};
+export type Language = 'en' | 'km';
 
-interface MiniAppStore {
-  // Bridge & Auth
-  superApp: SuperAppBridge | null;
-  authToken: string;
-  setSuperApp: (bridge: SuperAppBridge) => void;
-  setAuthToken: (token: string) => void;
-
-  initParams: Record<string, unknown>;
-  setInitParams: (params: Record<string, unknown>) => void;
-
-  // Localization
-  language: string;
-  translations: any;
-  setLanguage: (lang: string) => void;
+export function normalizeLanguage(value: unknown): Language {
+  return typeof value === 'string' && value.toLowerCase().startsWith('km') ? 'km' : 'en';
 }
 
-export const useMiniAppStore = create<MiniAppStore>((set) => ({
+interface MiniAppStore {
+  superApp: SuperAppBridge | null;
+  authToken: string;
+  sessionVersion: number;
+  initParams: Record<string, unknown>;
+  language: Language;
+  setAuthToken: (token: string) => void;
+  applyRefreshedToken: (previousToken: string, token: string, sessionVersion: number) => void;
+  setLanguage: (language: string) => void;
+  reset: () => void;
+}
+
+const initialState = () => ({
   superApp: null,
   authToken: '',
-  setSuperApp: (bridge) => set({ superApp: bridge }),
-  setAuthToken: (token) => set({ authToken: token }),
-
   initParams: {},
-  setInitParams: (params) => set({ initParams: params }),
+  language: appConfig.defaultLanguage as Language,
+});
 
-  language: 'en',
-  translations: enTranslations,
-  setLanguage: (lang) => {
-    const cleanLang = lang.toLowerCase().startsWith('km') ? 'km' : 'en';
-    set({
-      language: cleanLang,
-      translations: translationsMap[cleanLang] || enTranslations,
-    });
-  },
+export const useMiniAppStore = create<MiniAppStore>((set) => ({
+  ...initialState(),
+  sessionVersion: 0,
+  setAuthToken: (authToken) => set((state) => ({ authToken, sessionVersion: state.sessionVersion + 1 })),
+  applyRefreshedToken: (previousToken, authToken, sessionVersion) => set((state) =>
+    state.sessionVersion === sessionVersion && state.authToken === previousToken
+      ? { authToken } : state),
+  setLanguage: (language) => set({ language: normalizeLanguage(language) }),
+  reset: () => set((state) => ({ ...initialState(), sessionVersion: state.sessionVersion + 1 })),
 }));

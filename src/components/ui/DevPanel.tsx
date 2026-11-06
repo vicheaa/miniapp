@@ -1,252 +1,62 @@
-import React, { useState } from 'react';
-import type { SuperAppBridge } from '../../types/bridge';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import type { MockBridgeController } from '../../services/bridge/mock-bridge';
 import { useMiniAppStore } from '../../store/miniAppStore';
 
-interface DevPanelProps {
-  superApp: SuperAppBridge;
-  authToken: string;
-  onSaveToken: (token: string) => void;
-}
+export default function DevPanel({ controller }: { controller: MockBridgeController }) {
+  const [open, setOpen] = useState(false);
+  const token = useMiniAppStore((state) => state.authToken);
+  const language = useMiniAppStore((state) => state.language);
+  const [input, setInput] = useState(token);
+  const [result, setResult] = useState('');
+  const queryClient = useQueryClient();
+  const bridge = controller.bridge;
 
-export default function DevPanel({ superApp, authToken, onSaveToken }: DevPanelProps) {
-  const [showPanel, setShowPanel] = useState(false);
-  const [tokenInput, setTokenInput] = useState(authToken);
-
-  const language = useMiniAppStore((s) => s.language);
-
-  // Keep input in sync when external token changes
-  React.useEffect(() => {
-    setTokenInput(authToken);
-  }, [authToken]);
-
-  const handleScanQR = async () => {
-    const result = await superApp.scanQR();
-    console.log('[DevPanel] scanQR result:', result);
+  const run = async (action: () => unknown) => {
+    try {
+      const value = await action();
+      setResult(value === undefined ? 'Done' : JSON.stringify(value, null, 2));
+    } catch (error) { setResult(error instanceof Error ? error.message : String(error)); }
   };
-
-  const handleShowDialog = async () => {
-    await superApp.showDialog({
-      title: 'Hello from Mini App!',
-      message: 'This dialog was triggered from a React component.',
-    });
+  const saveToken = () => {
+    controller.setToken(input);
+    useMiniAppStore.getState().setAuthToken(input);
+    void queryClient.cancelQueries();
+    queryClient.clear();
+    try {
+      sessionStorage.setItem('dev_auth_token', input);
+    } catch { /* Browser storage may be disabled. The in-memory token still works. */ }
+    setResult('Development token updated for this tab.');
   };
-
-  const handleShowToast = () => {
-    superApp.showToast('🎉 Toast from the mini app!');
-  };
-
-  const handleClose = () => {
-    superApp.close();
-  };
-
-  const handleToggleLanguage = () => {
-    const nextLang = language === 'en' ? 'km' : 'en';
-    (window as any).__mockLanguage = nextLang;
-    if ((window as any).triggerMockEvent) {
-      (window as any).triggerMockEvent('onLanguageChanged', { language: nextLang });
-    }
-  };
-
-  if (!showPanel) {
-    return (
-      <div style={styles.wrapper}>
-        <button onClick={() => setShowPanel(true)} style={styles.pillBtn}>
-          <span>🛠️ Dev Mode</span>
-
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <span style={styles.panelTitle}>🛠️ Dev Bridge Console</span>
-          <button onClick={() => setShowPanel(false)} style={styles.closeBtn}>
-            ×
-          </button>
-        </div>
-
-        <div style={styles.panelBody}>
-          <p style={styles.descText}>
-            Running standalone. Using static fallback token and mock bridge actions.
-          </p>
-
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Auth Token Fallback:</label>
-            <div style={styles.inputRow}>
-              <input
-                type="password"
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                style={styles.input}
-                placeholder="Enter token..."
-              />
-              <button
-                onClick={() => onSaveToken(tokenInput)}
-                style={styles.saveBtn}
-              >
-                Save
-              </button>
-            </div>
+    <aside className="dev-panel" aria-label="Development bridge tools">
+      <button className="action-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="dev-tools">
+        {open ? 'Close dev tools' : 'Dev tools'}
+      </button>
+      {open && (
+        <div id="dev-tools" className="dev-panel-body">
+          <h2 className="text-lg font-semibold">Dev Bridge Console</h2>
+          <p className="my-3 text-sm text-slate-600">Browser mock active. Native actions are simulated.</p>
+          <label htmlFor="dev-token">Development auth token</label>
+          <input id="dev-token" type="password" autoComplete="off" value={input} onChange={(event) => setInput(event.target.value)} />
+          <button className="action-button" onClick={saveToken}>Save token</button>
+          <div className="dev-actions">
+            <button onClick={() => void run(() => bridge.scanQR())}>Scan QR</button>
+            <button onClick={() => void run(() => bridge.showDialog({ title: 'Mini App', message: 'Test bridge dialog' }))}>Dialog</button>
+            <button onClick={() => void run(() => bridge.showToast('Hello from the mini-app'))}>Toast</button>
+            <button onClick={() => void run(() => controller.setLanguage(language === 'en' ? 'km' : 'en'))}>Language: {language.toUpperCase()}</button>
+            <button onClick={() => void run(() => bridge.getInitParams())}>Launch params</button>
+            <button onClick={() => void run(() => bridge.getDeviceInfo())}>Device info</button>
+            <button onClick={() => void run(() => bridge.getUserInfo())}>User info</button>
+            <button onClick={() => void run(() => bridge.hapticFeedback('light'))}>Haptic</button>
+            <button onClick={() => void run(() => bridge.openPrinterSettings())}>Printer settings</button>
+            <button onClick={() => void run(() => bridge.printText('Mini App test print', false))}>Print preview</button>
+            <button onClick={() => void run(() => bridge.close())}>Close mini-app</button>
           </div>
-
-          <div style={styles.actionsGroup}>
-            <span style={styles.label}>Test Bridge Actions:</span>
-            <div style={styles.btnGrid}>
-              <button onClick={handleScanQR} style={styles.testBtn}>
-                Scan QR
-              </button>
-              <button onClick={handleShowDialog} style={styles.testBtn}>
-                Show Dialog
-              </button>
-              <button onClick={handleShowToast} style={styles.testBtn}>
-                Show Toast
-              </button>
-              <button onClick={handleToggleLanguage} style={styles.testBtn}>
-                Toggle Lang ({language === 'en' ? 'EN ➔ KM' : 'KM ➔ EN'})
-              </button>
-              <button onClick={handleClose} style={styles.testBtn}>
-                Close App
-              </button>
-            </div>
-          </div>
+          {result && <pre className="selectable" role="status">{result}</pre>}
         </div>
-      </div>
-    </div>
+      )}
+    </aside>
   );
 }
-
-/* ── Styles ─────────────────────────────────────────────────────────────── */
-
-const styles: Record<string, React.CSSProperties> = {
-  wrapper: {
-    position: 'fixed',
-    bottom: '24px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    zIndex: 9999,
-    width: '90%',
-    maxWidth: '440px',
-    fontFamily: "'Kantumruy Pro', sans-serif",
-  },
-  pillBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    margin: '0 auto',
-    padding: '8px 14px',
-    background: 'rgba(26, 26, 46, 0.95)',
-    border: '1px solid rgba(67, 97, 238, 0.4)',
-    borderRadius: '30px',
-    color: '#93c5fd',
-    fontSize: '12.5px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-    transition: 'all 0.2s',
-  },
-  panel: {
-    background: 'rgba(26, 26, 46, 0.98)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '16px',
-    padding: '16px',
-    color: '#fff',
-    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
-    backdropFilter: 'blur(10px)',
-  },
-  panelHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '12px',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    paddingBottom: '8px',
-  },
-  panelTitle: {
-    fontSize: '14px',
-    fontWeight: 700,
-    color: '#e2e8f0',
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#a0aec0',
-    fontSize: '20px',
-    cursor: 'pointer',
-    lineHeight: 1,
-    padding: '0 4px',
-  },
-  panelBody: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  descText: {
-    fontSize: '11px',
-    color: '#a0aec0',
-    margin: 0,
-    lineHeight: 1.4,
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#cbd5e0',
-  },
-  inputRow: {
-    display: 'flex',
-    gap: '8px',
-  },
-  input: {
-    flex: 1,
-    background: '#121224',
-    border: '1px solid #2d3748',
-    borderRadius: '8px',
-    padding: '8px 12px',
-    color: '#fff',
-    fontSize: '12px',
-    outline: 'none',
-    fontFamily: 'monospace',
-  },
-  saveBtn: {
-    background: '#4361ee',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '8px 14px',
-    fontSize: '12px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'background 0.2s',
-  },
-  actionsGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    marginTop: '4px',
-  },
-  btnGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '8px',
-  },
-  testBtn: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    color: '#e2e8f0',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '8px',
-    padding: '8px',
-    fontSize: '11px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-};
-

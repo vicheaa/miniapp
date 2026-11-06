@@ -1,9 +1,11 @@
 {
   "global": {
-    "loading": "Loading..."
+    "loading": "Connecting…",
+    "connectionError": "Unable to open mini-app",
+    "retry": "Retry"
   },
   "home": {
-    "title": "Mini App",
-    "description": "Your app is ready. Start building your new project here."
+    "title": "Ready to build",
+    "description": "Your mini-app is ready. Add your first feature here."
   }
 }

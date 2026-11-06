@@ -1,0 +1,31 @@
+purpose:
+  stands_in_for: Central auth refresh and an authenticated API resource.
+  unblocks: Verify mini-app 401 recovery and native form serialization without production credentials.
+assumptions:
+  - id: refresh-request-contract
+    status: supported
+    claim: Native refresh posts form-encoded grant_type=refresh_token, client_id=central_app, and refresh_token to /mobile/auth/refresh.
+    reason: Matches the user's Postman sample and the existing native AuthInterceptor.
+    verification: Read the Postman screenshot and native AuthInterceptor. Ran 50 native tests including real HTTP success and 503 against this fixture; simulation logs confirmed form content type and grant_type/client_id fields. Live production was not called.
+    source: User Postman sample; ../oml-central/lib/data/network/interceptors/auth_interceptor.dart
+    updated_at: '2026-11-06'
+  - id: refresh-response-contract
+    status: supported
+    claim: The native integration expects access_token and an optional rotated refresh_token at the response root.
+    reason: This is the response parsed by the existing SuperApp implementation.
+    verification: Existing AuthInterceptor model was inspected. Local Flutter HTTP tests verified dummy token rotation. Chrome used the actual injected SDK with a simulated native dispatcher and the shared API client: concurrent 401s refreshed once and replayed successfully, while refresh 503 preserved the original API 401. Also ran 36 mini-app tests. No live response or device validation was supplied.
+    source: ../oml-central/lib/data/network/interceptors/auth_interceptor.dart; ../oml-central/lib/features/auth/data/models/auth_response.dart
+    updated_at: '2026-11-06'
+  - id: production-behavior
+    status: unknown
+    claim: The production server accepts the shown contract and rejects expired tokens before applying resource writes.
+    reason: Local stand-ins cannot establish live production behavior.
+    verification: Pending real-device validation with the updated SuperApp and a production-compatible test account.
+    source: postman/mocks/auth-refresh/default.js
+    updated_at: '2026-11-06'
+fingerprints:
+  - id: local-refresh-implementation
+    date: '2026-11-06'
+    commit: working trees contain existing uncommitted changes
+    cli: Postman CLI 1.74.0; workspace lookup skipped because CLI is unauthenticated
+

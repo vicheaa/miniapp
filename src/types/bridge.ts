@@ -9,11 +9,14 @@ export interface SuperAppBridge {
   /** Retrieve the current user's authentication token. */
   getAuthToken(): Promise<string>;
 
+  /** Refresh in native secure storage and return only the access token. Older hosts may omit this. */
+  refreshAuthToken?(rejectedToken: string): Promise<string>;
+
   /** Get basic profile information about the logged-in user. */
-  getUserInfo(): Promise<any>;
+  getUserInfo(): Promise<unknown>;
 
   /** Retrieve the initial launch parameters map passed to this mini-app. */
-  getInitParams(): Promise<any>;
+  getInitParams(): Promise<unknown>;
 
   /** Open the native QR-code scanner. */
   scanQR(): Promise<{ success: boolean; code?: string; error?: string }>;
@@ -37,7 +40,7 @@ export interface SuperAppBridge {
   hapticFeedback(type?: string): void;
 
   /** Retrieve device platform & OS information. */
-  getDeviceInfo(): Promise<any>;
+  getDeviceInfo(): Promise<unknown>;
 
   /** Retrieve current app localization/language. */
   getLocalization(): Promise<{ localization: string; language: string }>;
@@ -58,7 +61,7 @@ export interface SuperAppBridge {
   printText(text: string, cut?: boolean): Promise<unknown>;
 
   /** Subscribe to events from the SuperApp. */
-  on(event: string, cb: (data: any) => void): void | (() => void);
+  on(event: string, cb: (data: unknown) => void): void | (() => void);
 }
 
 /* ── Global augmentation ───────────────────────────────────────────────── */

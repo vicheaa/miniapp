@@ -1,0 +1,10 @@
+version: 1
+name: miniapp-auth-refresh
+slug: miniapp-auth-refresh
+protocol: http
+port: 4900
+interceptRequests: true
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
