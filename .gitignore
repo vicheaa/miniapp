@@ -7,3 +7,5 @@ example-miniapp.zip
 .env.dev
 .env.staging
 .env.prod
+test-results/
+playwright-report/

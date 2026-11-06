@@ -31,6 +31,8 @@ console.log(`\nBuilding for flavor: ${mode}...\n`);
 try {
   // Execute typescript check and vite build with the resolved mode
   execSync(`npx tsc && npx vite build --mode ${mode}`, { stdio: 'inherit' });
+  // Fail before packaging if dependency upgrades reintroduce known failures.
+  execSync('node scripts/check-compatibility.js', { stdio: 'inherit' });
   // Automatically update production deployment zip package
   execSync(`cd dist && tar -a -c -f ../example-miniapp.zip *`, { stdio: 'inherit' });
   console.log(`\n✓ Build & zip package for flavor "${mode}" completed successfully!\n`);

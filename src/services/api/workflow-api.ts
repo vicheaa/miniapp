@@ -6,6 +6,7 @@ import type {
   FileMetadata,
   ProcessFlowDetail,
   FnsRequestDetail,
+  NCMRequestDetail,
   BudgetCode
 } from '../../types/workflow-detail';
 export type { BudgetCode };
@@ -52,7 +53,7 @@ export async function fetchWorkflowTasks(
       filter: filter ?? "AVAILABLE",
       latest: latest ?? true,
       myRequest: myRequest ?? false,
-      buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR"],
+      buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR", "NCM"],
       ...(taskStatus && taskStatus.length > 0 && { taskStatus }),
       ...(searchValue && { searchValue }),
     })
@@ -311,6 +312,18 @@ export async function fetchFmaNewStaffRequestDetail(processInstanceId: string): 
     body: JSON.stringify({ id: processInstanceId }),
   });
   if (!res.ok) throw new Error(`Failed to fetch FNS request detail: ${res.statusText}`);
+  return res.json();
+}
+
+/** Fetch FMA NCM request detail by process instance ID. */
+export async function fetchFmaNCMDetail(processInstanceId: string): Promise<NCMRequestDetail> {
+  const url = `/services/fma/api/name/detail-by-process-flow/find`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ id: processInstanceId }),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch NCM request detail: ${res.status} ${res.statusText}`);
   return res.json();
 }
 

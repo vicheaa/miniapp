@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
+import { pdfjsAssets } from './scripts/pdfjs-assets';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -11,8 +11,21 @@ export default defineConfig(({ mode }) => {
     'http://oneiis.vital.com.kh';
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), pdfjsAssets()],
     base: './',
+    // Build the PDF worker with the same syntax target as the application.
+    worker: {
+      format: 'es',
+      rollupOptions: {
+        output: {
+          // Vite removes worker entry exports. PDF.js also imports this file
+          // on the main thread when a WebView cannot create a native worker.
+          footer: (chunk) => chunk.facadeModuleId?.endsWith('/services/pdf.worker.ts')
+            ? 'const __miniappWorkerHandler = globalThis.pdfjsWorker.WorkerMessageHandler; export { __miniappWorkerHandler as WorkerMessageHandler };'
+            : '',
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
@@ -39,15 +52,12 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      rollupOptions: {
-        output: {
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              return 'vendor';
-            }
-          },
-        },
-      },
+      // Embedded iOS WebViews use the device's Safari engine. In particular,
+      // class static blocks must be transformed for iOS versions before 16.4.
+      target: ['es2018', 'safari14.5', 'chrome88', 'firefox78'],
+      cssTarget: ['safari14.5', 'chrome88', 'firefox78'],
+      // Let dynamic imports split naturally; a single forced vendor chunk
+      // would pull the PDF renderer back into the startup dependency graph.
     },
   };
 });

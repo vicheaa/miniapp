@@ -29,7 +29,43 @@
         <div class="dots"><span></span><span></span><span></span></div>
       </div>
     </div>
+    <script>
+      // This classic script can report startup failures even when the WebView
+      // cannot parse the application's module bundle.
+      (function () {
+        var timer;
+        function showStartupError(detail) {
+          var splash = document.querySelector('.splash-init');
+          if (!splash || splash.getAttribute('data-startup-error')) return;
+          splash.setAttribute('data-startup-error', 'true');
+          window.clearTimeout(timer);
+          splash.textContent = '';
+          splash.style.padding = '24px';
+          splash.style.boxSizing = 'border-box';
+          splash.style.textAlign = 'center';
+          splash.style.fontFamily = 'sans-serif';
+          var message = document.createElement('p');
+          message.textContent = 'Unable to start Workflow. Please close the miniapp and try again.';
+          splash.appendChild(message);
+          if (detail) {
+            var reason = document.createElement('p');
+            reason.style.fontSize = '13px';
+            reason.style.color = '#6b7280';
+            reason.textContent = detail;
+            splash.appendChild(reason);
+          }
+        }
+        window.addEventListener('error', function (event) {
+          showStartupError(event.message || 'An application file could not be loaded.');
+        }, true);
+        window.addEventListener('unhandledrejection', function () {
+          showStartupError('The application failed to initialize.');
+        });
+        timer = window.setTimeout(function () {
+          showStartupError('Startup timed out.');
+        }, 20000);
+      })();
+    </script>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
-

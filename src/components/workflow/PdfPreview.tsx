@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy } from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-GlobalWorkerOptions.workerSrc = workerUrl;
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import workerUrl from '../../services/pdf.worker.ts?worker&url';
 
 /** Render one page at a time, fitted to both dimensions of the available space. */
 export default function PdfPreview({ url }: { url: string }) {
@@ -46,21 +44,36 @@ export default function PdfPreview({ url }: { url: string }) {
 
   useEffect(() => {
     let cancelled = false;
+    let task: PDFDocumentLoadingTask | undefined;
     setDocument(null);
     setPage(1);
     setError(null);
-    const task = getDocument({ url });
-    task.promise.then((pdf) => {
-      if (!cancelled) setDocument(pdf);
-    }).catch((err: Error) => {
-      if (!cancelled) setError(err.message);
-    });
-    return () => { cancelled = true; void task.destroy(); };
+    const load = async () => {
+      try {
+        // Import the compatible renderer only when a preview opens.
+        const { getDocument, GlobalWorkerOptions } = await import('../../services/pdf-renderer');
+        if (cancelled) return;
+        GlobalWorkerOptions.workerSrc = workerUrl;
+        task = getDocument({ url });
+        const pdf = await task.promise;
+        if (!cancelled) setDocument(pdf);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load PDF.');
+      }
+    };
+    void load();
+    return () => { cancelled = true; void task?.destroy(); };
   }, [url]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    const measure = () => setSize({ width: container.clientWidth, height: container.clientHeight });
+    measure();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
     const observer = new ResizeObserver(([entry]) => {
       setSize({ width: entry.contentRect.width, height: entry.contentRect.height });
     });
@@ -71,7 +84,7 @@ export default function PdfPreview({ url }: { url: string }) {
   useEffect(() => {
     if (!document || !size.width || !size.height) return;
     let cancelled = false;
-    let renderTask: ReturnType<Awaited<ReturnType<PDFDocumentProxy['getPage']>>['render']> | undefined;
+    let renderTask: RenderTask | undefined;
     const render = async () => {
       try {
         const pdfPage = await document.getPage(page);
@@ -84,7 +97,9 @@ export default function PdfPreview({ url }: { url: string }) {
         // fitted viewport with only a transform can downsample PDF images early.
         const desiredRatio = Math.max(2, window.devicePixelRatio || 1) * renderZoom;
         // Bound bitmap memory on high-density phones while preserving detail.
-        const pixelRatio = Math.min(desiredRatio, Math.sqrt(16_000_000 / (fitted.width * fitted.height)));
+        const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
+        const maxPixels = memory !== undefined && memory <= 2 ? 2_000_000 : 4_000_000;
+        const pixelRatio = Math.min(desiredRatio, Math.sqrt(maxPixels / (fitted.width * fitted.height)));
         const renderViewport = pdfPage.getViewport({ scale: scale * pixelRatio });
         // Render offscreen so the visible page never clears or partially redraws.
         const buffer = window.document.createElement('canvas');

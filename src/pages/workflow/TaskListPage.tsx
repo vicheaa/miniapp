@@ -182,7 +182,7 @@ export default function TaskListPage() {
 
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
 
     const observer = new IntersectionObserver(handleIntersect, {
       root: null,
@@ -379,6 +379,12 @@ export default function TaskListPage() {
 
             {/* Loading indicator */}
             {isFetchingNextPage && <LoadingMore t={t} />}
+
+            {hasNextPage && !isFetchingNextPage && (
+              <button type="button" onClick={() => fetchNextPage()} className="w-full py-3 text-blue-600 text-sm">
+                {t('workflow.load_more')}
+              </button>
+            )}
 
             {/* End of list */}
             {!hasNextPage && allTasks.length > 0 && (

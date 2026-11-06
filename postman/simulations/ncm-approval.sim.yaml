@@ -1,0 +1,5 @@
+simulation: ncm-approval
+routing: path
+mocks:
+  - routeKey: workflow
+    path: ../mocks/ncm-approval/default.js

@@ -873,8 +873,8 @@ export default function TaskDetailPage() {
 
       <Drawer open={isReportOpen} onOpenChange={setIsReportOpen} dismissible={false}>
         <DrawerContent
-          className="bg-white flex flex-col overflow-hidden [&>div:first-child]:hidden"
-          style={{ top: 0, height: '100dvh', maxHeight: '100dvh', marginTop: 0, borderRadius: 0, border: 0, overscrollBehavior: 'none', touchAction: 'none' }}
+          className="pdf-drawer bg-white flex flex-col overflow-hidden [&>div:first-child]:hidden"
+          style={{ top: 0, marginTop: 0, borderRadius: 0, border: 0, overscrollBehavior: 'none', touchAction: 'none' }}
         >
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 gap-3 shrink-0 pt-[max(0.875rem,env(safe-area-inset-top))]">
             <DrawerTitle className="text-[15px] font-bold text-gray-800 truncate">

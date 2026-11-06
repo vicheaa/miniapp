@@ -9,6 +9,9 @@ import TaskDetailPage from './pages/workflow/TaskDetailPage';
 import DevPanel from './components/ui/DevPanel';
 import PageTransition from './components/ui/PageTransition';
 import { AppBootstrapSkeleton } from './components/ui/SkeletonLoader';
+import ErrorState from './components/ui/ErrorState';
+import { safeStorage } from './lib/safe-storage';
+import { withTimeout } from './lib/with-timeout';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,15 +26,16 @@ const queryClient = new QueryClient({
 export default function App() {
   const [authToken, setAuthToken] = useState<string>(() => {
     return (
-      localStorage.getItem('dev_auth_token') ||
+      safeStorage.getItem('dev_auth_token') ||
       import.meta.env.VITE_DEV_AUTH_TOKEN ||
       'mock-dev-token-value'
     );
   });
 
-  const { bridge: superApp, isMock } = useSuperApp(authToken);
+  const { bridge: superApp, isMock, error: bridgeError } = useSuperApp(authToken);
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   const setSuperApp = useMiniAppStore((s) => s.setSuperApp);
   const setAuthTokenInStore = useMiniAppStore((s) => s.setAuthToken);
@@ -39,26 +43,30 @@ export default function App() {
 
   useEffect(() => {
     if (superApp) {
+      let cancelled = false;
       setSuperApp(superApp);
-      superApp.ready();
-      superApp.setTitle('Workflow');
+      setIsInitialized(false);
+      setBootstrapError(null);
+      try { superApp.ready?.(); } catch (error) { console.warn('[App] Native ready notification failed:', error); }
+      try { superApp.setTitle?.('Workflow'); } catch (error) { console.warn('[App] Native title update failed:', error); }
 
       const initializeApp = async () => {
         try {
           // 1. Fetch token if not present
           const token = useMiniAppStore.getState().authToken;
           if (!token) {
-            try {
-              const t = await superApp.getAuthToken();
-              if (t) setAuthTokenInStore(t);
-            } catch (e) {
-              console.error('[App] Failed to fetch dynamic token:', e);
+            const t = await withTimeout(() => superApp.getAuthToken(), 10_000, 'Sign-in');
+            if (cancelled) return;
+            if (typeof t !== 'string' || !t.trim()) {
+              throw new Error('The Super App could not sign you in. Please close the miniapp and open it again.');
             }
+            setAuthTokenInStore(t);
           }
 
           // 2. Fetch init params
           try {
-            let params = await superApp.getInitParams();
+            let params = await withTimeout(() => superApp.getInitParams?.(), 5_000, 'Launch settings');
+            if (cancelled) return;
             if (typeof params === 'string') {
               try {
                 params = JSON.parse(params);
@@ -104,25 +112,31 @@ export default function App() {
 
           // 3. Fetch localization
           try {
-            const loc = await superApp.getLocalization();
+            const loc = await withTimeout(() => superApp.getLocalization?.(), 5_000, 'Language settings');
+            if (cancelled) return;
             if (loc && (loc.language || loc.localization)) {
               setLanguage(loc.language || loc.localization);
             }
           } catch (err) {
             console.error('[App] Failed to fetch initial localization:', err);
           }
+        } catch (error) {
+          if (!cancelled) setBootstrapError(error instanceof Error ? error.message : 'Unable to start Workflow. Please reopen the miniapp.');
         } finally {
-          setIsInitialized(true);
+          if (!cancelled) setIsInitialized(true);
         }
       };
 
       initializeApp();
 
-      superApp.on('onLanguageChanged', (data: any) => {
-        if (data && data.language) {
-          setLanguage(data.language);
-        }
-      });
+      try {
+        superApp.on?.('onLanguageChanged', (data: any) => {
+          if (!cancelled && data && typeof data.language === 'string') setLanguage(data.language);
+        });
+      } catch (error) {
+        console.warn('[App] Native language listener unavailable:', error);
+      }
+      return () => { cancelled = true; };
     }
   }, [superApp, setSuperApp, setLanguage, setAuthTokenInStore]);
 
@@ -133,7 +147,7 @@ export default function App() {
   }, [authToken, isMock, setAuthTokenInStore]);
 
   const handleSaveToken = useCallback((newToken: string) => {
-    localStorage.setItem('dev_auth_token', newToken);
+    safeStorage.setItem('dev_auth_token', newToken);
     setAuthToken(newToken);
     setAuthTokenInStore(newToken);
   }, [setAuthTokenInStore]);
@@ -150,6 +164,10 @@ export default function App() {
 
   const storeToken = useMiniAppStore((s) => s.authToken);
   const superAppFromStore = useMiniAppStore((s) => s.superApp);
+
+  if (bridgeError || bootstrapError) {
+    return <div className="min-h-screen flex items-center justify-center p-4"><ErrorState message={bridgeError?.message || bootstrapError!} onRetry={() => window.location.reload()} /></div>;
+  }
 
   /* ── Waiting for bridge, token and initialization ────────────────────── */
   if (!superAppFromStore || !storeToken || !isInitialized) {
@@ -169,13 +187,13 @@ export default function App() {
             </PageTransition>
           </div>
 
-          {isMock && superApp && (
+          {/* {isMock && superApp && (
             <DevPanel
               superApp={superApp}
               authToken={authToken}
               onSaveToken={handleSaveToken}
             />
-          )}
+          )} */}
         </div>
       </HashRouter>
     </QueryClientProvider>

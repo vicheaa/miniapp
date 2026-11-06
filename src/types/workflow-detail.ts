@@ -195,3 +195,36 @@ export interface FnsRequestDetail {
   year: string | null;
   plateNumber: string | null;
 }
+
+export interface NCMRequestItem {
+  id: number;
+  itemId: number;
+  itemCode: string;
+  itemName: string;
+  description: string | null;
+  qty: number;
+  uom: string;
+  budgetCode: string;
+  remarks: string | null;
+  stockRemarks: string | null;
+  seqNo: number;
+}
+
+export interface NCMRequestDetail {
+  id: number;
+  groupId: number;
+  groupName: string;
+  warehouseFrom: string;
+  delivery: string | null;
+  deptId: number;
+  formNo: string;
+  reason: string;
+  processStatus: string;
+  postedDate: string | null;
+  requestedDate: string;
+  requestedBy: string;
+  createdDate: string;
+  createdBy: string;
+  items: NCMRequestItem[];
+  fileIds: string[];
+}

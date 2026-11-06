@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { WorkflowTask } from '../types/workflow';
+import { safeStorage } from '../lib/safe-storage';
 
 export type WorkflowStatusFilter = 'ALL' | 'OPEN' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED';
 
@@ -69,7 +70,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             : (state.statusFilter === 'OPEN' ? 'ALL' : state.statusFilter),
         })),
 
-      buKeys: ['PR'],
+      buKeys: ['PR', 'NCM'],
       setBuKeys: (buKeys) => set({ buKeys }),
 
       isFilterBtndisable: false,
@@ -80,7 +81,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
     }),
     {
       name: 'workflow-filter-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
         filter: state.filter,
         statusFilter: state.statusFilter,

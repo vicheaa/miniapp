@@ -5,9 +5,12 @@ import FmaNewStaffRequestForm from './fma-new-staff-request';
 import FmaNewStaffRequestActions from './fma-new-staff-request/Actions';
 import ItRequestForm from './it-request';
 import ItRequestActions from './it-request/Actions';
+import FmaNCMRequestForm from './fma-ncm-request';
+import FmaNCMRequestActions from './fma-ncm-request/Actions';
 import {
   fetchProcessFlowDetail,
   fetchFmaNewStaffRequestDetail,
+  fetchFmaNCMDetail,
 } from '@/services/api/workflow-api';
 
 export interface TaskTypeConfig {
@@ -37,6 +40,11 @@ export const taskRegistry: Record<string, TaskTypeConfig> = {
     Form: FmaNewStaffRequestForm,
     Actions: FmaNewStaffRequestActions,
     fetchDetail: fetchFmaNewStaffRequestDetail,
+  },
+  NCM: {
+    Form: FmaNCMRequestForm,
+    Actions: FmaNCMRequestActions,
+    fetchDetail: fetchFmaNCMDetail,
   },
   IT: {
     Form: ItRequestForm,

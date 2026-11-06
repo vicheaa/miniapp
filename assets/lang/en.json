@@ -112,6 +112,7 @@
         "status_completed": "Complete",
         "status_rejected": "Reject",
         "no_tasks": "No pending tasks found.",
+        "load_more": "Load more",
         "loading_more": "Loading more...",
         "no_more_tasks": "No more tasks",
         "detail": "Detail",
