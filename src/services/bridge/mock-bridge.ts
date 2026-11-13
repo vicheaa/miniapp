@@ -18,7 +18,12 @@ export function createMockBridge(initialToken = ''): MockBridgeController {
   };
   const bridge: SuperAppBridge = {
     getAuthToken: async () => token,
-    getUserInfo: async () => ({ name: 'Dev User', username: 'dev_user', email: 'dev@example.com' }),
+    getUserInfo: async () => ({ 
+      name: 'Dev User', 
+      staff_code: '002330',
+      username: 'dev_user', 
+      email: 'dev@example.com' 
+    }),
     getInitParams: async () => {
       const hashQuery = window.location.hash.split('?')[1] || '';
       return Object.fromEntries([

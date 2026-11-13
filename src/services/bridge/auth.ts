@@ -2,7 +2,7 @@ import { appConfig } from '../../config';
 import { useMiniAppStore } from '../../store/miniAppStore';
 import { withTimeout } from './timeout';
 
-/** Refresh tokens stay in the SuperApp. A failure leaves the caller's original 401 intact. */
+/** Refresh tokens stay in the SuperApp. A failure leaves the caller's original API rejection intact. */
 export async function refreshNativeAuthToken(rejectedToken: string): Promise<string | null> {
   const { superApp, sessionVersion, authToken } = useMiniAppStore.getState();
   if (authToken !== rejectedToken) return authToken || null;

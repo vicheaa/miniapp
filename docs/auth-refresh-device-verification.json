@@ -1,0 +1,293 @@
+{
+  "device": "Sunmi V3",
+  "stagingSuperAppBuild": 46,
+  "bundleVersion": "0.1.8",
+  "bundleRevision": "diagnostic revision before guarded internal-wrapper recovery",
+  "recordedOn": "2026-11-12",
+  "events": [
+    {
+      "deviceTime": "11-12 13:24:35.548",
+      "phase": "response",
+      "requestId": 6,
+      "attempt": 1,
+      "status": 500,
+      "elapsedMs": 95,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "managedAuth": true,
+      "refreshAvailable": true,
+      "sessionCurrent": true
+    },
+    {
+      "deviceTime": "11-12 13:24:35.578",
+      "phase": "auth_rejection",
+      "requestId": 6,
+      "attempt": 1,
+      "status": 500,
+      "elapsedMs": 123,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "reason": "unrecognized",
+      "indicators": {
+        "dataFailure": true,
+        "upstreamUnauthorized": true,
+        "wrappedGet": true,
+        "sfaProxy": true,
+        "authenticationFailed": true,
+        "expiredToken": false
+      }
+    },
+    {
+      "deviceTime": "11-12 13:24:35.582",
+      "phase": "request_end",
+      "requestId": 6,
+      "attempt": 1,
+      "status": 500,
+      "elapsedMs": 123,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "result": "http_error"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.770",
+      "phase": "response",
+      "requestId": 8,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 128,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find",
+      "managedAuth": true,
+      "refreshAvailable": true,
+      "sessionCurrent": true
+    },
+    {
+      "deviceTime": "11-12 13:28:15.772",
+      "phase": "auth_rejection",
+      "requestId": 8,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 129,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find",
+      "reason": "http_401"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.775",
+      "phase": "refresh_start",
+      "requestId": 8,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 130,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.776",
+      "nativeEvent": "Received action: refreshAuthToken"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.777",
+      "nativeEvent": "Token refresh triggered"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.801",
+      "phase": "response",
+      "requestId": 9,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 157,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find",
+      "managedAuth": true,
+      "refreshAvailable": true,
+      "sessionCurrent": true
+    },
+    {
+      "deviceTime": "11-12 13:28:15.803",
+      "phase": "auth_rejection",
+      "requestId": 9,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 158,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find",
+      "reason": "http_401"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.805",
+      "phase": "refresh_join",
+      "requestId": 9,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 160,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.882",
+      "phase": "refresh_result",
+      "requestId": 8,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 243,
+      "durationMs": 113,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find",
+      "result": "success"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.884",
+      "phase": "replay_start",
+      "requestId": 8,
+      "attempt": 2,
+      "status": 401,
+      "elapsedMs": 245,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:15.898",
+      "phase": "replay_start",
+      "requestId": 9,
+      "attempt": 2,
+      "status": 401,
+      "elapsedMs": 253,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:16.245",
+      "phase": "response",
+      "requestId": 9,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 572,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:16.245",
+      "phase": "request_end",
+      "requestId": 9,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 575,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-summary/find",
+      "result": "success"
+    },
+    {
+      "deviceTime": "11-12 13:28:16.257",
+      "phase": "response",
+      "requestId": 8,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 617,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find"
+    },
+    {
+      "deviceTime": "11-12 13:28:16.260",
+      "phase": "request_end",
+      "requestId": 8,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 620,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-employee-order-history/find",
+      "result": "success"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.630",
+      "phase": "response",
+      "requestId": 5,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 322,
+      "accessTokenExpiresInSeconds": -76,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "managedAuth": true,
+      "refreshAvailable": true,
+      "sessionCurrent": true
+    },
+    {
+      "deviceTime": "11-12 13:33:36.631",
+      "phase": "auth_rejection",
+      "requestId": 5,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 322,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "reason": "http_401"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.633",
+      "phase": "refresh_start",
+      "requestId": 5,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 328,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.637",
+      "nativeEvent": "Received action: refreshAuthToken"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.637",
+      "nativeEvent": "Token refresh triggered"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.728",
+      "phase": "refresh_result",
+      "requestId": 5,
+      "attempt": 1,
+      "status": 401,
+      "elapsedMs": 422,
+      "durationMs": 94,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "result": "success"
+    },
+    {
+      "deviceTime": "11-12 13:33:36.730",
+      "phase": "replay_start",
+      "requestId": 5,
+      "attempt": 2,
+      "status": 401,
+      "elapsedMs": 425,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find"
+    },
+    {
+      "deviceTime": "11-12 13:33:37.674",
+      "phase": "response",
+      "requestId": 5,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 1363,
+      "accessTokenExpiresInSeconds": 51,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find"
+    },
+    {
+      "deviceTime": "11-12 13:33:37.679",
+      "phase": "request_end",
+      "requestId": 5,
+      "attempt": 2,
+      "status": 200,
+      "elapsedMs": 1366,
+      "method": "GET",
+      "path": "/services/central/api/name/staff-order-detail/find",
+      "result": "success"
+    }
+  ],
+  "limitations": [
+    "The final guarded bundle could not be deployed after the device disconnected.",
+    "The OTA server record was not modified."
+  ]
+}

@@ -1,0 +1,10 @@
+version: 1
+name: miniapp-delivery-maps
+slug: miniapp-delivery-maps
+protocol: http
+port: 4903
+interceptRequests: true
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

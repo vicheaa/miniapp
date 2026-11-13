@@ -6,12 +6,15 @@ import { useSuperApp } from './hooks/useSuperApp';
 import { useTranslation } from './hooks/useTranslation';
 import { useMiniAppStore } from './store/miniAppStore';
 import AppRoutes from './router';
+import { MiniAppNavigationProvider } from './components/MiniAppNavigation';
+import { useKeyboardViewport } from './hooks/useKeyboardViewport';
 
 const DevPanel = import.meta.env.DEV
   ? lazy(() => import('./components/ui/DevPanel'))
   : null;
 
 export default function App() {
+  useKeyboardViewport();
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: { refetchOnWindowFocus: false, retry: false, staleTime: 5 * 60_000 },
@@ -46,7 +49,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <HashRouter>
-        <AppRoutes />
+        <MiniAppNavigationProvider><AppRoutes /></MiniAppNavigationProvider>
         {DevPanel && session.mock && (
           <Suspense fallback={null}><DevPanel controller={session.mock} /></Suspense>
         )}

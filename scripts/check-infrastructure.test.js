@@ -15,6 +15,21 @@ let createApiClient;
 let ApiError;
 let refreshNativeAuthToken;
 const writes = new Map();
+let completeUnauthorizedBody;
+const wrappedReadPath = '/services/central/api/name/staff-order-detail/find';
+
+function wrappedSfaError(variant = '') {
+  const upstream = { message: 'Unauthorized', title: 'Unauthorized', ex: {
+    message: variant === 'revoked' ? 'Token has been revoked or logged out.' :
+      variant === 'internal-expired' ? 'Internal microservice token has expired.' : 'Token has expired.',
+    code: variant === 'wrong-code' ? 'permission_denied' : 'authentication_failed',
+  } };
+  return {
+    timestamp: '2026-11-12T01:24:00Z', status: 550,
+    error: variant === 'other-error' ? 'Other failure' : 'Data failure',
+    message: `[${variant === 'forbidden' ? '403 Forbidden' : '401 Unauthorized'}] during [GET] to [http://sfa/mobile/staff-order-detail/32/] [${variant === 'other-proxy' ? 'OtherApiProxy' : 'SFAApiProxy'}#staffOrderDetail(Long)]: [${variant === 'malformed' ? 'invalid json' : JSON.stringify(upstream)}]`,
+  };
+}
 
 before(async () => {
   vite = await createServer({
@@ -38,7 +53,23 @@ before(async () => {
       for await (const chunk of req) chunks.push(chunk);
       const body = Buffer.concat(chunks).toString();
       if (req.method !== 'GET') writes.set(url.pathname, (writes.get(url.pathname) ?? 0) + 1);
-      if (url.pathname.startsWith('/protected')) {
+      if (url.pathname.startsWith('/services/central/api/name/staff-order-') || url.pathname === '/wrapped-other') {
+        const authorized = req.headers.authorization === 'Bearer fresh-token' && !url.searchParams.has('always');
+        const respond = () => {
+          res.writeHead(authorized ? 200 : Number(url.searchParams.get('status') || 500), { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(authorized
+            ? { method: req.method, body, query: [...url.searchParams], authorization: req.headers.authorization }
+            : wrappedSfaError(url.searchParams.get('variant'))));
+        };
+        const delay = !authorized ? Number(url.searchParams.get('delay') || 0) : 0;
+        if (delay) setTimeout(respond, delay);
+        else respond();
+      } else if (url.pathname === '/protected-stream401' && req.headers.authorization !== 'Bearer fresh-token') {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.flushHeaders();
+        res.write('{"message":');
+        completeUnauthorizedBody = () => res.end('"Original API unauthorized","code":"expired_access_token"}');
+      } else if (url.pathname.startsWith('/protected')) {
         const authorized = req.headers.authorization === 'Bearer fresh-token' && url.pathname !== '/protected-always401';
         const respond = () => {
           res.writeHead(authorized ? 200 : 401, { 'Content-Type': 'application/json' });
@@ -46,7 +77,7 @@ before(async () => {
             ? { method: req.method, body, query: [...url.searchParams], authorization: req.headers.authorization }
             : { message: 'Original API unauthorized', code: 'expired_access_token' }));
         };
-        const delay = !authorized ? Number(url.searchParams.get('delay') || 0) : 0;
+        const delay = Number(url.searchParams.get(authorized ? 'replayDelay' : 'delay') || 0);
         if (delay) setTimeout(respond, delay);
         else respond();
       } else if (url.pathname === '/slow') {
@@ -99,13 +130,15 @@ function fixture(overrides = {}) {
     setPullToRefreshEnabled: (enabled) => calls.push(['refresh', enabled]),
     ready: () => calls.push(['ready']),
     on: (event, callback) => {
-      assert.equal(event, 'onLanguageChanged');
+      assert.ok(['onLanguageChanged', 'tokenRefreshed'].includes(event));
+      callback.event = event;
       listeners.add(callback);
       return () => listeners.delete(callback);
     },
     ...overrides,
   };
-  return { bridge, listeners, calls, emit: (data) => listeners.forEach((callback) => callback(data)) };
+  return { bridge, listeners, calls, emit: (data, event = 'onLanguageChanged') =>
+    listeners.forEach((callback) => { if (callback.event === event) callback(data); }) };
 }
 
 test('bridge: immediately injected native bridge', async () => {
@@ -189,6 +222,51 @@ test('bootstrap: newer language events win over a stale initial locale', async (
   dispose();
 });
 
+test('bootstrap: native resume token updates are used by HTTP without replacing the session', async () => {
+  useMiniAppStore.getState().reset();
+  const f = fixture();
+  const dispose = await initializeBridge(f.bridge, { signal: new AbortController().signal });
+  try {
+    const version = useMiniAppStore.getState().sessionVersion;
+    f.emit({ token: 'fresh-token' }, 'tokenRefreshed');
+    const api = createApiClient({ baseUrl: origin, getToken: () => useMiniAppStore.getState().authToken });
+    assert.equal((await api.get('/protected')).authorization, 'Bearer fresh-token');
+    assert.equal(useMiniAppStore.getState().sessionVersion, version);
+    for (const data of [null, 'token', {}, { token: 123 }, { token: '   ' }]) f.emit(data, 'tokenRefreshed');
+    assert.equal(useMiniAppStore.getState().authToken, 'fresh-token');
+    f.emit({ token: '' }, 'tokenRefreshed');
+    assert.equal(useMiniAppStore.getState().authToken, '');
+    assert.equal(useMiniAppStore.getState().sessionVersion, version + 1);
+    f.emit({ token: 'late-token' }, 'tokenRefreshed');
+    assert.equal(useMiniAppStore.getState().authToken, '');
+  } finally { dispose(); }
+});
+
+test('bootstrap: a token pushed during initialization wins over a stale getAuthToken result', async () => {
+  useMiniAppStore.getState().reset();
+  let resolveAuth;
+  const f = fixture({ getAuthToken: () => new Promise((resolve) => { resolveAuth = resolve; }) });
+  const pending = initializeBridge(f.bridge, { signal: new AbortController().signal });
+  await new Promise(setImmediate);
+  f.emit({ token: 'fresh-token' }, 'tokenRefreshed');
+  resolveAuth('stale-token');
+  const dispose = await pending;
+  assert.equal(useMiniAppStore.getState().authToken, 'fresh-token');
+  dispose();
+  f.emit({ token: 'disposed-token' }, 'tokenRefreshed');
+  assert.equal(useMiniAppStore.getState().authToken, 'fresh-token');
+});
+
+test('bootstrap: token events from a replaced session cannot overwrite credentials', async () => {
+  useMiniAppStore.getState().reset();
+  const f = fixture();
+  const dispose = await initializeBridge(f.bridge, { signal: new AbortController().signal });
+  useMiniAppStore.getState().setAuthToken('replacement-session');
+  f.emit({ token: 'late-token' }, 'tokenRefreshed');
+  assert.equal(useMiniAppStore.getState().authToken, 'replacement-session');
+  dispose();
+});
+
 test('bootstrap: auth failure/timeout and invalid tokens are recoverable', async () => {
   for (const getAuthToken of [
     () => Promise.reject(new Error('Auth unavailable')),
@@ -197,7 +275,7 @@ test('bootstrap: auth failure/timeout and invalid tokens are recoverable', async
   ]) {
     useMiniAppStore.getState().reset();
     const f = fixture({ getAuthToken });
-    await assert.rejects(initializeBridge(f.bridge, { signal: new AbortController().signal, timeoutMs: 15 }));
+    await assert.rejects(initializeBridge(f.bridge, { signal: new AbortController().signal, timeoutMs: 15, authTimeoutMs: 15 }));
     assert.equal(f.listeners.size, 0);
     assert.equal(f.calls.some(([call]) => call === 'ready'), false);
     assert.equal(useMiniAppStore.getState().authToken, '');
@@ -223,7 +301,7 @@ test('bootstrap: abort prevents late initialization and ready calls', async () =
   assert.notEqual(useMiniAppStore.getState().authToken, 'late-token');
 });
 
-test('bootstrap: Strict Mode style setup/cleanup/setup leaves one active listener', async () => {
+test('bootstrap: Strict Mode style setup/cleanup/setup leaves one listener per event', async () => {
   const f = fixture();
   const first = new AbortController();
   const dispose = await initializeBridge(f.bridge, { signal: first.signal });
@@ -231,7 +309,7 @@ test('bootstrap: Strict Mode style setup/cleanup/setup leaves one active listene
   dispose();
   const second = new AbortController();
   const disposeAgain = await initializeBridge(f.bridge, { signal: second.signal });
-  assert.equal(f.listeners.size, 1);
+  assert.equal(f.listeners.size, 2);
   second.abort();
   disposeAgain();
   assert.equal(f.listeners.size, 0);
@@ -404,6 +482,107 @@ function refreshingClient(overrides = {}) {
   return { api, refreshes: () => refreshes, token: () => token };
 }
 
+function expiringWriteToken(seconds = -60) {
+  return `fixture.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + seconds })).toString('base64url')}.signature`;
+}
+
+test('auth preflight: concurrent writes and a rejected read share refresh before any writes', async () => {
+  let token = expiringWriteToken();
+  let refreshes = 0;
+  const api = createApiClient({ baseUrl: origin, getToken: () => token, refreshAuthToken: async () => {
+    refreshes++;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    token = 'fresh-token';
+    return token;
+  } });
+  const path = '/services/central/api/name/staff-order-save/exec';
+  const before = writes.get(path) ?? 0;
+  const payload = { customer: 'fixture', items: [{ product_code: 'fixture', quantity: 1 }] };
+  const values = await Promise.all([api.post(path, payload), api.post(path, payload), api.get('/protected')]);
+  assert.equal(refreshes, 1);
+  assert.equal(writes.get(path), before + 2);
+  assert.deepEqual(values.slice(0, 2).map((value) => JSON.parse(value.body)), [payload, payload]);
+  assert.ok(values.every((value) => value.authorization === 'Bearer fresh-token'));
+});
+
+test('auth preflight: unavailable, unchanged, and still-expiring credentials send no writes', async () => {
+  const token = expiringWriteToken();
+  for (const refreshAuthToken of [undefined, async () => null, async () => token,
+    async () => expiringWriteToken(-30), async () => expiringWriteToken(15),
+    async () => { throw new Error('Refresh unavailable'); }]) {
+    const api = createApiClient({ baseUrl: origin, getToken: () => token, refreshAuthToken });
+    const before = writes.get('/protected-write') ?? 0;
+    await assert.rejects(api.post('/protected-write', {}), (error) => error.status === 401);
+    assert.equal(writes.get('/protected-write') ?? 0, before);
+  }
+});
+
+test('auth preflight: cancellation of one write leaves shared refresh available to another', async () => {
+  const controller = new AbortController();
+  let token = expiringWriteToken();
+  let refreshes = 0;
+  const api = createApiClient({ baseUrl: origin, getToken: () => token, refreshAuthToken: async () => {
+    refreshes++;
+    controller.abort();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return token = 'fresh-token';
+  } });
+  const before = writes.get('/protected-write') ?? 0;
+  const values = await Promise.allSettled([
+    api.post('/protected-write', {}, { signal: controller.signal }), api.post('/protected-write', {}),
+  ]);
+  assert.equal(values[0].reason.kind, 'aborted');
+  assert.equal(values[1].status, 'fulfilled');
+  assert.equal(refreshes, 1);
+  assert.equal(writes.get('/protected-write'), before + 1);
+});
+
+test('auth preflight: changing session while refreshing prevents the write', async () => {
+  let session = 1;
+  const api = createApiClient({ baseUrl: origin, getToken: () => expiringWriteToken(), getAuthSession: () => session,
+    refreshAuthToken: async () => { session++; return 'fresh-token'; } });
+  const before = writes.get('/protected-write') ?? 0;
+  await assert.rejects(api.post('/protected-write', {}), (error) => error.kind === 'aborted');
+  assert.equal(writes.get('/protected-write') ?? 0, before);
+});
+
+test('auth preflight: refresh has a separate deadline and a fresh resource timeout', async () => {
+  for (const authRefreshTimeoutMs of [20, 1000]) {
+    let token = expiringWriteToken();
+    const api = createApiClient({ baseUrl: origin, getToken: () => token, authRefreshTimeoutMs,
+      refreshAuthToken: async () => { await new Promise((resolve) => setTimeout(resolve, 100)); return token = 'fresh-token'; } });
+    const before = writes.get('/protected-write') ?? 0;
+    const operation = api.post('/protected-write', {}, { timeoutMs: 50 });
+    if (authRefreshTimeoutMs === 20) {
+      await assert.rejects(operation, (error) => error.kind === 'timeout');
+      assert.equal(writes.get('/protected-write') ?? 0, before);
+    } else {
+      assert.equal((await operation).authorization, 'Bearer fresh-token');
+      assert.equal(writes.get('/protected-write'), before + 1);
+    }
+  }
+});
+
+test('auth preflight: a real 401 still refreshes immediately and replays only once', async () => {
+  let token = expiringWriteToken();
+  let refreshes = 0;
+  const api = createApiClient({ baseUrl: origin, getToken: () => token,
+    refreshAuthToken: async () => { refreshes++; return token = `fresh-token-${refreshes}`; } });
+  const before = writes.get('/protected-always401') ?? 0;
+  await assert.rejects(api.post('/protected-always401', {}), (error) => error.status === 401);
+  assert.equal(refreshes, 2, 'One preflight refresh and one reactive refresh; no rejection loop.');
+  assert.equal(writes.get('/protected-always401'), before + 2);
+});
+
+test('auth preflight: public requests and caller Authorization bypass managed write refresh', async () => {
+  let refreshes = 0;
+  const api = createApiClient({ baseUrl: origin, getToken: () => expiringWriteToken(),
+    refreshAuthToken: async () => { refreshes++; return 'fresh-token'; } });
+  await assert.rejects(api.post('/protected-write', {}, { auth: false }), (error) => error.status === 401);
+  await assert.rejects(api.post('/protected-write', {}, { headers: { Authorization: 'Bearer custom' } }), (error) => error.status === 401);
+  assert.equal(refreshes, 0);
+});
+
 test('auth refresh: replays a 401 once and persists the new access token', async () => {
   const f = refreshingClient();
   const value = await f.api.get('/protected');
@@ -412,6 +591,61 @@ test('auth refresh: replays a 401 once and persists the new access token', async
   assert.equal(f.token(), 'fresh-token');
   await f.api.get('/protected');
   assert.equal(f.refreshes(), 1);
+});
+
+test('auth refresh: starts on the first 401 headers before the unauthorized body finishes', async () => {
+  let refreshes = 0;
+  const f = refreshingClient({ refreshAuthToken: async () => {
+    refreshes++;
+    completeUnauthorizedBody?.();
+    return 'fresh-token';
+  } });
+  try {
+    const value = await f.api.get('/protected-stream401', { timeoutMs: 300 });
+    assert.equal(value.authorization, 'Bearer fresh-token');
+    assert.equal(refreshes, 1);
+  } finally { completeUnauthorizedBody?.(); completeUnauthorizedBody = undefined; }
+});
+
+test('auth refresh: the first query stays pending through slow refresh and replay, without Retry', async () => {
+  const { QueryClient } = await import('@tanstack/react-query');
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const states = [];
+  const unsubscribe = client.getQueryCache().subscribe((event) => states.push(event.query.state.status));
+  let refreshes = 0;
+  const f = refreshingClient({ refreshAuthToken: async () => {
+    refreshes++;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    return 'fresh-token';
+  } });
+  try {
+    const value = await client.fetchQuery({
+      queryKey: ['first-401-refresh'],
+      queryFn: ({ signal }) => f.api.get('/protected', {
+        signal, timeoutMs: 300, query: { delay: 150, replayDelay: 150 },
+      }),
+    });
+    assert.equal(value.authorization, 'Bearer fresh-token');
+    assert.equal(refreshes, 1);
+    assert.equal(states.includes('error'), false);
+    assert.equal(client.getQueryState(['first-401-refresh']).status, 'success');
+  } finally { unsubscribe(); client.clear(); }
+});
+
+test('auth refresh: cancellation still wins while reading a delayed 401 body after refresh failure', async () => {
+  let markRefreshStarted;
+  const started = new Promise((resolve) => { markRefreshStarted = resolve; });
+  const f = refreshingClient({ refreshAuthToken: async () => { markRefreshStarted(); return null; } });
+  const controller = new AbortController();
+  const rejected = assert.rejects(
+    f.api.get('/protected-stream401', { signal: controller.signal, timeoutMs: 500 }),
+    (error) => error.kind === 'aborted',
+  );
+  try {
+    await started;
+    controller.abort();
+    await rejected;
+  } finally { completeUnauthorizedBody?.(); completeUnauthorizedBody = undefined; }
 });
 
 test('auth refresh: concurrent and delayed 401 responses share one refresh', async () => {
@@ -423,6 +657,56 @@ test('auth refresh: concurrent and delayed 401 responses share one refresh', asy
   ]);
   assert.equal(values.length, 3);
   assert.equal(f.refreshes(), 1);
+});
+
+test('auth refresh: the screenshot Central 500 wrapper refreshes and replays the read once', async () => {
+  const f = refreshingClient();
+  const value = await f.api.get(wrappedReadPath, { query: { id: 32 } });
+  assert.equal(value.authorization, 'Bearer fresh-token');
+  assert.deepEqual(value.query, [['id', '32']]);
+  assert.equal(f.refreshes(), 1);
+});
+
+test('auth refresh: wrapped SFA errors and direct 401s share one refresh', async () => {
+  const f = refreshingClient();
+  const values = await Promise.all([
+    f.api.get(wrappedReadPath), f.api.get('/protected'),
+    f.api.get(wrappedReadPath, { query: { delay: 70 } }),
+  ]);
+  assert.ok(values.every((value) => value.authorization === 'Bearer fresh-token'));
+  assert.equal(f.refreshes(), 1);
+});
+
+test('auth refresh: failed refresh and a rejected replay preserve the wrapped 500 without looping', async () => {
+  for (const overrides of [{}, { refreshAuthToken: async () => null }, { refreshAuthToken: async () => { throw new Error('unavailable'); } }]) {
+    const f = refreshingClient(overrides);
+    await assert.rejects(f.api.get(wrappedReadPath, { query: { always: 1 } }), (error) => {
+      assert.equal(error.status, 500);
+      assert.deepEqual(error.data, wrappedSfaError());
+      return true;
+    });
+    assert.ok(f.refreshes() <= 1);
+  }
+});
+
+test('auth refresh: wrapped errors on writes, other endpoints, other failures, and custom/public auth do not refresh', async () => {
+  const f = refreshingClient();
+  const reject500 = (operation) => assert.rejects(operation, (error) => error.status === 500);
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    const path = '/services/central/api/name/staff-order-save/exec';
+    const before = writes.get(path) ?? 0;
+    await reject500(f.api.request(method, path, { body: { customer: 'fixture' } }));
+    assert.equal(writes.get(path), before + 1);
+    await reject500(f.api.request(method, wrappedReadPath));
+  }
+  await reject500(f.api.get('/wrapped-other'));
+  for (const variant of ['revoked', 'wrong-code', 'other-error', 'other-proxy', 'forbidden', 'malformed']) {
+    await reject500(f.api.get(wrappedReadPath, { query: { variant } }));
+  }
+  await reject500(f.api.get(wrappedReadPath, { auth: false }));
+  await reject500(f.api.get(wrappedReadPath, { headers: { Authorization: 'Bearer custom' } }));
+  await assert.rejects(f.api.get(wrappedReadPath, { query: { status: 403 } }), (error) => error.status === 403);
+  assert.equal(f.refreshes(), 0);
 });
 
 test('auth refresh: JSON writes and query parameters survive exactly one replay', async () => {
@@ -462,7 +746,7 @@ test('auth refresh: failure, malformed responses, and timeouts preserve the orig
     async () => 'expired-token',
     () => new Promise(() => {}),
   ]) {
-    const f = refreshingClient({ refreshAuthToken, timeoutMs: 50 });
+    const f = refreshingClient({ refreshAuthToken, timeoutMs: 50, authRefreshTimeoutMs: 50 });
     await assert.rejects(f.api.get('/protected'), (error) => {
       assert.ok(error instanceof ApiError);
       assert.equal(error.status, 401);
@@ -570,4 +854,88 @@ test('auth refresh: a fast failed refresh is shared by the original request wave
   assert.equal(calls, 1);
   await assert.rejects(f.api.get('/protected'), (error) => error.status === 401);
   assert.equal(calls, 2);
+});
+
+
+test('bootstrap: native auth refresh has its own deadline beyond optional bridge calls', async () => {
+  useMiniAppStore.getState().reset();
+  const f = fixture({
+    getAuthToken: async () => { await new Promise((resolve) => setTimeout(resolve, 45)); return 'refreshed-startup-token'; },
+    getInitParams: () => new Promise(() => {}),
+  });
+  const dispose = await initializeBridge(f.bridge, {
+    signal: new AbortController().signal, timeoutMs: 10, authTimeoutMs: 250,
+  });
+  try {
+    assert.equal(useMiniAppStore.getState().authToken, 'refreshed-startup-token');
+    assert.deepEqual(useMiniAppStore.getState().initParams, {});
+    assert.ok(f.calls.some(([action]) => action === 'ready'));
+  } finally { dispose(); }
+});
+
+test('auth diagnostics: concurrent recovery is correlated without logging tokens, headers, or queries', async () => {
+  const events = [];
+  const f = refreshingClient({ onAuthDiagnostic: (event) => events.push(event) });
+  await Promise.all([
+    f.api.get('/protected?access_token=private-query', { headers: { 'X-Private': 'private-header' } }),
+    f.api.get('/protected'),
+  ]);
+  assert.equal(events.filter((e) => e.phase === 'refresh_start').length, 1);
+  assert.equal(events.filter((e) => e.phase === 'refresh_result' && e.result === 'success').length, 1);
+  assert.equal(events.filter((e) => e.phase === 'replay_start').length, 2);
+  assert.equal(events.filter((e) => e.phase === 'request_end' && e.result === 'success').length, 2);
+  for (const id of new Set(events.map((e) => e.requestId))) {
+    const requestEvents = events.filter((e) => e.requestId === id);
+    assert.deepEqual(requestEvents.filter((e) => e.phase === 'response').map((e) => e.status), [401, 200]);
+    assert.ok(requestEvents.every((e) => e.path === '/protected' && e.elapsedMs >= 0));
+  }
+  assert.doesNotMatch(JSON.stringify(events), /expired-token|fresh-token|Bearer|private-query|private-header|Authorization|authorization/);
+});
+
+test('auth diagnostics: wrapped failures expose only fixed indicators and do not refresh generic 500s', async () => {
+  const events = [];
+  const f = refreshingClient({ onAuthDiagnostic: (event) => events.push(event) });
+  await f.api.get(wrappedReadPath);
+  const expired = events.find((e) => e.phase === 'auth_rejection');
+  assert.equal(expired.reason, 'sfa_expired');
+  assert.equal(expired.indicators.expiredToken, true);
+  assert.equal(expired.indicators.internalMicroserviceExpired, false);
+  events.length = 0;
+  await assert.rejects(f.api.get('/error', { query: { status: 500 } }), (error) => error.status === 500);
+  assert.equal(events.find((e) => e.phase === 'auth_rejection').reason, 'unrecognized');
+  assert.equal(events.some((e) => e.phase === 'refresh_start'), false);
+  assert.doesNotMatch(JSON.stringify(events), /Validation failed|errors|Required/);
+
+  const { inspectSfaAuthError } = await vite.ssrLoadModule('/src/services/api/auth-diagnostics.ts');
+  const wrapper = wrappedSfaError();
+  wrapper.private = 'private-body-secret';
+  const safe = inspectSfaAuthError(wrapper);
+  assert.ok(Object.values(safe).every((value) => typeof value === 'boolean'));
+  assert.doesNotMatch(JSON.stringify(safe), /private-body-secret|Token has expired|http:\/\//);
+});
+
+test('auth diagnostics: throwing listeners cannot interrupt refresh, replay, or original errors', async () => {
+  const f = refreshingClient({ onAuthDiagnostic: () => { throw new Error('Broken diagnostic sink'); } });
+  assert.equal((await f.api.get('/protected')).authorization, 'Bearer fresh-token');
+  assert.equal(f.refreshes(), 1);
+  await assert.rejects(f.api.get('/error', { query: { status: 500 } }), (error) => error.status === 500);
+});
+
+test('auth refresh: captured internal wrapper recovers only when the caller access token is also expired', async () => {
+  for (const expiry of [-60, 3600, null]) {
+    let token = expiry === null ? 'opaque-token' : `fixture.${Buffer.from(JSON.stringify({
+      exp: Math.floor(Date.now() / 1000) + expiry,
+    })).toString('base64url')}.signature`;
+    let refreshes = 0;
+    const api = createApiClient({ baseUrl: origin, getToken: () => token,
+      refreshAuthToken: async () => { refreshes++; token = 'fresh-token'; return token; } });
+    const operation = api.get(wrappedReadPath, { query: { variant: 'internal-expired' } });
+    if (expiry === -60) {
+      assert.equal((await operation).authorization, 'Bearer fresh-token');
+      assert.equal(refreshes, 1);
+    } else {
+      await assert.rejects(operation, (error) => error.status === 500);
+      assert.equal(refreshes, 0, 'A backend credential failure must not refresh a valid or opaque user token.');
+    }
+  }
 });

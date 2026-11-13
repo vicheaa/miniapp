@@ -1,0 +1,249 @@
+purpose:
+  stands_in_for: Central staff-order categories, products, order submission, employee order history, summary, media, and the Google Maps JavaScript/geocoding interface used by checkout.
+  unblocks: Sales dashboard, catalog, and checkout date/location HTTP integration and mobile UI checks without credentials, Google charges, or real orders.
+assumptions:
+  - id: keyboard-bottom-action-opening-stability
+    status: supported
+    claim: View your Cart and Submit order hide before the first keyboard resize and remain hidden during software keyboard editing in the local iOS harness.
+    reason: Input focus sets a separate synchronous action visibility state. Hidden actions have no exit transition, preventing a visible footer from moving with the shrinking viewport. Confirmed keyboard state holds them hidden until stable recovery, with a fade only on return. A 500ms provisional timeout preserves hardware keyboard use; Android Back re-taps are handled without requiring another focus event.
+    verification: On 2026-11-13, 171 web tests, type checking, and production build passed. Both native XCTest scenarios passed with zero visible-action frames during editing, covering phone, repeated customer reopening, product quantity, search, and address. The fixture samples computed visibility on every animation frame, including the interval between focus and the keyboard detection threshold. These checks use a real iOS simulator keyboard with local catalog/map fixtures and do not establish physical-device animation quality. Bundle 0.1.11 contains this web fix; no further native host changes were made for it.
+    source: src/utils/keyboardViewport.ts; src/styles/index.css; scripts/check-keyboard.test.js; scripts/check-webview-css.test.js; scripts/ios-keyboard/fixture.js; scripts/ios-keyboard/KeyboardTests.swift; /private/tmp/miniapp-ios-keyboard/footer-stability
+    updated_at: '2026-11-13'
+  - id: ios-keyboard-native-viewport
+    status: supported
+    claim: Against local catalog and map fixtures, the React input screens recover correctly from tapping inputs and opening or closing the native iOS keyboard in both overlay and resizing WKWebView hosts.
+    reason: The iOS host preserves its native WebView frame and bottom safe area during keyboard animation. Unfocused iOS fields use trusted touch focus with preventScroll, while focused fields retain native selection. Geometry writes are deduplicated, footers fade without reflow, and settled field reveal moves only the form scroll container. Stable closing accepts safe-area changes and ends stale iOS editing sessions.
+    verification: On 2026-11-13, two XCTest scenarios passed on the iPhone 17 simulator running iOS 26.5 with a real WKWebView and real software keyboard. Each scenario exercised phone entry, three customer-name reopen cycles, quantity entry, search entry, and address entry. Checks covered physical input bounds above the keyboard, a stable page top, hidden/restored actions, zero document scroll after closing, full recovered viewport height, and retained text. The native harness used the local fixture in scripts/ios-keyboard/fixture.js rather than the Postman HTTP Maps fixture; this does not establish behavior on physical iPhones or the deployed Flutter app. Final validation passed both native XCTest scenarios, 168 web tests including the WebView 101 CSS fallback, type checking, production build, 10 focused Flutter host tests, and analysis of both changed Flutter files. Full decoding of the original iOS recording found 34 frames with a missing header during four keyboard transitions; the final layout recording found zero missing-header frames across 502 frames covering the corresponding checkout cycles. Version 0.1.10 is prepared; applying the iOS host policy also requires a hot restart or rebuilt installed native app.
+    source: src/utils/keyboardViewport.ts; src/hooks/useKeyboardViewport.ts; scripts/check-keyboard.test.js; scripts/ios-keyboard/KeyboardTests.swift; scripts/ios-keyboard/Host.swift; ../oml-central/lib/features/webview/presentation/super_app_webview.dart; ../oml-central/test/features/webview/super_app_webview_refresh_test.dart; /private/tmp/miniapp-ios-keyboard/final-smooth; /private/tmp/miniapp-ios-keyboard/final-layer-frames.json
+    updated_at: '2026-11-13'
+  - id: map-drag-pull-to-refresh-isolation
+    status: supported
+    claim: The local picker excludes map-surface drags from the host pull-to-refresh gesture handler.
+    reason: The map surface uses the existing data-no-ptr host contract and owns its touch gestures independently of the surrounding scroll panel.
+    verification: On 2026-11-13, Chrome exercised the real React picker against the existing Postman Maps fixture and the exact pull-to-refresh JavaScript read from the sibling Flutter host. Removing data-no-ptr in the isolated test page reproduced pullProgress and pullToRefresh messages for a downward map swipe; restoring the attribute produced no host messages. This verifies the contract with the inspected host script, not the deployed host version or real Google tile gestures.
+    source: src/pages/cart/LocationPage.tsx; src/styles/index.css; ../oml-central/lib/features/webview/presentation/utils/pull_to_refresh_source.dart; /private/tmp/miniapp-location-drag-check.mjs
+    updated_at: '2026-11-13'
+  - id: settled-map-geocoding
+    status: supported
+    claim: Against the local Maps stand-in, pin selection waits for map movement to settle and previous address lookups cannot overwrite a newer drag or a manual edit after a layout-only idle event.
+    reason: Drag/pan intent gates selection, a short idle debounce coalesces callbacks, and drag start immediately invalidates the preceding lookup generation. Confirmation is disabled during movement and lookup.
+    verification: On 2026-11-13, the real React picker ran against the existing Postman simulation on port 4910 using Node 26.13.0 and Chrome. A delayed lookup for A completed while B was being dragged and was ignored; repeated idle events selected only the final coordinates 11.63,104.93. The log recorded one lookup for A and one for final B. Header, map, details, and footer geometry remained unchanged through movement, resolution, and REQUEST_DENIED. A layout-only idle preserved manual text without another request; after a denied lookup, manual entry confirmed the final coordinates 11.64,104.94. No live provider or real order service was called. Existing local mocks were reused; owner discovery was not repeated.
+    source: src/pages/cart/LocationPage.tsx; /private/tmp/miniapp-location-drag-check.mjs; postman/mocks/delivery-maps/default.js; /private/tmp/miniapp-location-drag-sim.ndjson request events dated 2026-11-13
+    updated_at: '2026-11-13'
+  - id: readable-location-address
+    status: supported
+    claim: Against the local maps fixture, the picker fills and saves readable address text, never substitutes coordinates after lookup failure, and populates administrative details even when the user edits the address during lookup.
+    reason: The user rejected coordinate strings as addresses on 2026-11-12. The resolver now returns an empty address and the provider failure status on error. Confirmation requires readable address text and waits for the lookup to settle; coordinates remain separate order fields. Typed manual text is preserved while administrative components finish loading.
+    verification: On 2026-11-12, all 16 focused maps/cart-storage tests, typecheck, and the Node 26.13.0 production build passed and miniapp.zip was regenerated. Headless Chrome exercised the running React app against this Postman simulation on port 4910 for OK and REQUEST_DENIED responses, all four administrative fields, empty address and disabled confirmation after denial, manual entry, coordinate-only entry rejection, typing during delayed lookup, changing the pin, saving and reopening. The simulation request log recorded SDK, geocode, and control traffic. A separate current live Google SDK lookup at the user's selected coordinates returned REQUEST_DENIED with no address or province; Geocoding API/project/key authorization remains an external configuration requirement. The fixture does not establish real boundary coverage or installed-device permissions.
+    source: src/services/maps/googleMaps.ts; src/pages/cart/LocationPage.tsx; scripts/check-maps.test.js; /private/tmp/miniapp-address-check.mjs; postman/mocks/delivery-maps/default.js; https://developers.google.com/maps/documentation/javascript/geocoding
+    updated_at: '2026-11-12'
+  - id: administrative-location-details
+    status: supported
+    claim: Against the local maps fixture, the picker displays province, district, commune, and village names from typed geocoding components and retains those values with the confirmed pin.
+    reason: The user explicitly requested the four address divisions. The implementation reads components across reverse-geocoding results, prefers administrative levels over numbered sublocality levels, and leaves unavailable divisions blank rather than deriving them from formatted strings or nearby POIs. The names remain frontend draft metadata; order requests retain the existing formatted address contract.
+    verification: On 2026-11-11, 14 maps/cart regression tests, typecheck, and the production build passed. Chromium against the existing Postman fixture verified all four names, confirmation and reopening, coordinate fallback with all previous divisions cleared after REQUEST_DENIED, stale-response/manual-edit handling, unchanged satellite and zoom controls, permission denial, and 280/390/768px layouts. Provider fixture names are synthetic and do not establish real Cambodian administrative boundaries. Live reverse geocoding remains denied by the existing key, as established by the earlier production check; enabling the Geocoding API and key authorization is still required for live automatic names. Google may omit smaller divisions, including villages. No live order was submitted.
+    source: User province/district/commune/village request dated 2026-11-11; src/services/maps/googleMaps.ts; src/types/location.ts; src/pages/cart/LocationPage.tsx; src/store/orderDraftStore.ts; scripts/check-maps.test.js; scripts/check-cart-storage.test.js; postman/mocks/delivery-maps/default.js; /private/tmp/miniapp-check-location.mjs; https://developers.google.com/maps/documentation/geocoding/guides-v3/requests-geocoding; https://developers.google.com/maps/documentation/geocoding/guides-v3/get-api-key
+    updated_at: '2026-11-11'
+  - id: satellite-pin-location-autofill
+    status: contradicted
+    claim: The map picker auto-fills the selected coordinates immediately, replaces them with a resolved street address when available, and permits confirmation when address lookup fails.
+    reason: Superseded by the user's 2026-11-12 request for readable address text instead of a coordinate string; see readable-location-address. Historical basis retained here. The user requested pin-based auto-fill and satellite viewing while preserving the existing UI styling. The picker defaulted to labeled satellite imagery, offered street-map and zoom controls, and kept the selected location usable during unavailable or denied reverse-geocoding.
+    verification: On 2026-11-11, typecheck, four maps tests, and the production build passed. Chromium against the existing Postman maps fixture verified hybrid default, street/satellite switching, zoom controls preserving coordinates, pin/current-location selection, automatic coordinate fallback after REQUEST_DENIED, confirmed location auto-filling the checkout field, retained phone/date values, stale lookups not overwriting typing, Back discarding unconfirmed changes, permission denial, and 280/390/768px widths. Postman requests exercised successful and denied lookups. The actual production package also rendered live Google satellite imagery on localhost, displayed the pin, filled the location field, and enabled confirmation despite a live Geocoder callback returning REQUEST_DENIED. The live screenshot was inspected. Street-address lookup authorization and installed-device verification remain external to these results.
+    source: User pin-selection reference dated 2026-11-11; src/pages/cart/LocationPage.tsx; src/services/maps/googleMaps.ts; scripts/check-maps.test.js; postman/mocks/delivery-maps/default.js; /private/tmp/miniapp-check-location.mjs; /private/tmp/miniapp-check-packaged-map.mjs; /private/tmp/miniapp-packaged-live-map.png
+    updated_at: '2026-11-12'
+  - id: optional-customer-and-delivery-date
+    status: supported
+    claim: The local checkout client permits absent or blank customer and delivery_date values and omits them from its submitted JSON.
+    reason: The user explicitly made customer name and delivery date optional on 2026-11-11. The form removes required markers and customer validation, starts delivery_date empty, and offers clearing a selected date. Supplied delivery dates still reject invalid or past values.
+    verification: On 2026-11-11, typecheck and 44 focused regression tests passed. Real local HTTP order tests exercised omitted, empty, whitespace, and null delivery-date values with absent or blank customer names, confirming successful local submissions and exact payload omission. Existing phone, item, coordinate, and supplied-date checks passed. The local Postman fixture was updated to accept optional customer values, but the simulation and real order backend were not called for this change.
+    source: User optional-fields request dated 2026-11-11; src/pages/cart/CartSummaryPage.tsx; src/store/orderDraftStore.ts; src/services/api/order.ts; src/types/order.ts; scripts/check-orders.test.js; postman/mocks/product-catalog/default.js
+    updated_at: '2026-11-11'
+  - id: packaged-google-maps-key
+    status: supported
+    claim: The rebuilt production ZIP includes the configured Maps browser key and can render a live Google Map on the localhost origin used by the native container.
+    reason: The user's report that the map did not load exposed a key present only in .env.dev and missing from .env.prod. The old production bundle contained no Maps key or SDK URL. The production environment now has the existing browser key, and packaging rejects empty Maps configuration before building.
+    verification: On 2026-11-11, the production build succeeded, ZIP inspection found the SDK URL and a browser key without printing the key, and the packaging regression test rejected empty keys for prod/dev/staging. Chromium loaded the real production assets at localhost:5181 with an injected native bridge stub. The real Google SDK rendered map tiles and the pin with no Maps authentication error, and recentering was enabled with emulated coordinates. The screenshot was inspected. A direct JavaScript Geocoder callback returned REQUEST_DENIED; Google Cloud Geocoding authorization remains unresolved. No installed native device was used.
+    source: User mini-app map-loading report dated 2026-11-11; ignored .env.dev and .env.prod; scripts/build.js; scripts/check-build.test.js; ../oml-central/lib/core/services/local_server_service.dart; /private/tmp/miniapp-check-packaged-map.mjs; /private/tmp/miniapp-packaged-live-map.png
+    updated_at: '2026-11-11'
+  - id: history-without-staff-code
+    status: supported
+    claim: The local order-history client sends only page and page_size=20, with the current bearer token and no staff_code query parameter.
+    reason: The user's latest clarification explicitly removes staff_code from order-list requests. Both home recent orders and the full history page share the updated hook, which no longer requests a staff profile. The local fixture now accepts pagination without a staff-code filter.
+    verification: On 2026-11-11, 16 sales regression tests passed against the local HTTP test server, including exact first/subsequent-page query parameters, bearer authentication, invalid pages, cancellation, errors, and response metadata. Typecheck passed. This verifies client HTTP behavior; the real backend and the Postman simulation were not exercised for this change.
+    source: User correction to remove staff_code dated 2026-11-11; src/services/api/order.ts; src/hooks/useStaffOrderHistory.ts; src/pages/HomePage.tsx; src/pages/orders/OrderHistoryPage.tsx; scripts/check-sales.test.js; postman/mocks/product-catalog/default.js
+    updated_at: '2026-11-11'
+  - id: location-screen-lookup-recovery
+    status: supported
+    claim: Against the local maps fixture, denied reverse-geocoding requests do not disable map pin selection, recentering, or confirmation with a manually entered address.
+    reason: Address lookup failure is separate from Maps SDK authorization and device geolocation permission. The previous picker treated REQUEST_DENIED as failure of the whole map, hiding its pin and location action. The replacement full-screen route preserves those controls and stores confirmed coordinates with the checkout draft.
+    verification: On 2026-11-11, 32 focused regression tests and typecheck passed. Chromium 158 exercised the real React screen against the existing Postman simulation, verifying automatic emulated device location, map clicks, recentering, REQUEST_DENIED with manual address confirmation, retained phone/date/location after returning to cart, discarded unconfirmed changes, late reverse-lookup responses not overwriting manual edits, emulated permission denial with usable manual selection, and 280/390/768px layouts. The screenshot was inspected. Postman request events showed SDK and reverse-geocoding traffic, including REQUEST_DENIED and successful responses. No real Google key, native location permission, live map tiles, or backend order submission was tested. The existing local mock was extended with controlled denial/delay responses; owner discovery was not repeated.
+    source: User full-screen location request and error screenshot dated 2026-11-11; src/pages/cart/LocationPage.tsx; src/services/maps/googleMaps.ts; src/store/orderDraftStore.ts; scripts/check-maps.test.js; scripts/check-cart-storage.test.js; postman/mocks/delivery-maps/default.js; /private/tmp/miniapp-check-location.mjs; /private/tmp/miniapp-location-screen.png
+    updated_at: '2026-11-11'
+  - id: date-only-delivery-selection
+    status: contradicted
+    claim: Checkout initially selects Cambodia today, offers only dates on or after today, and submits midnight at +07:00 with no editable time.
+    reason: The initial-date requirement was superseded by the user's later request to make delivery_date optional; checkout now starts with an empty date. Historical basis retained here: the user replaced the earlier date/time selection with a date-only native-style sheet. The picker and payload builder reject supplied backdates; submission rechecks a supplied date so an open checkout cannot submit yesterday after midnight.
+    verification: On 2026-11-11 all 95 tests passed and the production typecheck/build passed. Local mobile Chromium against the existing Postman simulation verified today's initial field, exactly three date wheels, restricted days/months/years, leap/month validity, Cancel and swipe dismissal, Done during pending scroll, Today resetting pending scroll, 280/390/768px bounds, and a clock advanced past midnight rejecting the stale date without a POST. The successful local fixture POST contained delivery_date 2026-11-12T00:00:00+07:00 with the original customer/email/phone/address/items and numeric map coordinates. The native-style sheet screenshot was inspected. No live Google key or real backend write was used.
+    source: User date-only clarification dated 2026-11-11; src/pages/cart/DeliveryDateSheet.tsx; src/pages/cart/WheelPicker.tsx; src/components/ui/BottomSheet.tsx; src/pages/cart/CartSummaryPage.tsx; src/utils/delivery.ts; src/services/api/order.ts; scripts/check-checkout.test.js; scripts/check-orders.test.js; /private/tmp/miniapp-check-date-only.mjs; /tmp/miniapp-native-date-only-sheet.png; /tmp/miniapp-date-only-tests.log
+    updated_at: '2026-11-11'
+  - id: checkout-delivery-fields
+    status: supported
+    claim: Checkout preserves existing order fields and adds delivery_date, latitude, and longitude from required date/time and location pickers.
+    reason: The user explicitly confirmed these payload names, chose to configure VITE_GOOGLE_MAPS_API_KEY, and requested retaining customer name above the new card. Existing email/customer/phone/address/items behavior was preserved. The UI requires all three new selections; lower-level builder callers can still omit the optional additions.
+    verification: On 2026-11-11 all 92 tests and production typecheck/build passed. Five new tests cover exact extended JSON, numeric coordinates, absent legacy fields, invalid/partial coordinates, timezone-independent Cambodia serialization, numeric date presentation, and leap/month-day validity. The actual React UI passed local Chromium/Postman checks for required fields, lazy singleton SDK loading without bearer auth, map pin/center selection, real local geocoding HTTP, address search/no results, explicit geolocation/denial, wheel keyboard/scroll selection, month clamping, cancellation, responsive/Khmer card layout, and exact POST delivery_date 2027-11-12T14:30:00+07:00 with coordinates 11.595/104.89 while retaining customer/email/address/items. The saved order's detail returned the selected delivery datetime. Additional browser checks passed for SDK network failure, Retry, and authentication failure without allowing an invalid location confirmation. English/Khmer card and date/time/map-sheet screenshots were inspected. Browser provider requests were intercepted with the local maps fixture; no live Google API key or real order was used.
+    source: User customer-card reference and field/key/name clarification dated 2026-11-11; src/pages/cart/CartSummaryPage.tsx; src/pages/cart/DeliveryDateSheet.tsx; src/pages/cart/WheelPicker.tsx; src/pages/cart/LocationSheet.tsx; src/services/maps/googleMaps.ts; src/services/api/order.ts; src/utils/delivery.ts; scripts/check-checkout.test.js; scripts/check-orders.test.js; postman/mocks/delivery-maps; local browser script /private/tmp/miniapp-check-checkout-browser.mjs and request log /tmp/miniapp-checkout-simulation.ndjson
+    updated_at: '2026-11-11'
+  - id: live-google-maps-configuration
+    status: unknown
+    claim: The user's configured browser key will authorize live Google map rendering and geocoding on the deployed mini-app's origin and installed WebView.
+    reason: The user will configure the key. Local SDK fixtures establish caller behavior but cannot establish Google project permissions, origin restrictions, billing configuration, or device compatibility.
+    verification: On 2026-11-11 the API discovery workflow identified Google's Geocoding endpoint through Orbit, and official Google loading, events, and Geocoding service docs were inspected. Implementation uses the documented Maps JavaScript Map/Geocoder API rather than directly calling the REST endpoint. Postman status is unsupported by CLI 1.74.0, so owning-team discovery was not available; the existing local simulation was extended. The production build contains an empty key unless the user configures the Vite environment. Live SDK rendering and installed-device checks were not performed; a configured key and a target-device run would settle this assumption.
+    source: .env.example; src/vite-env.d.ts; src/services/maps/googleMaps.ts; https://developers.google.com/maps/documentation/javascript/load-maps-js-api; https://developers.google.com/maps/documentation/javascript/geocoding; https://developers.google.com/maps/documentation/javascript/events; local discovery records /tmp/miniapp-maps-discovery.json and /tmp/miniapp-maps-integration.json
+    updated_at: '2026-11-11'
+  - id: order-submitted-dialog
+    status: supported
+    claim: A confirmed checkout opens the reference-style Order Submitted modal with working View Order and Create New PO actions; failed submissions never show it.
+    reason: The user supplied the dialog reference on 2026-11-11. The cart opens the native modal only after commitOrder resolves true and uses the validated savedOrder.data.id for navigation. Its open state is local to the cart page, so old receipts do not reopen a modal on return. Existing cart clearing, failure preservation, and query invalidation remain in place.
+    verification: On 2026-11-11 production typecheck/build passed and miniapp.zip was rebuilt. The actual React app passed a local Chromium/Postman run with three confirmed fixture orders and two rejected submissions. Checks covered waiting until the server confirms, modal initial focus and Tab/Shift+Tab behavior, View Order fetching the returned order ID, detail back navigation to My Sales, Create New PO returning to products with an empty cart, no stale modal on subsequent checkout, 280–768px bounds, Khmer text, HTTP 200 application rejection and HTTP 503 preserving the cart without showing success, and Escape dismissal. No duplicate POSTs or page errors occurred. English and Khmer screenshots were inspected. Existing order/API unit tests were not rerun because the API and store logic were unchanged. No live backend or installed WebView check was performed; existing local fixtures were reused.
+    source: User success-dialog reference dated 2026-11-11; src/pages/cart/OrderSuccessDialog.tsx; src/pages/cart/CartSummaryPage.tsx; src/styles/index.css; local browser script /private/tmp/miniapp-check-success-dialog.mjs and request log /tmp/miniapp-success-dialog.ndjson; screenshots /tmp/miniapp-order-success-dialog.png and /tmp/miniapp-order-success-dialog-khmer.png
+    updated_at: '2026-11-11'
+  - id: compact-detail-content
+    status: supported
+    claim: The detail content follows the latest compact reference with an inline customer/status heading, combined order number/date, three metadata rows, borderless product rows, and an emphasized USD total.
+    reason: The user supplied the compact content reference on 2026-11-11. The existing estimated-price calculation and API handling were preserved. Water-product image fallbacks use a bottle outline; other products retain a generic image outline.
+    verification: On 2026-11-11 the production typecheck/build passed and miniapp.zip was rebuilt. The actual React UI passed the reused local mobile browser checks for detail queries, quantities/prices/totals, navigation, history page retention, direct links, image fallback, null delivery date, Khmer names, 280–768px widths, and error/retry states. A browser-only response override matching the reference's G-Devit/Vital one-case example displayed USD 4.50 subtotal and total, USD 0.00 discount, combined product metadata, and a visible total without scrolling. Its content screenshot and the unchanged two-item API fixture screenshot were inspected. The 87 Node tests from the prior change were not rerun because this change only alters presentation; estimate calculations were unchanged. No live backend or installed-device check was performed.
+    source: User compact order-content reference dated 2026-11-11; src/pages/orders/OrderDetailPage.tsx; src/styles/index.css; src/pages/product/component/Icon.tsx; local browser script /private/tmp/miniapp-check-compact-detail-browser.mjs and request log /tmp/miniapp-compact-detail.ndjson; /tmp/miniapp-compact-detail-content.png
+    updated_at: '2026-11-11'
+  - id: detail-reference-layout-estimates
+    status: supported
+    claim: The detail UI presents aligned order metadata and bordered product cards with estimated USD amounts derived from quantity, current product price, and supplied line discounts.
+    reason: On 2026-11-11 the user requested a reference-based restyle and explicitly chose calculated estimated USD totals. Missing discounts are zero for the estimate; unavailable products or prices produce unavailable amounts instead of misleading zero totals. VAT and KHR conversion are not calculated without their source fields. Concurrent user layout edits removed the avatar, moved delivery scheduling into metadata, and removed estimate captions; those edits were preserved.
+    verification: On 2026-11-11 all 87 tests passed, including three new estimate checks for the sample USD 36.00 total, zero prices, fractional quantities, sub-cent prices, supplied discounts, half-cent rounding, invalid/unsafe inputs, and unavailable products. The production build and typecheck passed. The actual React UI passed local Chromium/Postman checks for exact quantity-times-price labels, USD 0.00 and 36.00 line totals, USD 36.00 subtotal and total, USD 0.00 discount, preserved home/history navigation and page retention, direct links, Khmer names, 280–768px widths, image fallback, error/retry, unknown orders, and invalid IDs. Screenshots of the current customer/metadata and product-card layout were inspected. Estimates use integer decimal units and cents with per-line rounding. No live service or installed WebView was checked; the existing local detail/media fixtures were reused.
+    source: User order-detail reference images and explicit estimate choice dated 2026-11-11; src/pages/orders/OrderDetailPage.tsx; src/pages/orders/estimates.ts; src/styles/index.css; scripts/check-sales.test.js; local browser script /private/tmp/miniapp-check-restyled-detail-browser.mjs and request log /tmp/miniapp-detail-restyle.ndjson
+    updated_at: '2026-11-11'
+  - id: order-detail-navigation
+    status: supported
+    claim: Order cards can fetch an unwrapped detail by ID with nested product objects and return to their source view, including the selected history page.
+    reason: The user supplied the staff-order-detail/find?id=25 endpoint and nested detail response on 2026-11-11. The service normalizes those products through the catalog adapter. Nullable delivery dates, images, and products have explicit UI fallbacks. Prices from nested catalog products are not interpreted as saved order-line prices. The existing Central summary route present at task start was preserved and its fixture/test documentation aligned.
+    verification: On 2026-11-11, all 84 Node tests and the Node 26.13.0 production build passed. Six new HTTP/helper tests cover detail ID/query/bearer serialization, nested product normalization, empty thumbnails, unchanged decimal quantities, invalid IDs and envelopes, mismatched response IDs, nullable/empty records, HTTP 404, aborts, decimal presentation, and safe back targets. The actual React app passed local Chromium/Postman checks for home and history clicks, deep-linked sample order 25 with two products, 10 Case and 12 Case, null delivery date, fallback/fixture images, read-only items, 280–768px widths, Khmer product names, and return to history page 2. Browser overrides exercised 503/retry; the real local fixture returned 404 for an unknown order. Invalid route IDs sent no HTTP detail request. English/Khmer screenshots were inspected and Postman events confirmed detail GETs and media requests. Product media in the mock uses local stand-ins rather than the private host from the sample. The live backend and installed WebView were not checked. Existing local mocks were extended; owner discovery was not repeated.
+    source: User order-detail endpoint/response dated 2026-11-11; src/services/api/order.ts; src/services/api/product.ts; src/pages/orders/OrderDetailPage.tsx; src/pages/orders/OrderCards.tsx; src/components/MiniAppNavigation.tsx; scripts/check-sales.test.js; postman/mocks/product-catalog/default.js; local browser script /private/tmp/miniapp-check-detail-browser.mjs and request log /tmp/miniapp-detail-simulation.ndjson
+    updated_at: '2026-11-11'
+  - id: sales-dashboard
+    status: contradicted
+    claim: The supplied sales dashboard uses the SFA summary fields and a paginated Central history response filtered by the bridge user's staff_code, preserving leading zeros.
+    reason: Superseded by the user's later instruction on 2026-11-11 to remove staff_code from order-list requests; see history-without-staff-code. Historical basis retained here: the user supplied both endpoint contracts and a ten-order JSON attachment on 2026-11-11. The browser bridge returned staff_code 002330. Local summary and history fixtures modeled those samples; successful fixture submissions added a Pending history entry and updated the summary to exercise cache invalidation. Accepted was displayed as Accepted rather than Delivered.
+    verification: On 2026-11-11, all 78 Node tests and the Node 26.13.0 production build passed. Real local HTTP tests cover SFA/Central routing, bearer auth, staff code 002330, page_size 20, subsequent pages, zero/empty responses, malformed envelopes, HTTP 503, cancellation, and Cambodia dates. The actual React app passed Chromium checks against this local Postman simulation for summary values 14/12/1/732, three recent orders, all ten supplied orders, iOS back icon, 280–768px widths, Khmer labels, and refresh to 15/13/1/733 plus the new order after a fixture submission. Additional browser response overrides tested Next/Previous with 21 modeled orders, summary failure/retry, empty history, and missing staff code without an unfiltered history request. Postman events confirmed summary/history requests, page 2 serialization, and order POST traffic. English and Khmer screenshots were inspected. The CLI strips trailing slashes when routing to its member, so the fixture accepts summary paths both ways; the frontend preserves the supplied trailing slash. The real APIs and installed device were not checked. Existing local mocks were reused; owner discovery was not repeated.
+    source: User HomePage reference and endpoint samples dated 2026-11-11; supplied Pasted text.txt history attachment; src/pages/HomePage.tsx; src/pages/orders/OrderHistoryPage.tsx; src/hooks/useStaffOrderHistory.ts; src/services/api/order.ts; scripts/check-sales.test.js; postman/mocks/product-catalog/default.js; local browser script /private/tmp/miniapp-check-sales-browser.mjs and request log /tmp/miniapp-sales-simulation.ndjson
+    updated_at: '2026-11-11'
+  - id: staff-order-submission
+    status: supported
+    claim: The supplied staff-order API accepts customer, phone, email, address, and product-code/quantity/price items, and confirms saving with status success plus data.id.
+    reason: The user supplied the request and success-response contracts on 2026-11-11. The existing local catalog mock was extended from those samples; owner discovery was not repeated.
+    verification: On 2026-11-11, all 71 tests and the Node 26.13.0 production build passed. New real-local-HTTP tests verify JSON POST serialization, bearer auth, internal_code mapping, numeric quantities/prices, optional product metadata, validation, explicit success confirmation, persisted-cart clearing, HTTP and application rejections, duplicate-submit locking, and session replacement. A 390x844 Chromium run exercised the actual React form through Vite and this Postman simulation. The final browser run confirmed exact payload, required customer fields, order numbers 25 and 26, cart removal after success, HTTP 200 status error and HTTP 503 with retained cart/contact values, and manual resubmission. Request events confirmed each POST and response. Form and confirmation screenshots were inspected. Browser timing respected the existing 500ms navigation guard. No live order or installed-device check was performed.
+    source: User staff-order-save request and response samples dated 2026-11-11; src/services/api/order.ts; src/store/orderDraftStore.ts; src/pages/cart/CartSummaryPage.tsx; scripts/check-orders.test.js; postman/mocks/product-catalog/default.js; local verification script /private/tmp/miniapp-check-order-browser.mjs and request log /tmp/miniapp-order-simulation.ndjson
+    updated_at: '2026-11-11'
+  - id: catalog-error-presentation
+    status: supported
+    claim: Product and category errors display the API error message with its HTTP status instead of the fixed connection hint.
+    reason: Both error states now render formatApiError; HTTP error messages preserve server message fields or plain-text bodies, with JSON serialization when no recognized message field exists.
+    verification: On 2026-11-08, inspected both React error states and the shared error formatter. Typecheck and all 49 existing infrastructure and product tests passed, including real local HTTP error handling and authentication recovery. No new Postman simulation run, live backend check, or installed-device validation was performed; this establishes source wiring and existing regression coverage only.
+    source: src/pages/product/index.tsx; src/services/api/request.ts; scripts/check-infrastructure.test.js; scripts/check-products.test.js
+    updated_at: '2026-11-08'
+  - id: sunmi-production-viewport
+    status: supported
+    claim: Sunmi WebView 101 requires the 100vh fallback to constrain the catalog and keep the header outside the scrolling list.
+    reason: ADB identified com.android.webview 101.0.4951.61 on the connected Sunmi V3. The old optimized stylesheet retained only 100dvh, unsupported by that engine.
+    verification: On 2026-11-06, all 50 tests passed including a production CSS regression build. Browser checks used the actual production page against the Postman catalog fixture, removing dvh declarations before parsing to model the device's missing support. Without the fallback the page grew to 2141px and document scrolling moved the header to -1401px; with the fix the page stayed at the 740px viewport height, catalog scrolling reached 1401px, and header pixels remained unchanged. Search passed. Inspected the rebuilt ZIP and confirmed both height declarations are packaged. The corrected ZIP has not been installed on the Sunmi; its app did not expose a WebView debugging endpoint.
+    source: vite.config.ts; scripts/check-webview-css.test.js; README.md; connected Sunmi V3 ADB webviewupdate output; Chrome viewport-unit support at https://developer.chrome.com/blog/new-in-chrome-108
+    updated_at: '2026-11-06'
+  - id: cors-safe-development-routing
+    status: supported
+    claim: With a development proxy target configured, browser API requests remain same-origin even if VITE_API_ORIGIN also contains the backend host.
+    reason: Vite supplies an empty browser API origin when serving with a proxy, while production builds retain their configured direct origin.
+    verification: On 2026-11-06, all 47 tests passed, including conflicting origin/proxy settings and forwarded bearer headers. Chrome reproduced those conflicting settings and loaded both /services/central catalog endpoints from localhost with HTTP 200, rendering 138 products without browser errors. The current endpoint paths include /services, and the development proxy target is the backend root. Production build and typecheck passed. Media responses still returned 404.
+    source: vite.config.ts; scripts/check-products.test.js; src/services/api/category.ts; src/services/api/product.ts; local .env.dev configuration
+    updated_at: '2026-11-06'
+  - id: catalog-response-contract
+    status: contradicted
+    claim: Categories are an array and products use an items array with page, page_size, and total metadata.
+    reason: Superseded on 2026-11-11 by user-supplied responses showing count, next, previous, and results for both endpoints. The previous array/items contract no longer applies.
+    verification: On 2026-11-06, all 46 Node tests passed, including catalog HTTP serialization, cancellation, grouping, image URLs, decimal quantities, and session resets. Chrome exercised the actual React UI through the Vite proxy and this Postman simulation; its request events confirmed category, product, and media traffic. Search, category filters, empty results, 503 with retry, broken images, navigation persistence, Khmer text, and 280–768px layouts passed. No live service was called. On 2026-11-11, the new user samples contradicted this historical contract; the services, fixtures, and tests were updated to the results envelope.
+    source: User product-list request and clarification; src/services/api/category.ts; src/services/api/product.ts
+    updated_at: '2026-11-11'
+  - id: flattened-catalog-response-contract
+    status: supported
+    claim: The supplied catalog contract uses a results envelope for both endpoints, numeric product category and default_uom IDs with separate names, and a thumbnail URL string.
+    reason: The user's 2026-11-11 response samples establish this shape. The API boundary converts flattened products to the catalog and cart's object model while retaining product response metadata.
+    verification: On 2026-11-11 using Node 26.13.0, all 63 tests, typecheck, and the production build passed. Local HTTP tests cover absolute thumbnail URLs, empty category thumbnail objects, enum-like category statuses, category grouping, optional values, default quantity steps, metadata, and cart UOM/image persistence. The real services and ProductImage server rendering were exercised against the updated Postman simulation on port 4910; request events confirmed category, product, and media traffic. Assertions passed for sorted categories, 14 products, Khmer category labels, image markup and HTTP 200 media, Case cart units, category filters, search, empty results, and HTTP 503. These are local fixture checks; the live API and installed WebView were not checked in this session. Existing local mocks were reused; owner discovery was not repeated.
+    source: User product/category response samples dated 2026-11-11; src/services/api/product.ts; src/services/api/category.ts; scripts/check-products.test.js; postman/mocks/product-catalog/default.js; Postman local request events at 2026-11-11T02:18:30Z
+    updated_at: '2026-11-11'
+  - id: catalog-ui-simulation
+    status: supported
+    claim: The product page handles the modeled catalog responses and product 503 failures through real HTTP without pagination parameters.
+    reason: Browser checks exercised the real page, API services, and development proxy against the local stand-ins.
+    verification: On 2026-11-06, Chrome checks passed using check-products-browser.mjs in the temporary miniapp-browser workspace. Postman request events showed central category/product and media requests, including modeled 503 and 404 responses. Screenshots products-mobile.png and products-khmer.png were inspected. This establishes only the supplied contract and modeled scenarios, not live backend behavior or native-device layout.
+    source: src/pages/product/index.tsx; scripts/check-products.test.js; postman/mocks/product-catalog/default.js; postman/mocks/product-media/default.js
+    updated_at: '2026-11-06'
+  - id: unpaginated-products
+    status: unknown
+    claim: Omitting page and page_size returns all matching products from the real service.
+    reason: Requested by the user; the local fixture models this assumption but cannot establish server behavior.
+    verification: On 2026-11-06 the configured development backend returned 138 products without pagination parameters, and Chrome rendered all 138 through the Vite proxy. Completeness for larger catalogs is not established; the implementation intentionally does not request subsequent pages.
+    source: User pagination clarification; postman/mocks/product-catalog/default.js
+    updated_at: '2026-11-06'
+  - id: development-gateway-routing
+    status: supported
+    claim: The current development API is reached with the services prefix in the proxy target and catalog endpoint paths beginning with /central.
+    reason: Live read-only requests and Chrome returned HTTP 200 for both category and product endpoints after migrating the ignored legacy development URL setting.
+    verification: On 2026-11-06, direct backend reads returned 3 categories and 138 products. A Chrome run using the actual .env.dev configuration confirmed both APIs returned 200 and 138 cards rendered. All 47 tests passed, including a new HTTP proxy prefix regression check. One sample image returned 404 at the backend root, services path, and central service path; media hosting remains unresolved and the UI uses its fallback.
+    source: vite.config.ts; src/services/api/category.ts; src/services/api/product.ts; scripts/check-products.test.js; local .env.dev configuration
+    updated_at: '2026-11-06'
+fingerprints:
+  - id: fullscreen-location-recovery
+    date: '2026-11-11'
+    commit: Existing dirty working tree; replaced the location bottom sheet with a route, retained checkout details in memory, separated address lookup failures from map failures, added automatic device location and recentering, guarded stale lookups and geolocation responses, and extended the local maps fixture and regression tests.
+    cli: Postman CLI 1.74.0; Node 26.13.0 for checks/build; Chromium 158 using the existing local Playwright installation and Postman simulation on port 4910.
+  - id: native-date-only-delivery
+    date: '2026-11-11'
+    commit: Existing dirty working tree; default Cambodia today, date-only momentum wheels with Today and swipe dismissal, backdate restrictions in picker/checkout/payload builder, fixed midnight +07:00 serialization, and three additional date regression tests. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; mobile Chromium using the existing local Playwright installation. Local existing simulation only; postman status is unavailable in this CLI version.
+  - id: checkout-customer-date-map
+    date: '2026-11-11'
+    commit: Existing dirty working tree; customer-card restyle with retained name/email, native bottom sheets and wheel date/time, lazy Google Map/geocoding integration, validated delivery payload fields, local SDK/provider fixture, five added tests, and English/Khmer labels. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation; official Google documentation and Orbit discovery.
+  - id: submitted-order-modal
+    date: '2026-11-11'
+    commit: Existing dirty working tree; replaced inline success banner with a native confirmation dialog, returned-ID navigation and new-PO action, green checkmark styling, and English/Khmer labels. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation.
+  - id: compact-order-content
+    date: '2026-11-11'
+    commit: Existing dirty working tree; compact white content layout, combined metadata, item rows and total styling, bottle icon, and delivery/total translations. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation.
+  - id: detail-reference-restyle
+    date: '2026-11-11'
+    commit: Existing dirty working tree; restyled order metadata/product cards, added estimated USD amounts and decimal-rounding tests, optional image placeholders, and Cambodia date/time formatting. Preserved concurrent user layout edits. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation.
+  - id: clickable-order-details
+    date: '2026-11-11'
+    commit: Existing dirty working tree; added order detail API/types/page and clickable cards, preserved route state through guarded links and history page in the URL, added six tests, localized labels, and detail fixtures. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation.
+  - id: my-sales-dashboard
+    date: '2026-11-11'
+    commit: Existing dirty working tree; replaced placeholder home with sales dashboard, added history page and queries, expanded fixtures, translations, and seven sales tests. Removed an unused setter from the already-hidden development panel to restore typechecking. Rebuilt production dist and miniapp.zip.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 using the existing local Playwright installation.
+  - id: staff-order-checkout
+    date: '2026-11-11'
+    commit: Existing dirty working tree; added order API types/service, cart checkout form and submission state, English/Khmer labels, local order fixture, and eight order tests. Production dist and miniapp.zip rebuilt.
+    cli: Postman CLI 1.74.0; Node 26.13.0; Chromium 158 through the existing local Playwright installation; reused the local catalog simulation.
+  - id: flattened-catalog-responses
+    date: '2026-11-11'
+    commit: Existing dirty working tree; updated catalog response adapters, types, fixtures, tests, and documentation. Production dist and miniapp.zip rebuilt.
+    cli: Postman CLI 1.74.0; Node 26.13.0; existing local user-contract fixtures reused.
+  - id: thumbnail-base-url-check
+    date: '2026-11-06'
+    commit: Working tree; thumbnail URL concatenation now preserves API base paths. Three live base-plus-thumbnail URLs still returned 404. Thumbnail URL assertions and production build passed; two existing service endpoint path assertions failed because the current endpoints include /services.
+    cli: Postman CLI 1.74.0; live read-only image checks used the configured development API.
+  - id: product-catalog-implementation
+    date: '2026-11-06'
+    commit: Working tree implementation; existing empty placeholders reused.
+    cli: Postman CLI 1.74.0; owner mock search skipped because the CLI is unauthenticated.

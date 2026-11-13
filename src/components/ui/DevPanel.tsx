@@ -4,7 +4,7 @@ import type { MockBridgeController } from '../../services/bridge/mock-bridge';
 import { useMiniAppStore } from '../../store/miniAppStore';
 
 export default function DevPanel({ controller }: { controller: MockBridgeController }) {
-  const [open, setOpen] = useState(false);
+  const [open] = useState(false);
   const token = useMiniAppStore((state) => state.authToken);
   const language = useMiniAppStore((state) => state.language);
   const [input, setInput] = useState(token);
@@ -31,15 +31,15 @@ export default function DevPanel({ controller }: { controller: MockBridgeControl
 
   return (
     <aside className="dev-panel" aria-label="Development bridge tools">
-      <button className="action-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="dev-tools">
+      {/* <button className="action-button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="dev-tools">
         {open ? 'Close dev tools' : 'Dev tools'}
-      </button>
+      </button> */}
       {open && (
-        <div id="dev-tools" className="dev-panel-body">
+        <div id="dev-tools" className="dev-panel-body" data-keyboard-scroll>
           <h2 className="text-lg font-semibold">Dev Bridge Console</h2>
           <p className="my-3 text-sm text-slate-600">Browser mock active. Native actions are simulated.</p>
           <label htmlFor="dev-token">Development auth token</label>
-          <input id="dev-token" type="password" autoComplete="off" value={input} onChange={(event) => setInput(event.target.value)} />
+          <input id="dev-token" type="password" enterKeyHint="done" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) { event.preventDefault(); event.currentTarget.blur(); } }} />
           <button className="action-button" onClick={saveToken}>Save token</button>
           <div className="dev-actions">
             <button onClick={() => void run(() => bridge.scanQR())}>Scan QR</button>

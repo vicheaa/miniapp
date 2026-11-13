@@ -23,9 +23,108 @@ assumptions:
     verification: Pending real-device validation with the updated SuperApp and a production-compatible test account.
     source: postman/mocks/auth-refresh/default.js
     updated_at: '2026-11-06'
+  - id: central-sfa-auth-status
+    status: contradicted
+    claim: Central staff-order reads propagate an upstream expired-token rejection as HTTP 401.
+    reason: The supplied order-detail screenshot shows HTTP 500 wrapping SFA HTTP 401; local StandardRestService catches every exception and responds with HTTP 500 and Data failure.
+    verification: On 2026-11-12 inspected the screenshot, StandardRestService.getOne, FailedResponse, and SFA verify_token. The named deployed SFA proxy is absent from the local Central checkout, so its additional behavior remains unverified. Added the observed wrapper to the existing fixture.
+    source: User order-detail screenshot; ../INTERN-OML-EMPLOYEE-API/oml-core/src/main/java/com/oml/core/rest/StandardRestService.java; ../sfa-api/core/authentication/keycloak.py; postman/mocks/auth-refresh/default.js
+    updated_at: '2026-11-12'
+  - id: wrapped-read-recovery
+    status: supported
+    claim: In the local scenarios exercised, the miniapp recovers from the specific Central SFA expired-token wrapper on staff-order GET reads with at most one refresh and replay.
+    reason: The actual injected JavaScript SDK, real miniapp bootstrap, native-refresh adapter, token store, and HTTP client ran against the extended existing fixture using a simulated native dispatcher.
+    verification: On 2026-11-12 ran scripts/verify-auth-refresh-simulation.js with Postman CLI 1.74.0 on localhost:4912. Two wrapped 500 reads and one direct 401 shared one refresh and made three successful replays (one refresh and six resource calls total). Refresh 503 preserved the wrapped 500 without replay; a rejected replay stopped at two resource calls. Request events confirmed form encoding and the resource/refresh sequence. All 112 miniapp tests passed. No live/device or Flutter secure storage validation was performed.
+    source: scripts/verify-auth-refresh-simulation.js; scripts/check-infrastructure.test.js; src/services/api/request.ts; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-12'
+  - id: native-resume-token-sync
+    status: supported
+    claim: In local verification, native updateToken events synchronize the miniapp token without replacing the current session.
+    reason: The injected SDK emits tokenRefreshed and the updated miniapp bootstrap now consumes it.
+    verification: On 2026-11-12 the SDK simulation delivered updateToken and the next authenticated read succeeded without refresh while sessionVersion remained unchanged. Infrastructure tests also exercised startup races, malformed events, empty tokens, and late events after session replacement or disposal. Device lifecycle delivery remains unverified.
+    source: src/services/bridge/bootstrap.ts; scripts/verify-auth-refresh-simulation.js; ../oml-central/lib/features/webview/bridge/sdk/bridge_sdk_source.dart
+    updated_at: '2026-11-12'
+  - id: immediate-first-401-recovery
+    status: supported
+    claim: In the local follow-up scenarios, the first 401 starts refresh immediately and its original query succeeds after native refresh without a Retry click.
+    reason: The old client blocked refresh on error-body reading and allowed the resource timer to expire during refresh. Regression tests reproduced both failures before the fix and passed after separating refresh and resource-attempt timeouts.
+    verification: On 2026-11-12 all 117 tests passed including 46 infrastructure tests. The streaming 401 fixture now refreshes before its body completes, and cancellation remains effective during delayed error-body reading. The injected SDK simulation also ran a real 11-second refresh HTTP response with a 500 ms resource timeout and React Query retries disabled. The first query never entered error and succeeded after one refresh and one replay. Postman request events showed resource 401, refresh 200 with duration 11001 ms, and resource 200; counters confirmed two resource calls and one refresh. Native dispatch was simulated; no device logs or production calls were available.
+    source: scripts/check-infrastructure.test.js; scripts/verify-auth-refresh-simulation.js; src/services/api/request.ts; src/config.ts; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-12'
+  - id: startup-auth-refresh-budget
+    status: supported
+    claim: In local regression tests, miniapp startup authentication can outlive optional bridge calls while awaiting native token refresh.
+    reason: Authentication now uses the 120-second native refresh budget independently of the 5-second optional bridge deadline.
+    verification: On 2026-11-12 ran 47 staged infrastructure tests including authentication completing after the optional-call deadline. Miniapp TypeScript checking passed. Re-ran all five existing Postman scenarios on localhost:4915 using the changed injected SDK, real miniapp bootstrap and HTTP client with a simulated native dispatcher. Request events confirmed 401, one form-encoded refresh lasting 11001 ms, then 200; the original query succeeded without Retry. Separate SuperApp verification passed 139 Flutter tests and 19 JavaScript tests, including older expired native tokens, pending shared rotation, early RPC replies and page navigation. Production and physical WebViews were not exercised.
+    source: src/services/bridge/bootstrap.ts; scripts/check-infrastructure.test.js; scripts/verify-auth-refresh-simulation.js; ../oml-central/test/features/webview/super_app_webview_refresh_test.dart; ../oml-central/test/data/network/interceptors/auth_interceptor_test.dart
+    updated_at: '2026-11-12'
+  - id: staging-device-direct-401-recovery
+    status: supported
+    claim: On the connected staging Sunmi V3, concurrent history and summary HTTP 401s shared one native refresh and automatically replayed to HTTP 200 without Retry.
+    reason: Redacted events from the actual miniapp, native bridge, and API proxy establish the sequence on a physical device.
+    verification: On 2026-11-12 installed staging SuperApp build 46 and a local diagnostic v0.1.8 sales bundle. At device time 13:28:15 refresh started about 5 ms after the first 401, lasted 113 ms, and both requests completed in at most 620 ms. An order-detail request at 13:33:36 also recovered after a 94 ms refresh. These observations preceded the final guarded-wrapper change. No new expired-token catalog recovery was captured before disconnection.
+    source: docs/auth-refresh-device-verification.json; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-12'
+  - id: captured-internal-token-wrapper
+    status: supported
+    claim: The staging deployment can return HTTP 500 wrapping an SFA HTTP 401 with authentication_failed and Internal microservice token has expired.
+    reason: The physical device displayed that exact response; fixed diagnostic indicators confirmed the wrapper while the original exact-message matcher rejected it.
+    verification: Captured the displayed order-detail error at device time 13:24:35 on 2026-11-12. The deployed message was absent from local backend checkouts. Ownership of the internal credential is not established; this does not prove a valid user token should be refreshed.
+    source: docs/auth-refresh-investigation.md; docs/auth-refresh-device-verification.json; postman/mocks/auth-refresh/default.js
+    updated_at: '2026-11-12'
+  - id: guarded-internal-wrapper-recovery
+    status: supported
+    claim: In local scenarios, the exact internal-token wrapper on known GET reads refreshes once only when the rejected user JWT has also expired; a valid or opaque user token preserves the backend error.
+    reason: A real local HTTP regression failed before the guard and passed after it. The actual injected SDK and miniapp client also exercised expired and valid JWT cases against the extended fixture.
+    verification: On 2026-11-12 all 123 miniapp tests, typecheck, and seven Postman simulation scenarios passed. The localhost simulation confirmed one refresh plus one replay for an expired user JWT, and no refresh or replay for a valid JWT. Native dispatch was simulated. The final guarded bundle could not be installed after the device disconnected; its device behavior is unverified.
+    source: src/services/api/request.ts; scripts/check-infrastructure.test.js; scripts/verify-auth-refresh-simulation.js; postman/mocks/auth-refresh/default.js
+    updated_at: '2026-11-12'
+  - id: lockscreen-transport-recovery-gap
+    status: supported
+    claim: In local TCP-fault scenarios, the current sales queries keep their exact network errors after focus and token synchronization, while manual refetch succeeds after connectivity returns.
+    reason: The actual App query defaults disable retries and focus refetching; native token events preserve the query session and do not refetch failed reads. A connection rejection has no HTTP auth status to trigger refresh.
+    verification: On 2026-11-13 ran scripts/investigate-lockscreen-resume.js on Node 26.13.0. The real sales functions, shared client, bootstrap/store and TanStack observers used a local fault server, not the Postman fixture. Both pre-response disconnects produced the screenshot message with null status and zero refreshes. Focus and token push made no requests; manual refetch succeeded. An explicit offline-to-online transition also recovered the reads. Successful cache entries aged beyond five minutes stayed available and made no requests on focus. No physical suspension, Flutter proxy or production service was exercised.
+    source: scripts/investigate-lockscreen-resume.js; src/App.tsx; src/services/api/request.ts; src/services/bridge/bootstrap.ts; docs/lockscreen-resume-investigation.md
+    updated_at: '2026-11-13'
+  - id: reported-iphone-lockscreen-trigger
+    status: unknown
+    claim: The reported five-minute iPhone lock causes a specific WebView-to-localhost connection failure.
+    reason: The screenshot fits a pre-response transport exception in the current formatter, but no correlated device trace or installed-version confirmation establishes the failed hop. A stale socket, local listener failure, remote request or CORS failure remain distinguishable possibilities.
+    verification: On 2026-11-13 inspected the native lifecycle and local-server source read-only. Resume synchronizes auth without a local transport health check or a dedicated resume-ready event. The connected Android device's existing redacted excerpt contained token events but no matching miniapp network diagnostics. Pending a correlated five-minute reproduction on the identified iPhone/build.
+    source: docs/lockscreen-resume-investigation.md; ../oml-central/lib/features/webview/presentation/super_app_webview.dart; ../oml-central/lib/core/services/local_server_service.dart
+    updated_at: '2026-11-13'
+  - id: wrapped-order-write-status
+    status: contradicted
+    claim: Central order submission preserves an upstream SFA HTTP 401 as an actual HTTP 401.
+    reason: The new Cart Detail screenshot displays HTTP 500 wrapping an SFA POST 401, and local StandardRestService.exec catches all exceptions as HTTP 500. The empty upstream body does not identify the failed credential.
+    verification: On 2026-11-13 inspected the screenshot, shared client and StandardRestService.exec. The deployed SFAApiProxy implementation remains unavailable locally. Added the exact empty-body POST wrapper to the existing fixture; no live order was submitted.
+    source: User Cart Detail screenshot; ../INTERN-OML-EMPLOYEE-API/oml-core/src/main/java/com/oml/core/rest/StandardRestService.java; postman/mocks/auth-refresh/default.js; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-13'
+  - id: expiring-write-token-preflight
+    status: supported
+    claim: In local scenarios, managed writes with a JWT expiring within 30 seconds await shared native refresh before sending; a subsequent wrapped POST 500 is not replayed.
+    reason: Two order regressions reproduced sending expired credentials before the change. The updated request client passed those regressions and real HTTP scenarios through the actual injected SDK with a simulated native dispatcher.
+    verification: On 2026-11-13 all 158 tests, typecheck, production packaging and 11 SDK/HTTP simulation scenarios passed on Node 26.13.0 with Postman CLI 1.74.0 at localhost:4921. Request events showed refresh 200 followed by one order POST 200 with preserved JSON; refresh 503 produced zero order POSTs; the screenshot wrapper after successful refresh produced one POST without replay. Counters confirmed three total POSTs and one simulated saved order across the new cases. Unit HTTP regressions also cover concurrent refresh, cancellation, session replacement and separate deadlines. Opaque tokens retain prior behavior. No production calls or device verification were performed.
+    source: src/services/api/request.ts; scripts/check-orders.test.js; scripts/check-infrastructure.test.js; scripts/verify-auth-refresh-simulation.js; postman/mocks/auth-refresh/default.js; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-13'
+  - id: order-401-recovery-stays-pending
+    status: supported
+    claim: In local scenarios, an actual order POST 401 starts native refresh on headers and keeps checkout submitting until one automatic replay finishes, including after proactive refresh.
+    reason: Removing the preflight suppression restores reactive 401 handling. The completed preflight refresh result is not reused for a rejection of that same token. The actual order service, draft store and browser UI stayed pending without exposing the intermediate failure.
+    verification: On 2026-11-13 all 162 tests, typecheck, production packaging and 12 SDK/HTTP scenarios passed. Postman events for the new case show preflight refresh 200, POST 401, reactive refresh 200 and POST 200 with one modeled save. Real localhost order tests withheld the 401 body until refresh started and observed no submitError. Headless Chromium exercised the actual React checkout, confirming its submitting dialog stayed open with zero alerts until refresh and replay succeeded. A failed refresh showed friendly session guidance without 401 text. Native dispatch and API responses were simulated; production and the reported iPhone were not exercised.
+    source: src/services/api/request.ts; scripts/check-orders.test.js; scripts/check-infrastructure.test.js; scripts/verify-auth-refresh-simulation.js; /private/tmp/miniapp-checkout-errors-browser.mjs; docs/auth-refresh-investigation.md
+    updated_at: '2026-11-13'
 fingerprints:
   - id: local-refresh-implementation
     date: '2026-11-06'
     commit: working trees contain existing uncommitted changes
     cli: Postman CLI 1.74.0; workspace lookup skipped because CLI is unauthenticated
+  - id: wrapped-sfa-refresh-investigation
+    date: '2026-11-12'
+    commit: 1edf287651205c37dfd48ebc0c86683b0b5ce8d4 with pre-existing and task-specific uncommitted changes
+    cli: Postman CLI 1.74.0; Node 26.13.0; existing local fixture extended, owner lookup not repeated; postman status is unavailable in this CLI
+  - id: order-submit-refresh-investigation
+    date: '2026-11-13'
+    commit: 1edf287651205c37dfd48ebc0c86683b0b5ce8d4 with pre-existing and task-specific uncommitted changes
+    cli: Postman CLI 1.74.0; Node 26.13.0; reused the local auth fixture; owner lookup not repeated; postman status remains unavailable
 

@@ -17,7 +17,7 @@
     "preview": "vite preview",
     "zip": "node scripts/zip.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --test scripts/check-infrastructure.test.js"
+    "test": "node --test --test-concurrency=1 scripts/*.test.js"
   },
   "dependencies": {
     "@tanstack/react-query": "5.106.1",

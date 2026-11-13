@@ -1,0 +1,9 @@
+simulation: miniapp-product-catalog
+routing: path
+mocks:
+  - routeKey: maps
+    path: postman/mocks/delivery-maps/config.yaml
+  - routeKey: services
+    path: postman/mocks/product-catalog/config.yaml
+  - routeKey: media
+    path: postman/mocks/product-media/config.yaml
