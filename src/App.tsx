@@ -8,6 +8,7 @@ import { useMiniAppStore } from './store/miniAppStore';
 import AppRoutes from './router';
 import { MiniAppNavigationProvider } from './components/MiniAppNavigation';
 import { useKeyboardViewport } from './hooks/useKeyboardViewport';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 const DevPanel = import.meta.env.DEV
   ? lazy(() => import('./components/ui/DevPanel'))
@@ -33,7 +34,7 @@ export default function App() {
   }, [queryClient, sessionVersion]);
 
   if (session.status === 'loading') {
-    return <main className="app-shell" role="status"><p className='font-inter'>{t('global.loading')}</p></main>;
+    return <LoadingScreen />;
   }
   if (session.status === 'error') {
     return (

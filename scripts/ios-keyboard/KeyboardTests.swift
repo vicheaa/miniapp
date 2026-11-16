@@ -89,7 +89,7 @@ final class KeyboardTests: XCTestCase {
         XCTAssertEqual(search.value as? String, "Vital")
         app.buttons["test-Address"].tap()
         wait(app, "address") { $0["addressReady"] as? Bool == true }
-        let address = app.webViews.textFields.firstMatch
+        let address = app.webViews.textViews.firstMatch
         address.tap()
         opened(app, input: address)
         address.typeText("House 12")

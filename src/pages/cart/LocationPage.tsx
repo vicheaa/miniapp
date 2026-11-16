@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMiniAppNavigation } from '../../components/MiniAppNavigation';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useKeyboardPage } from '../../hooks/useKeyboardViewport';
 import { useOrderDraftStore } from '../../store/orderDraftStore';
-import { isCoordinateAddress, loadGoogleMaps, mapCoordinates, onMapsAuthFailure, resolveLocationAddress, type DeliveryMap, type MapCircle, type MapPoint } from '../../services/maps/googleMaps';
+import { hasResolvedLocation, isCoordinateAddress, isPlusCodeAddress, loadGoogleMaps, mapCoordinates, onMapsAuthFailure, resolveLocationAddress, type DeliveryMap, type MapCircle, type MapPoint } from '../../services/maps/googleMaps';
 import { validCoordinates } from '../../utils/delivery';
 import { emptyLocationAddressDetails } from '../../types/location';
 import Icon from '../product/component/Icon';
@@ -19,8 +19,9 @@ export default function LocationPage() {
   const details = useOrderDraftStore((state) => state.details);
   const savedLocationDetails = useOrderDraftStore((state) => state.locationDetails);
   const updateLocation = useOrderDraftStore((state) => state.updateLocation);
-  const [initial] = useState(() => ({ address: isCoordinateAddress(details.address) ? '' : details.address, details: savedLocationDetails, point: validCoordinates(details.latitude, details.longitude) ? { lat: details.latitude!, lng: details.longitude! } : null }));
+  const [initial] = useState(() => ({ address: isCoordinateAddress(details.address) || isPlusCodeAddress(details.address) ? '' : details.address.replace(/ប្រទេស\s*កម្ពុជា\s*$/, 'ព្រះរាជាណាចក្រកម្ពុជា'), details: savedLocationDetails, point: validCoordinates(details.latitude, details.longitude) ? { lat: details.latitude!, lng: details.longitude! } : null }));
   const host = useRef<HTMLDivElement>(null);
+  const addressInput = useRef<HTMLTextAreaElement>(null);
   const map = useRef<DeliveryMap | null>(null);
   const locate = useRef<(() => void) | null>(null);
   const generation = useRef(0);
@@ -39,6 +40,19 @@ export default function LocationPage() {
   const [addressDetails, setAddressDetails] = useState(initial.details ?? emptyLocationAddressDetails());
   const [point, setPoint] = useState<MapPoint | null>(initial.point);
   const close = () => { if (route.state?.fromCart) navigateTo(-1); else navigateTo('/cart', true); };
+
+  useLayoutEffect(() => {
+    const input = addressInput.current;
+    if (!input) return;
+    const resize = () => {
+      input.style.height = 'auto';
+      input.style.height = `${input.scrollHeight + 2}px`;
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    if (input.parentElement) observer.observe(input.parentElement);
+    return () => observer.disconnect();
+  }, [address]);
 
   useEffect(() => {
     let live = true;
@@ -69,7 +83,8 @@ export default function LocationPage() {
       let dragging = false;
       let selectionNeeded = false;
       let lookupActive = false;
-      let last = initial.address.trim() && initial.point && Object.values(initial.details ?? {}).some(Boolean) ? `${center.lat.toFixed(7)},${center.lng.toFixed(7)}` : '';
+      // Recheck older addresses; Khmer text and prefixes do not prove the road is correct.
+      let last = initial.address.trim() && hasResolvedLocation(initial.details, initial.point) ? `${center.lat.toFixed(7)},${center.lng.toFixed(7)}` : '';
       let circles: MapCircle[] = [];
       const select = (selected: MapPoint) => {
         if (!live || !validCoordinates(selected.lat, selected.lng)) return;
@@ -207,7 +222,7 @@ export default function LocationPage() {
         {mapError && <div className="checkout-map-error" role="alert"><p>{t('checkout.mapUnavailable')}</p><button type="button" onClick={() => setAttempt((current) => current + 1)}>{t('global.retry')}</button></div>}
         <div className="location-selected-heading"><span className="location-selected-icon" aria-hidden="true"><Icon name="location" /></span><div><h2>{t('checkout.selectedLocation')}</h2>{point && <p className="checkout-map-coordinates">{mapCoordinates(point)}</p>}</div></div>
         {locationError && <p className="checkout-map-error" role="alert">{t(locationError)}</p>}
-        <label className="checkout-map-address">{t('orderDetails.address')}<input type="text" name="street-address" enterKeyHint="done" autoComplete="street-address" autoCapitalize="sentences" onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) { event.preventDefault(); event.currentTarget.blur(); } }} value={address} disabled={!ready} placeholder={t(resolving ? 'checkout.findingAddress' : 'checkout.addressPlaceholder')} onChange={(event) => { addressEdited.current = true; locatingGeneration.current++; setLocating(false); setAddress(event.target.value); }} /></label>
+        <label className="checkout-map-address">{t('orderDetails.address')}<textarea ref={addressInput} rows={2} name="street-address" enterKeyHint="done" autoComplete="street-address" autoCapitalize="sentences" onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) { event.preventDefault(); event.currentTarget.blur(); } }} value={address} disabled={!ready} placeholder={t(resolving ? 'checkout.findingAddress' : 'checkout.addressPlaceholder')} onChange={(event) => { addressEdited.current = true; locatingGeneration.current++; setLocating(false); setAddress(event.target.value); }} /></label>
         {/* <dl className="location-address-details" aria-label={t('checkout.addressDetails')} aria-busy={resolving}>
           {(['province', 'district', 'commune', 'village'] as const).map((field) => <div key={field}><dt>{t(`checkout.${field}`)}</dt><dd>{addressDetails[field] || t(resolving ? 'global.loading' : 'checkout.addressDetailUnavailable')}</dd></div>)}
         </dl> */}

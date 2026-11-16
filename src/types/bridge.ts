@@ -51,8 +51,8 @@ export interface SuperAppBridge {
   /** Check whether the bridge is available. */
   isAvailable(): boolean;
 
-  /** Open a URL in the browser or native webview. */
-  openUrl(url: string): void;
+  /** Ask the native host to open a URL externally. Older SDKs may return void. */
+  openUrl(url: string): Promise<unknown> | void;
 
   /** Open the native printer connection/settings screen. */
   openPrinterSettings(): Promise<unknown>;

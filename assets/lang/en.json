@@ -113,6 +113,8 @@
     "phone": "Phone",
     "email": "Email",
     "address": "Address",
+    "seeMap": "See map",
+    "mapOpenFailed": "Could not open the map. Please try again.",
     "staff": "Staff",
     "deliveryDate": "Delivery date",
     "notScheduled": "Not scheduled",

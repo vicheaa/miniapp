@@ -61,7 +61,7 @@
       footerVisible: footerVisible(),
       editingFrames,
       footerFlashFrames,
-      addressReady: !!document.querySelector('.checkout-map-address input:not(:disabled)') && document.querySelector('.location-details')?.getAttribute('aria-busy') === 'false',
+      addressReady: !!document.querySelector('.checkout-map-address textarea:not(:disabled)') && document.querySelector('.location-details')?.getAttribute('aria-busy') === 'false',
     };
   };
   const timer = setInterval(async () => {
