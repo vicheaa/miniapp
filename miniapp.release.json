@@ -1,0 +1,8 @@
+{
+  "id": 4,
+  "version": "0.1.11",
+  "bundleFile": "miniapp.zip",
+  "bundleHash": "65177edd4ac40457b014baee05416e4719b18be78dde36d0977d3d89e847593a",
+  "mode": "prod",
+  "authDiagnosticsEnabled": false
+}

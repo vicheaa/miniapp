@@ -53,7 +53,7 @@ export async function fetchWorkflowTasks(
       filter: filter ?? "AVAILABLE",
       latest: latest ?? true,
       myRequest: myRequest ?? false,
-      buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR", "NCM"],
+      buKeys: buKeys && buKeys.length > 0 ? buKeys : ["PR", "NCM", "PO"],
       ...(taskStatus && taskStatus.length > 0 && { taskStatus }),
       ...(searchValue && { searchValue }),
     })

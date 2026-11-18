@@ -70,7 +70,7 @@ export const useWorkflowStore = create<WorkflowStore>()(
             : (state.statusFilter === 'OPEN' ? 'ALL' : state.statusFilter),
         })),
 
-      buKeys: ['PR', 'NCM'],
+      buKeys: ['PR', 'NCM', "PO"],
       setBuKeys: (buKeys) => set({ buKeys }),
 
       isFilterBtndisable: false,
