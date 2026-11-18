@@ -458,8 +458,8 @@ html[data-keyboard-actions-hidden="true"] .keyboard-bottom-actions, html[data-ke
 .sales-new-order:active { background: #06336c; }
 .sales-new-order svg { width: 20px; height: 20px; stroke-width: 2; }
 .sales-history-count { margin: 0 0 16px; color: #64748b; font-size: 14px; }
-.sales-pagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 20px; font-size: 14px; }
-.sales-pagination button { min-height: 44px; padding: 8px 14px; border-radius: 10px; background: white; color: var(--product-blue); }
+.sales-load-more { height: 1px; }
+.sales-history-loading { margin: 20px 0 12px; color: #64748b; text-align: center; font-size: 14px; }
 .sales-state { padding: 32px 12px; color: #64748b; text-align: center; font-size: 14px; }
 .sales-error { margin-bottom: 16px; padding: 14px; border-radius: 12px; background: #fff1f2; color: #9f1239; font-size: 14px; }
 .sales-error p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }

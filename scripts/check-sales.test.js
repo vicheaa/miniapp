@@ -3,8 +3,9 @@ import { after, before, beforeEach, test } from 'node:test';
 import { createServer as createHttpServer } from 'node:http';
 import { once } from 'node:events';
 import { createServer } from 'vite';
+import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query';
 
-let vite, server, sales, presentation, estimates, session, origin;
+let vite, server, sales, presentation, estimates, session, origin, infiniteStaffOrderHistoryOptions;
 let lastRequest, summaryBody, historyBody, detailBody, status, delay, calls;
 const nativeFetch = globalThis.fetch;
 const summary = { total_requests: 14, pending_requests: 12, accepted_requests: 1, total_items_case: 732 };
@@ -24,6 +25,7 @@ before(async () => {
   globalThis.fetch = (url, options) => nativeFetch(new URL(url, origin), options);
   vite = await createServer({ mode: 'test', appType: 'custom', server: { middlewareMode: true, hmr: false, ws: false, watch: null } });
   sales = await vite.ssrLoadModule('/src/services/api/order.ts');
+  ({ infiniteStaffOrderHistoryOptions } = await vite.ssrLoadModule('/src/hooks/useStaffOrderHistory.ts'));
   presentation = await vite.ssrLoadModule('/src/pages/orders/presentation.ts');
   estimates = await vite.ssrLoadModule('/src/pages/orders/estimates.ts');
   ({ useMiniAppStore: session } = await vite.ssrLoadModule('/src/store/miniAppStore.ts'));
@@ -64,6 +66,68 @@ test('sales HTTP: subsequent pages preserve count and next/previous metadata', a
   assert.deepEqual(await sales.getStaffOrderHistory(2), historyBody);
   assert.equal(lastRequest.url.searchParams.get('page'), '2');
   assert.deepEqual([...lastRequest.url.searchParams], [['page', '2'], ['page_size', '20']]);
+});
+
+test('order list: infinite query appends pages, shares in-flight requests, and stops at the last page', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const options = infiniteStaffOrderHistoryOptions(session.getState().sessionVersion);
+  try {
+    historyBody = { count: 2, next: '/history?page=2', previous: null, results: [order] };
+    await client.fetchInfiniteQuery(options);
+    const observer = new InfiniteQueryObserver(client, options);
+    historyBody = { count: 2, next: null, previous: '/history?page=1', results: [{ ...order, id: 21 }] };
+    delay = 20;
+    const [result] = await Promise.all([
+      observer.fetchNextPage({ cancelRefetch: false }),
+      observer.fetchNextPage({ cancelRefetch: false }),
+    ]);
+    assert.equal(calls, 2);
+    assert.equal(lastRequest.url.searchParams.get('page'), '2');
+    assert.deepEqual(result.data.pageParams, [1, 2]);
+    assert.deepEqual(result.data.pages.flatMap((page) => page.results.map((entry) => entry.id)), [22, 21]);
+    assert.equal(result.hasNextPage, false);
+    await observer.fetchNextPage();
+    assert.equal(calls, 2);
+  } finally { client.clear(); }
+});
+
+test('order list: a failed next page preserves loaded orders and retries the same page', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const options = infiniteStaffOrderHistoryOptions(session.getState().sessionVersion);
+  try {
+    historyBody = { count: 2, next: '/history?page=2', previous: null, results: [order] };
+    await client.fetchInfiniteQuery(options);
+    const observer = new InfiniteQueryObserver(client, options);
+    status = 503;
+    historyBody = { message: 'Temporarily unavailable' };
+    const failed = await observer.fetchNextPage();
+    assert.equal(failed.isFetchNextPageError, true);
+    assert.deepEqual(failed.data.pages[0].results, [order]);
+    assert.deepEqual(failed.data.pageParams, [1]);
+    status = 200;
+    historyBody = { count: 2, next: null, previous: '/history?page=1', results: [{ ...order, id: 21 }] };
+    const retried = await observer.fetchNextPage();
+    assert.equal(lastRequest.url.searchParams.get('page'), '2');
+    assert.equal(retried.isError, false);
+    assert.equal(retried.data.pages.length, 2);
+  } finally { client.clear(); }
+});
+
+test('order list: empty pages stop pagination and caches stay separate from home and other sessions', async () => {
+  const client = new QueryClient();
+  const version = session.getState().sessionVersion;
+  const options = infiniteStaffOrderHistoryOptions(version);
+  try {
+    client.setQueryData(['staff-orders', 'history', version, 1], historyBody);
+    historyBody = { count: 0, next: '/history?page=2', previous: null, results: [] };
+    await client.fetchInfiniteQuery(options);
+    const observer = new InfiniteQueryObserver(client, options);
+    const result = await observer.fetchNextPage();
+    assert.equal(result.hasNextPage, false);
+    assert.equal(calls, 1);
+    assert.deepEqual(client.getQueryData(['staff-orders', 'history', version, 1]).results, [order]);
+    assert.equal(client.getQueryData(infiniteStaffOrderHistoryOptions(version + 1).queryKey), undefined);
+  } finally { client.clear(); }
 });
 
 test('sales: invalid page numbers are rejected before making a request', async () => {
