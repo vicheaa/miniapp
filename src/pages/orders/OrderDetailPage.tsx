@@ -1,45 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { NavigationLink } from '../../components/MiniAppNavigation';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getStaffOrderDetail } from '../../services/api/order';
 import { useMiniAppStore } from '../../store/miniAppStore';
-import { copyText } from '../../utils/clipboard';
 import { productName } from '../product/catalog';
 import Icon from '../product/component/Icon';
 import ProductImage from '../product/component/ProductImage';
 import OrdersError from './OrdersError';
 import { orderDateTime, orderDetailBackTarget, orderMapUrl, orderNumber, orderStatus, orderUnit } from './presentation';
 
-function CopyOrderNumber({ number }: { number: string }) {
+function OrderPhone({ phone }: { phone: string }) {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<'idle' | 'copying' | 'copied' | 'error'>('idle');
+  const superApp = useMiniAppStore((state) => state.superApp);
+  const [status, setStatus] = useState<'idle' | 'calling' | 'error'>('idle');
+  const number = phone.trim();
 
-  useEffect(() => {
-    if (status !== 'copied' && status !== 'error') return;
-    const timeout = window.setTimeout(() => setStatus('idle'), 2500);
-    return () => window.clearTimeout(timeout);
-  }, [status]);
-
-  const copy = async () => {
-    setStatus('copying');
+  const call = async () => {
+    if (!number || status === 'calling') return;
+    setStatus('calling');
     try {
-      await copyText(number);
-      setStatus('copied');
-    } catch {
+      if (!superApp?.isAvailable()) throw new Error('SuperApp unavailable');
+      await superApp.openUrl(`tel:${number.replace(/[\s().-]/g, '')}`);
+      setStatus('idle');
+    } catch (error) {
+      console.error('[OrderPhone] SuperApp could not open the dialer.', error);
       setStatus('error');
     }
   };
 
   return (
-    <span className="order-detail-number">
-      <button type="button" className="order-detail-copy" onClick={() => void copy()} disabled={status === 'copying'} aria-label={t(status === 'copied' ? 'orderDetails.copied' : 'orderDetails.copyOrderNumber')} title={t('orderDetails.copyOrderNumber')} data-copied={status === 'copied'}>
-        <Icon name={status === 'copied' ? 'check' : 'copy'} />
-      </button>
-      <strong>{number}</strong>
-      <span className={status === 'error' ? 'order-detail-copy-error' : 'sr-only'} role="status">{status === 'copied' ? t('orderDetails.copied') : status === 'error' ? t('orderDetails.copyFailed') : ''}</span>
-    </span>
+    <div className="order-detail-phone">
+      <h2>{number ? <button type="button" className="order-detail-call" onClick={() => void call()} disabled={status === 'calling'} aria-label={`${t('orderDetails.call')} ${number}`} title={t('orderDetails.call')}>
+        <Icon name="phone" /><span>{number}</span>
+      </button> : '—'}</h2>
+      {status === 'error' && <span className="order-detail-call-error" role="status">{t('orderDetails.callFailed')}</span>}
+    </div>
   );
 }
 
@@ -72,16 +69,15 @@ export default function OrderDetailPage() {
         {!validId ? <p className="sales-error" role="alert">{t('orderDetails.invalidOrder')}</p> : detail.isError ? <OrdersError error={detail.error} retry={() => void detail.refetch()} /> : !order ? <p className="sales-state" role="status">{t('orderDetails.loading')}</p> : <>
           <section className="order-detail-panel" aria-label={t('orderDetails.overview')}>
             <div className="order-detail-customer-heading">
-              {/* <h2>{order.customer || '—'}</h2> */}
-              <CopyOrderNumber key={`${sessionVersion}:${order.id}:${order.no}`} number={order.no} />
+              <OrderPhone key={`${sessionVersion}:${order.id}:${order.phone}`} phone={order.phone} />
               <span className="sales-status" data-status={status}>{status === 'unknown' ? order.status : t(`home.${status}`)}</span>
             </div>
             <p className="order-detail-identity"><time dateTime={order.created_date}>{orderDateTime(order.created_date, language)}</time></p>
             <dl className="order-detail-fields">
+              <div><dt>{t('orderDetails.order_no')}</dt><dd>{order.no || '—'}</dd></div>
               {order.customer?.trim() && (
                 <div><dt>{t('orderDetails.customer')}</dt><dd>{order.customer}</dd></div>
               )}
-              <div><dt>{t('orderDetails.phone')}</dt><dd>{order.phone || '—'}</dd></div>
               <div><dt>{t('orderDetails.salesperson')}</dt><dd>{order.staff_code && `${order.staff_code} · `}{order.staff_name || '—'}</dd></div>
               <div><dt>{t('orderDetails.delivery')}</dt><dd>{order.delivery_date ? orderDateTime(order.delivery_date, language) : t('orderDetails.notScheduled')}</dd></div>
               <div><dt>{t('orderDetails.address')}</dt><dd className="order-detail-address">
